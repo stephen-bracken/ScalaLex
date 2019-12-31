@@ -15,8 +15,8 @@ object expressions {
     var nextId: Int = 0
     // create an NFA from a regular expression string, return success or failure, store result on operatorStack
     def translateToNFA(s: List[Char]): (FSA,Boolean) = {
-      stack = List()
-      opStack = List()
+      //stack = List()
+      //opStack = List()
       def translateAction(c:Char):Boolean = {
         ///add a state pair to represent a standard input symbol
         def parenth: Boolean = {
@@ -201,7 +201,10 @@ object expressions {
     if (!translateToNFA(r.toList)._2) throw new FSAError("failed to parse regex")
     if (stack isEmpty) throw new FSAError("no NFA found")
     val nfa = stack.head
-    if (!stack.tail.isEmpty) throw new FSAError("unresolved states")
+    if (!stack.tail.isEmpty) throw new FSAError("unresolved states: " + 
+      (for{
+        f <- stack.tail
+        s <- f.states} yield s.id))
     dTranslate(nfa initialState)
   }
 }
