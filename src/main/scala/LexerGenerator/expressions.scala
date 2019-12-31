@@ -45,6 +45,7 @@ object expressions {
       if(s.isEmpty) {
         //eval remaining operators
         if((for(op <- opStack) yield eval).exists(x => x == false)) false
+        //error:head of empty list
         val fsa = stack.head
         //add the final state as an accepting state
         fsa.addAccepting(fsa.states.last)
@@ -236,6 +237,11 @@ class DFA(states: List[State], accepting: Set[State] = Set())
 class State(val id: Int) {
   var transitions: Map[Char, List[State]] = Map('\u0000' -> List(this))
   def addTransition(c: Char, s: State) = {
+    println("adding transition ("+
+    (c match {
+      case '\u0008' => "epsilon" 
+      case x => x }) 
+      +") from state " + id + " to state " + s.id)
     transitions = transitions.updated(c, List(s))
   }
   def getTransitions(c: Char) = transitions filter (t => t._1 == c)
