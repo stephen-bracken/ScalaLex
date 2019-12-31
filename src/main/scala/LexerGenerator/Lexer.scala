@@ -1,7 +1,7 @@
 package lexerGenerator
-class Lexer(tokens: Token){
+abstract class Lexer(tokens: Token){
     val words = tokens
-    def yylex() = ???
+    def yylex(input:String):List[Token]
 }
 
 trait Token {
