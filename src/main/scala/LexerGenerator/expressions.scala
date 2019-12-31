@@ -233,12 +233,10 @@ class DFA(states: List[State], accepting: Set[State] = Set())
   for (s <- states) yield { s removeEpsilon }
 }
 
-//TODO: Fix compiler problem??
-///
 class State(val id: Int) {
   var transitions: Map[Char, List[State]] = Map('\u0000' -> List(this))
   def addTransition(c: Char, s: State) = {
-    transitions = transitions.updated(c, (s :: transitions(c)))
+    transitions = transitions.updated(c, List(s))
   }
   def getTransitions(c: Char) = transitions filter (t => t._1 == c)
   def transition(c: Char) = transitions(c)
