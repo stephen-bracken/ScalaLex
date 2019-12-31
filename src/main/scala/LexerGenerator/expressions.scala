@@ -253,6 +253,9 @@ class State(val id: Int) {
   def removeEpsilon = {
     transitions = transitions filter (t => t._1 != '\u0000')
   }
+  override def toString(): String = {
+    "state no. " + id + ", transition symbols:" + getSymbols.toString
+  }
 }
 
 class FSAError(msg: String) extends Error(msg)
