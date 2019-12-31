@@ -18,7 +18,8 @@ scalacOptions ++= Seq(
     "-explaintypes",    //explain type errors in more detail
     "-Ywarn-dead-code", //warn when dead code is identified
     "-Xfatal-warnings",  //fail the compilation if there are any warnings
-    "-language:implicitConversions"
+    "-language:implicitConversions",
+    "-feature"
 )
 
 
