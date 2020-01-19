@@ -21,3 +21,4 @@ project/plugins/project/
 project/.bloop/*
 .scalafmt.conf
 null/*
+project/metals.sbt
