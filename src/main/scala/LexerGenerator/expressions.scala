@@ -301,7 +301,7 @@ abstract class FSA[A<:State](s:List[A]) {
 
 class NFAState(id: Int, var accepting: Boolean = false) extends State(id) {
   override type S = NFAState
-  override var transitions: Map[Char, Set[S]] = Map(/*'\u0000' -> List(this)*/)
+  override var transitions: Map[Char, Set[S]] = Map(/*'\u0000' -> List(this)*/).withDefaultValue(Set())
   override var inputSymbols: Set[Char] = (for {c <- getSymbols } yield c).toSet
   override def getTransitions(c: Char): Map[Char,Set[NFAState]] = transitions filter(t => t._1 == c)
   /*def removeEpsilon = {
