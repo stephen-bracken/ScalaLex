@@ -19,6 +19,7 @@ scalacOptions ++= Seq(
     "-Ywarn-dead-code", //warn when dead code is identified
     "-Xfatal-warnings",  //fail the compilation if there are any warnings
     "-language:implicitConversions",
+    "-language:postfixOps",
     "-feature"
 )
 
