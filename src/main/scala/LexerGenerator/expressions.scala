@@ -301,14 +301,19 @@ abstract class FSA[A<:State](s:List[A]) {
 
 class NFAState(id: Int, var accepting: Boolean = false) extends State(id) {
   override type S = NFAState
-  override var inputSymbols: Set[Char] = (for {c <- getSymbols } yield c).toSet
   override var transitions: Map[Char, Set[S]] = Map(/*'\u0000' -> List(this)*/)
+  override var inputSymbols: Set[Char] = (for {c <- getSymbols } yield c).toSet
   override def getTransitions(c: Char): Map[Char,Set[NFAState]] = transitions filter(t => t._1 == c)
   /*def removeEpsilon = {
     transitions = transitions filter (t => t._1 != '\u0000')
   }*/
     def transition(c: Char): Set[NFAState] = transitions(c)
     def addTransition(c: Char, s:NFAState) = {
+    if(transitions exists(x => x._1 == c)){
+      transitions = transitions.updated(c, transitions(c).union(Set(s)))
+    }
+    else
+    transitions = transitions.+(c -> Set(s))
     /*println(
       "adding transition (" +
         (c match {
@@ -318,13 +323,12 @@ class NFAState(id: Int, var accepting: Boolean = false) extends State(id) {
         })
         + ") from state " + id + " to state " + s.id
     )*/
-    transitions = transitions.updated(c, transitions(c).union(Set(s)))
   }
 }
 
 class DFAState(val nfaStates:Set[NFAState], id: Int) extends State(id){
   override type S = DFAState
-  override var accepting = !(nfaStates filter(p => p.accepting) isEmpty)
+  override var accepting = (nfaStates exists(p => p.accepting))
   override var transitions: Map[Char,Set[S]] = Map()
   def included(s:NFAState) = nfaStates contains s
   override var inputSymbols: Set[Char] = 
@@ -332,6 +336,7 @@ class DFAState(val nfaStates:Set[NFAState], id: Int) extends State(id){
           c <- s inputSymbols} yield (c)).toSet
     def transition(c: Char): DFAState = transitions(c).head
     def addTransition(c: Char, s:DFAState) = {
+    transitions = transitions.+(c -> Set(s))
     /*println(
       "adding transition (" +
         (c match {
@@ -341,7 +346,6 @@ class DFAState(val nfaStates:Set[NFAState], id: Int) extends State(id){
         })
         + ") from state " + id + " to state " + s.id
     )*/
-    transitions = transitions.updated(c,Set(s))
   }
   def nfaMove(c:Char):Set[NFAState] = {
     def move(s: List[NFAState]):Set[NFAState] = {
