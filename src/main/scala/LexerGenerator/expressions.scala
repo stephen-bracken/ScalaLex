@@ -196,42 +196,49 @@ object expressions {
 
     //gets all the epsilon transitions for a single state
 
-    def epsilonClosure(t: List[State], r: List[State]): List[State] = {
-      def getEpsilons(st: State) = {
-        if (st.transitions.contains(epsilon)) {
-          st transition epsilon filter (s => !r.contains(s))
-        } else List()
+    def epsilonClosure(t: Set[NFAState]): Set[NFAState] = {
+      var result = t.toList
+      var unprocessed = t.toList
+      while(!(unprocessed isEmpty)){
+      val fst = t.head
+      unprocessed = unprocessed tail
+      val epsilons = fst transition(epsilon)
+      for {u <- epsilons if !result.contains(u)} yield {result = u::result; unprocessed = u::unprocessed}
       }
-      var stack = t
-      if(stack isEmpty) r
-      else
-      {
-      var result = r
-      val s = stack.head
-      stack = stack.tail
-        for(u <- getEpsilons(s) if(!r.contains(u))) yield {stack = u::stack;result = u::result}
-        epsilonClosure(stack, result)
-      }
+      result.toSet
     }
 
-    def dTranslate(s: State,a: Set[State]) = {
+    def dTranslate(s: NFAState,a: Set[NFAState]): DFA = {
+      var dfaStates: List[DFAState] = List()
+      nextId = 0
       println("dTranslate")
-      val dstates = epsilonClosure(List(s), List(s))
-      def dTran(u: List[State], m: List[State]): List[State] = {
-        if (u isEmpty) m
-        else {
-          val i = u.head
-          val e = (for {
-            s <- i.getSymbols
-            e <- epsilonClosure(List(i.transition(s).head), List())
-            if (!dstates.contains(e))
-          } yield { i.addTransition(s, e); e })
-          dTran(u.tail ++ e, u.head :: m)
-        }
-      }
-      new DFA(dTran(dstates,List()),a)
-    }
+      //starting state of DFA is epsilon closure of first state of NFA
+      val dfaStartState = new DFAState(epsilonClosure(Set(s)),nextId)
+      var unmarked = List(dfaStartState)
+      var processing:DFAState = dfaStartState
+      var result:List[DFAState] = List(dfaStartState)
+      while (!(unmarked isEmpty)){
+        processing = unmarked.head
+        unmarked = unmarked.tail
+        for{c <- processing.inputSymbols
+            } yield {
+              val move = processing nfaMove c
+              val closure = epsilonClosure(move)
+              if(!(result exists(x => x.nfaStates == closure)))
+              {
+                nextId += 1
+                val state = new DFAState(closure,nextId)
+                result = state :: result
+                unmarked = state :: unmarked
+              }
+              else{
 
+              }
+            }
+      }
+      new DFA(result)
+    }
+  
     if (!translateToNFA(concatExpand(r))._2)
       throw new FSAError("failed to parse regex")
     if (stack isEmpty) throw new FSAError("no NFA found")
@@ -242,35 +249,30 @@ object expressions {
         "unresolved states: " +
           (for {
             f <- stack.tail
-            s <- f.states
+            s <- f.getStates
           } yield s.id)
       )
     val d = dTranslate(nfa initialState, nfa accepting)
-    println("included states" + d.states)
+    println("included states" + d.getStates)
     println("accepting states: " + d.accepting)
     d
   }
 }
 
-class NFA(s:List[NFAState], accept: Set[NFAState] = Set()) extends FSA {
-  override var states: List[NFAState] = states
-  override var accepting: Set[NFAState] = accept
-  override var currentState: NFAState = states.head
-  override val initialState: NFAState = states.head
-  override def getStates: List[NFAState] = states
-  override def addAccepting(s: NFAState): Unit = {accepting = accepting.union(Set(s))}
-  override def addState(s: NFAState): Unit = {states = s::states}
+class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
 }
 
-class DFA(states: List[DFAState], accept: Set[DFAState] = Set())
-    extends FSA {
-  
+class DFA(states: List[DFAState])
+    extends FSA[DFAState](states) {
+      
   //for (s <- states) yield { s removeEpsilon }
 }
 
-trait FSA {
-  var states:List[State]
-  var currentState:State
+abstract class FSA[A<:State](s:List[A]) {
+  var states:List[A] = s
+  var currentState:A = s.head
+  var accepting:Set[A] = (for {s <- states if s.accepting} yield s).toSet
+  val initialState: A = states.head
   def eval(s: String): Boolean = {
     currentState = states.head
     def e(s:String):Boolean = {
@@ -278,52 +280,35 @@ trait FSA {
     else {
       if (!currentState.transitions.contains(s.head)) false
       else {
-        val t = currentState.transitions(s.head)
+        val t:List[A] = currentState.transition(s.head).toList
           currentState = t.head
         e(s.tail)
-      }}
+        }
+      }
     }
     e(s)
   }
 
   def getStates = states
-  def addState(s: State) = {states = s :: states}
+  def addState(s: A) = {states = s :: states}
 
-  def addAccepting(s: State) = {
+  def addAccepting(s: A) = {
     s accepting = true
     accepting = (s :: (accepting).toList).toSet
   }
-  val initialState: State = states.head
-  var accepting:Set[State]
+
 }
 
-class NFAState(val id: Int, var accepting: Boolean = false) extends State {
-    val inputSymbols: Set[Char] =
-    (for {c <- getSymbols } yield c).toSet
-  override var transitions: Map[Char, List[NFAState]] = Map(/*'\u0000' -> List(this)*/)
-  override def getTransitions(c: Char): Map[Char,List[NFAState]] = transitions filter(t => t._1 == c)
+class NFAState(id: Int, var accepting: Boolean = false) extends State(id) {
+  override type S = NFAState
+  override var inputSymbols: Set[Char] = (for {c <- getSymbols } yield c).toSet
+  override var transitions: Map[Char, Set[S]] = Map(/*'\u0000' -> List(this)*/)
+  override def getTransitions(c: Char): Map[Char,Set[NFAState]] = transitions filter(t => t._1 == c)
   /*def removeEpsilon = {
     transitions = transitions filter (t => t._1 != '\u0000')
   }*/
-  override def transition(c: Char): List[NFAState] = transitions(c)
-}
-
-class DFAState(val nfaStates:List[NFAState], val id: Int) extends State{
-  val accepting = !(nfaStates filter(p => p.accepting) isEmpty)
-  def included(s:State) = nfaStates contains s
-  override val inputSymbols: Set[Char] = 
-    (for {s <- nfaStates
-          c <- s inputSymbols} yield (c)).toSet
-  override var transitions: Map[Char,List[DFAState]]
-}
-
-trait State{
-  val id: Int
-  var accepting: Boolean
-  var inputSymbols: Set[Char]
-  var transitions: Map[Char,List[State]]
-  def getTransitions(c: Char) = transitions filter (t => t._1 == c)
-  def addTransition(c: Char, s: State) = {
+    def transition(c: Char): Set[NFAState] = transitions(c)
+    def addTransition(c: Char, s:NFAState) = {
     /*println(
       "adding transition (" +
         (c match {
@@ -333,14 +318,50 @@ trait State{
         })
         + ") from state " + id + " to state " + s.id
     )*/
-    transitions = transitions.updated(c, List(s))
+    transitions = transitions.updated(c, transitions(c).union(Set(s)))
   }
+}
+
+class DFAState(val nfaStates:Set[NFAState], id: Int) extends State(id){
+  override type S = DFAState
+  override var accepting = !(nfaStates filter(p => p.accepting) isEmpty)
+  override var transitions: Map[Char,Set[S]] = Map()
+  def included(s:NFAState) = nfaStates contains s
+  override var inputSymbols: Set[Char] = 
+    (for {s <- nfaStates
+          c <- s inputSymbols} yield (c)).toSet
+    def transition(c: Char): DFAState = transitions(c).head
+    def addTransition(c: Char, s:DFAState) = {
+    /*println(
+      "adding transition (" +
+        (c match {
+          case '\u0000' => "epsilon"
+          case '\u0008' => "backspace"
+          case x        => x
+        })
+        + ") from state " + id + " to state " + s.id
+    )*/
+    transitions = transitions.updated(c,Set(s))
+  }
+  def nfaMove(c:Char):Set[NFAState] = {
+    def move(s: List[NFAState]):Set[NFAState] = {
+      if(s isEmpty) Set()
+      else
+      s.head transition(c) union(move(s tail))
+    }
+    move(nfaStates.toList)
+  }
+}
+
+abstract class State(val id:Int){
+  type S <: State
+  var accepting: Boolean
+  var inputSymbols: Set[Char]
+  var transitions: Map[Char,Set[S]]
   def getTransitions(c: Char) = transitions filter (t => t._1 == c)
-  def transition(c: Char) = transitions(c)
+
+  def transition[A<:State](c: Char):List[A] = transitions(c).asInstanceOf[List[A]]
   def getSymbols: List[Char] = (transitions keys).toList
-  def removeEpsilon = {
-    transitions = transitions filter (t => t._1 != '\u0000')
-  }
   override def toString(): String = {
     "state no. " + id + ", transition symbols:" + getSymbols.toString
   }
