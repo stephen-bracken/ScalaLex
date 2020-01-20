@@ -6,7 +6,7 @@ import scala.language.postfixOps
 object expressions {
   //def program: Parser[Any] = definitions ~ "%%" ~ rules ~ "%%" ~ routines
   def translateRegex(r: String) = {
-    var stack: List[FSA] = List()
+    var stack: List[NFA] = List()
     var opStack: List[Char] = List()
     def epsilon: Char = '\u0000'
     def backspace: Char = '\u0008'
@@ -34,7 +34,7 @@ object expressions {
       checkLeft(s.toList)
     }
     // create an NFA from a regular expression string, return success or failure, store result on operatorStack
-    def translateToNFA(s: List[Char]): (FSA, Boolean) = {
+    def translateToNFA(s: List[Char]): (NFA, Boolean) = {
       //stack = List()
       //opStack = List()
       def translateAction(c: Char): Boolean = {
@@ -71,7 +71,7 @@ object expressions {
         if ((for (op <- opStack) yield eval).exists(x => x == false)) false
         val fsa = stack.head
         //add the final state as an accepting state
-        fsa.addAccepting(fsa.states.last)
+        fsa.addAccepting(fsa.getStates.last)
         (fsa, true)
       } else {
         val t = translateAction(s.head)
@@ -109,13 +109,13 @@ object expressions {
     }
 
     def push(c: Char): Unit = {
-      val s0 = new State(nextId)
-      val s1 = new State(nextId + 1)
+      val s0 = new NFAState(nextId)
+      val s1 = new NFAState(nextId + 1)
       nextId = nextId + 2
       s0.addTransition(c, s1)
-      stack = (new FSA(List(s0, s1))) :: stack
+      stack = (new NFA(List(s0, s1))) :: stack
     }
-    def pop: (FSA, Boolean) = {
+    def pop: (NFA, Boolean) = {
       if (stack isEmpty) (null, false)
       else {
         val p = stack.head
@@ -132,8 +132,8 @@ object expressions {
       if (!t1 || t2) false
       else
         //add epsilon transition from the final state of A to the initial state of B
-        a.states.last.addTransition(epsilon, b.initialState)
-      stack = (new FSA(a.states ++ b.states)) :: stack
+        a.getStates.last.addTransition(epsilon, b.initialState)
+      stack = (new NFA(a.getStates ++ b.getStates)) :: stack
       true
     }
 
@@ -144,10 +144,10 @@ object expressions {
       val (a, t) = pop
       if (!t) false
       else {
-        val s0 = new State(nextId)
-        val s1 = new State(nextId + 1)
+        val s0 = new NFAState(nextId)
+        val s1 = new NFAState(nextId + 1)
         val fst = a.initialState
-        val lst = a.states.last
+        val lst = a.getStates.last
         nextId = nextId + 2
 
         //create transition from s0 to s1
@@ -156,7 +156,7 @@ object expressions {
         s0 addTransition (epsilon, fst)
         lst addTransition (epsilon, s1)
         lst addTransition (epsilon, fst)
-        stack = (new FSA(s0 :: a.states ++ List(s1))) :: stack
+        stack = (new NFA(s0 :: a.getStates ++ List(s1))) :: stack
         true
       }
     }
@@ -169,12 +169,12 @@ object expressions {
       val (a, t2) = pop
       if (!t1 || !t2) false
       else {
-        val s0 = new State(nextId)
-        val s1 = new State(nextId + 1)
+        val s0 = new NFAState(nextId)
+        val s1 = new NFAState(nextId + 1)
         val fstA = a.initialState
         val fstB = b.initialState
-        val lstA = a.states.last
-        val lstB = b.states.last
+        val lstA = a.getStates.last
+        val lstB = b.getStates.last
         nextId = nextId + 2
 
         //create epsilon transition from s0 to the initial states of A and B
@@ -185,11 +185,11 @@ object expressions {
         lstB addTransition (epsilon, s1)
 
         //create new FSAs with s1 and s0
-        val newB = new FSA(b.states ++ List(s1))
-        val newA = new FSA(s0 :: a.states)
+        val newB = new NFA(b.getStates ++ List(s1))
+        val newA = new NFA(s0 :: a.getStates)
 
         //add to the result set
-        stack = (new FSA(newA.states ++ newB.states)) :: stack
+        stack = (new NFA(newA.getStates ++ newB.getStates)) :: stack
         true
       }
     }
@@ -252,11 +252,25 @@ object expressions {
   }
 }
 
-class FSA(
-    val states: List[State],
-    val accept: Set[State] = Set()
-) {
-  private var currentState = states.head
+class NFA(s:List[NFAState], accept: Set[NFAState] = Set()) extends FSA {
+  override var states: List[NFAState] = states
+  override var accepting: Set[NFAState] = accept
+  override var currentState: NFAState = states.head
+  override val initialState: NFAState = states.head
+  override def getStates: List[NFAState] = states
+  override def addAccepting(s: NFAState): Unit = {accepting = accepting.union(Set(s))}
+  override def addState(s: NFAState): Unit = {states = s::states}
+}
+
+class DFA(states: List[DFAState], accept: Set[DFAState] = Set())
+    extends FSA {
+  
+  //for (s <- states) yield { s removeEpsilon }
+}
+
+trait FSA {
+  var states:List[State]
+  var currentState:State
   def eval(s: String): Boolean = {
     currentState = states.head
     def e(s:String):Boolean = {
@@ -271,22 +285,44 @@ class FSA(
     }
     e(s)
   }
+
+  def getStates = states
+  def addState(s: State) = {states = s :: states}
+
   def addAccepting(s: State) = {
+    s accepting = true
     accepting = (s :: (accepting).toList).toSet
   }
-  val inputSymbols: Set[Char] =
-    (for { s <- states; c <- s getSymbols } yield c).toSet
   val initialState: State = states.head
-  var accepting = accept
+  var accepting:Set[State]
 }
 
-class DFA(states: List[State], accepting: Set[State] = Set())
-    extends FSA(states, accepting) {
-  for (s <- states) yield { s removeEpsilon }
+class NFAState(val id: Int, var accepting: Boolean = false) extends State {
+    val inputSymbols: Set[Char] =
+    (for {c <- getSymbols } yield c).toSet
+  override var transitions: Map[Char, List[NFAState]] = Map(/*'\u0000' -> List(this)*/)
+  override def getTransitions(c: Char): Map[Char,List[NFAState]] = transitions filter(t => t._1 == c)
+  /*def removeEpsilon = {
+    transitions = transitions filter (t => t._1 != '\u0000')
+  }*/
+  override def transition(c: Char): List[NFAState] = transitions(c)
 }
 
-class State(val id: Int) {
-  var transitions: Map[Char, List[State]] = Map(/*'\u0000' -> List(this)*/)
+class DFAState(val nfaStates:List[NFAState], val id: Int) extends State{
+  val accepting = !(nfaStates filter(p => p.accepting) isEmpty)
+  def included(s:State) = nfaStates contains s
+  override val inputSymbols: Set[Char] = 
+    (for {s <- nfaStates
+          c <- s inputSymbols} yield (c)).toSet
+  override var transitions: Map[Char,List[DFAState]]
+}
+
+trait State{
+  val id: Int
+  var accepting: Boolean
+  var inputSymbols: Set[Char]
+  var transitions: Map[Char,List[State]]
+  def getTransitions(c: Char) = transitions filter (t => t._1 == c)
   def addTransition(c: Char, s: State) = {
     /*println(
       "adding transition (" +
