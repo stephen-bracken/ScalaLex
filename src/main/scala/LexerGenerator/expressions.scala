@@ -132,8 +132,8 @@ object expressions {
       if (!t1 || t2) false
       else
         //add epsilon transition from the final state of A to the initial state of B
-        a.getStates.last.addTransition(epsilon, b.initialState)
-      stack = (new NFA(a.getStates ++ b.getStates)) :: stack
+        a.getStates.head.addTransition(epsilon, b.initialState)
+      stack = a :: stack
       true
     }
 
@@ -198,14 +198,16 @@ object expressions {
     //gets all the epsilon transitions for a single state
 
     def epsilonClosure(t: List[NFAState]): Set[NFAState] = {
+      println("epsilon closure")
       var result = t.toList
       var unprocessed = t.toList
       while(!(unprocessed isEmpty)){
-      val fst = t.head
-      unprocessed = unprocessed tail
-      val epsilons = fst transition(epsilon)
-      for {u <- epsilons if !result.contains(u)} yield {result = u::result; unprocessed = u::unprocessed}
+        val fst = t.head
+        unprocessed = unprocessed tail
+        val epsilons = fst transition(epsilon)
+        for {u <- epsilons if !result.contains(u)} yield {result = u::result; unprocessed = u::unprocessed}
       }
+      println(result)
       result.toSet
     }
 
@@ -221,8 +223,7 @@ object expressions {
       while (!(unmarked isEmpty)){
         processing = unmarked.head
         unmarked = unmarked.tail
-        val processed = result.head
-        for{c <- processing.inputSymbols
+        for{c <- processing.transitions.keys
             } yield {
               val move = processing nfaMove c
               val closure = epsilonClosure(move.toList)
@@ -235,7 +236,8 @@ object expressions {
                 unmarked = state :: unmarked
               }
               else{
-                processed.addTransition(c,processing)
+                val res = result.head
+                res.addTransition(c,processing)
               }
             }
       }
@@ -258,6 +260,6 @@ object expressions {
     val d = dTranslate(nfa initialState, nfa accepting)
     println("included states" + d.getStates)
     println("accepting states: " + d.accepting)
-    d
+    nfa
   }
 }
