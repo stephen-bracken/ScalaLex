@@ -6,6 +6,7 @@ import scala.language.postfixOps
 object expressions {
   //def program: Parser[Any] = definitions ~ "%%" ~ rules ~ "%%" ~ routines
   def translateRegex(r: String) = {
+    val inputSet = r.toSet
     var stack: List[NFA] = List()
     var opStack: List[Char] = List()
     def epsilon: Char = '\u0000'
@@ -14,6 +15,7 @@ object expressions {
     val special: List[Char] = List('|', '*', '+', '(', ')', epsilon, backspace)
     var nextId: Int = 0
 
+    ///adds backspace chars to string for concatenation
     def concatExpand(s: String): List[Char] = {
       def checkLeft(s: List[Char]): List[Char] = s match {
         case Nil       => Nil
@@ -33,13 +35,18 @@ object expressions {
       }
       checkLeft(s.toList)
     }
-    // create an NFA from a regular expression string, return success or failure, store result on operatorStack
+
+    /// create an NFA from a regular expression string, return success or failure, store result on operatorStack
     def translateToNFA(s: List[Char]): (NFA, Boolean) = {
       //stack = List()
       //opStack = List()
       def translateAction(c: Char): Boolean = {
-        println("translating '" + c + "'")
-        ///add a state pair to represent a standard input symbol
+        println("translating '" + (c match {
+          case '\u0000' => "epsilon"
+          case '\u0008' => "backspace"
+          case x        => x
+        }) + "'")
+        //add a state pair to represent a standard input symbol
         def parenth: Boolean = {
           if (opStack.head != '(')
             if (eval) parenth
@@ -71,7 +78,7 @@ object expressions {
         if ((for (op <- opStack) yield eval).exists(x => x == false)) false
         val fsa = stack.head
         //add the final state as an accepting state
-        fsa.addAccepting(fsa.getStates.last)
+        fsa.addAccepting(fsa.finalState)
         (fsa, true)
       } else {
         val t = translateAction(s.head)
@@ -113,7 +120,7 @@ object expressions {
       val s1 = new NFAState(nextId + 1)
       nextId = nextId + 2
       s0.addTransition(c, s1)
-      stack = (new NFA(List(s0, s1))) :: stack
+      stack = (new NFA(List(s1, s0))) :: stack
     }
     def pop: (NFA, Boolean) = {
       if (stack isEmpty) (null, false)
@@ -129,12 +136,15 @@ object expressions {
       println("concat")
       val (b, t1) = pop
       val (a, t2) = pop
-      if (!t1 || t2) false
-      else
+      if (!t1 || !t2) false
+      else{
         //add epsilon transition from the final state of A to the initial state of B
-        a.getStates.head.addTransition(epsilon, b.initialState)
-      stack = a :: stack
+        a.finalState.addTransition(epsilon, b.initialState)
+        val f = new NFA(a.states)
+        f.addStates(b.states)
+      stack = f :: stack
       true
+      }
     }
 
     //translate kleene star (*)
@@ -147,7 +157,7 @@ object expressions {
         val s0 = new NFAState(nextId)
         val s1 = new NFAState(nextId + 1)
         val fst = a.initialState
-        val lst = a.getStates.last
+        val lst = a.finalState
         nextId = nextId + 2
 
         //create transition from s0 to s1
@@ -173,8 +183,8 @@ object expressions {
         val s1 = new NFAState(nextId + 1)
         val fstA = a.initialState
         val fstB = b.initialState
-        val lstA = a.getStates.last
-        val lstB = b.getStates.last
+        val lstA = a.finalState
+        val lstB = b.finalState
         nextId = nextId + 2
 
         //create epsilon transition from s0 to the initial states of A and B
@@ -223,7 +233,8 @@ object expressions {
       while (!(unmarked isEmpty)){
         processing = unmarked.head
         unmarked = unmarked.tail
-        for{c <- processing.transitions.keys
+        for{c <- inputSet
+            if processing.transitions.contains(c)
             } yield {
               val move = processing nfaMove c
               val closure = epsilonClosure(move.toList)
