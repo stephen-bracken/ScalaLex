@@ -54,7 +54,7 @@ class NFAState(i: Int, var accepting: Boolean = false) extends State {
   override val id: Int = i
   override type S = NFAState
   override var transitions: Map[Char, Set[NFAState]] = Map('\u0000' -> Set(this))//.withDefaultValue(Set())
-  override def getTransitions(c: Char): Map[Char,Set[NFAState]] = transitions filter(t => t._1 == c)
+  //override def getTransitions(c: Char): Map[Char,Set[NFAState]] = transitions filter(t => t._1 == c)
   /*def removeEpsilon = {
     transitions = transitions filter (t => t._1 != '\u0000')
   }*/
@@ -114,7 +114,7 @@ trait State{
   type S <: State
   var accepting: Boolean
   var transitions: Map[Char,Set[S]]
-  def getTransitions(c: Char) = transitions filter (t => t._1 == c)
+  //def getTransitions(c: Char) = transitions filter (t => t._1 == c)
 
   def transition(c: Char):Set[S] = transitions(c)
   override def toString(): String = {
