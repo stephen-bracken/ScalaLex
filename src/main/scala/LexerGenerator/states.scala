@@ -6,7 +6,21 @@ class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
 
 class DFA(states: List[DFAState])
     extends FSA[DFAState](states) {
-      
+    def eval(s: String): Boolean = {
+      currentState = initialState
+      println("eval state " + currentState.id + " with '" + s.head + "'")
+      def e(s:String):Boolean = {
+        if (s isEmpty) currentState.accepting
+        else {
+          if (!(currentState.transitions.exists(x => x._1 == s.head))) false
+          else {
+            currentState = currentState.transition(s.head).head
+            e(s.tail)
+          }
+        }
+      }
+      e(s)
+    }
   //for (s <- states) yield { s removeEpsilon }
 }
 
@@ -16,21 +30,6 @@ abstract class FSA[A<:State](s:List[A]) {
   var accepting:Set[A] = (for {s <- states if s.accepting} yield s).toSet
   val initialState: A = states.last
   var finalState:A = states.head
-  def eval(s: String): Boolean = {
-    currentState = initialState
-    println("eval state " + currentState.id + " with '" + s.head + "'")
-    def e(s:String):Boolean = {
-    if (s isEmpty) currentState.accepting
-    else {
-      if (!(currentState.transitions.exists(x => x._1 == s.head))) false
-      else {
-          currentState = currentState.transition(s.head).head
-          e(s.tail)
-        }
-      }
-    }
-    e(s)
-  }
 
   def getStates = states
   def addState(s: A) = {
