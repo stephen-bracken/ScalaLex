@@ -17,8 +17,8 @@ abstract class FSA[A<:State](s:List[A]) {
   val initialState: A = states.last
   var finalState:A = states.head
   def eval(s: String): Boolean = {
+    currentState = initialState
     println("eval state " + currentState.id + " with '" + s.head + "'")
-    currentState = states.head
     def e(s:String):Boolean = {
     if (s isEmpty) currentState.accepting
     else {
