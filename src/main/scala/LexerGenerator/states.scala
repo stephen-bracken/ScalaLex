@@ -22,7 +22,7 @@ abstract class FSA[A<:State](s:List[A]) {
     def e(s:String):Boolean = {
     if (s isEmpty) currentState.accepting
     else {
-      if (currentState.transition(s.head).isEmpty) false
+      if (!(currentState.transitions.exists(x => x._1 == s.head))) false
       else {
           currentState = currentState.transition(s.head).head
           e(s.tail)
