@@ -79,6 +79,7 @@ object expressions {
         if ((for (op <- opStack) yield eval).exists(x => x == false)) false
         val fsa = stack.head
         //add the final state as an accepting state
+        println("accepting NFA state: " + fsa.finalState.id)
         fsa.finalState.accepting = true
         fsa.addAccepting(fsa.finalState)
         (fsa, true)
@@ -247,7 +248,7 @@ object expressions {
               {
                 nextId += 1
                 val state = new DFAState(closure,nextId)
-                println("adding state" + state.id + "for epsilon closure")
+                println("adding state " + state.id + " for epsilon closure")
                 processing.addTransition(c,state)
                 result = state :: result
                 unmarked = state :: unmarked
@@ -276,6 +277,7 @@ object expressions {
       )
     val d = dTranslate(nfa initialState, nfa accepting)
     println("included states" + d.getStates)
+    for(s <- d.getStates) yield {println("State " + s.id + ", accepting: " + s.accepting)}
     println("accepting states: " + d.accepting)
     d
   }
