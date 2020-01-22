@@ -7,26 +7,24 @@ class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
 class DFA(states: List[DFAState])
     extends FSA[DFAState](states) {
     def eval(s: String): Boolean = {
-      currentState = initialState
-      println("eval state " + currentState.id + " with '" + s.head + "'")
-      def e(s:String):Boolean = {
-        if (s isEmpty) currentState.accepting
+      def e(s:String,st:DFAState):Boolean = {
+        println("eval state " + st.id + " with '" + s.head + "'")
+        if (s isEmpty) st.accepting
         else {
-          if (!(currentState.transitions.exists(x => x._1 == s.head))) false
+          if (!(st.transitions.exists(x => x._1 == s.head))) false
           else {
-            currentState = currentState.transition(s.head).head
-            e(s.tail)
+            val next = st.nextState(s.head)
+            e(s.tail,next)
           }
         }
       }
-      e(s)
+      e(s,initialState)
     }
   //for (s <- states) yield { s removeEpsilon }
 }
 
 abstract class FSA[A<:State](s:List[A]) {
   var states:List[A] = s
-  var currentState:State = s.head
   var accepting:Set[A] = (for {s <- states if s.accepting} yield s).toSet
   val initialState: A = states.last
   var finalState:A = states.head
@@ -84,7 +82,7 @@ class DFAState(val nfaStates:Set[NFAState], override val id: Int) extends State{
   override var transitions: Map[Char,Set[S]] = Map()//.withDefaultValue(Set())
   def included(s:NFAState) = nfaStates contains s
     //override def transition(c: Char): Set[DFAState] = transitions(c)
-    def nextState(c: Char): List[DFAState] = transition(c).toList
+    def nextState(c: Char): DFAState = transition(c).head
     def addTransition(c: Char, s:DFAState) = {
     println(
       "adding transition (" +
