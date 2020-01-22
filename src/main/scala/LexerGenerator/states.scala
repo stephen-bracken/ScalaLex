@@ -12,10 +12,11 @@ class DFA(states: List[DFAState])
       def e(s:String,st:DFAState):Boolean = {
         if (s isEmpty) st.accepting
         else {
-          println("eval state " + st.id + " with '" + s.head + "'")
+          println("eval state " + st + " with '" + s.head + "'")
           if (!(st.transitions.exists(x => x._1 == s.head))) false
           else {
             val next = st.nextState(s.head)
+            println("transition to " + next)
             e(s.tail,next)
           }
         }
@@ -37,10 +38,13 @@ abstract class FSA[A<:State](s:List[A]) {
     finalState = s
   }
   def addStates(s:List[A]):Unit = {
+    def add(s:List[A]):Unit = {
     if(!s.isEmpty){
     addState(s.last)
-    addStates(s.tail)
+    add(s.tail)
     }
+    }
+    add(s.reverse)
   }
 
   def addAccepting(s: A) = {
