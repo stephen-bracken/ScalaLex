@@ -9,8 +9,8 @@ object expressions {
     //initialisation
     var stack: List[NFA] = List()
     var opStack: List[Char] = List()
-    def epsilon: Char = '\u0000'
-    def backspace: Char = '\u0008'
+    val epsilon: Char = '\u0000'
+    val backspace: Char = '\u0008'
     val illegal: List[Char] = List(epsilon, backspace)
     val special: List[Char] = List('|', '*', '+', '(', ')', epsilon, backspace)
     var nextId: Int = 0
