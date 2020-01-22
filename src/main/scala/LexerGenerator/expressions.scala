@@ -79,7 +79,7 @@ object expressions {
         if ((for (op <- opStack) yield eval).exists(x => x == false)) false
         val fsa = stack.head
         //add the final state as an accepting state
-        println("accepting NFA state: " + fsa.finalState.id)
+        //println("accepting NFA state: " + fsa.finalState)
         fsa.finalState.accepting = true
         fsa.addAccepting(fsa.finalState)
         (fsa, true)
@@ -143,6 +143,8 @@ object expressions {
       if (!t1 || !t2) false
       else{
         //add epsilon transition from the final state of A to the initial state of B
+        //println("FSA A: initial state: " + a.initialState + ", final state: " + a.finalState)
+        //println("FSA B: initial state: " + b.initialState + ", final state: " + b.finalState)
         a.finalState.addTransition(epsilon, b.initialState)
         val f = new NFA(a.states)
         f.addStates(b.states)
@@ -239,19 +241,19 @@ object expressions {
       var result:List[DFAState] = List(dfaStartState)
       while (!(unmarked isEmpty)){
         processing = unmarked.head
-        println("processing state " + processing.id)
+        // println("processing " + processing)
         unmarked = unmarked.tail
         for{c <- inputSet
             //if processing.transitions.contains(c)
             } yield {
-              println("processing epsilon closure of " + c)
+              // println("processing epsilon closure of " + c + " on " + processing)
               val move = processing nfaMove c
               val closure = epsilonClosure(move)
               if(!(result exists(x => x.nfaStates == closure)))
               {
                 nextId += 1
                 val state = new DFAState(closure,nextId)
-                println("adding state " + state.id + " for epsilon closure")
+                // println("adding state " + state.id + " to result")
                 processing.addTransition(c,state)
                 result = state :: result
                 unmarked = state :: unmarked
@@ -288,8 +290,8 @@ object expressions {
       )
     val d = dTranslate(nfa initialState, nfa accepting)
     println("included states" + d.getStates)
-    for(s <- d.getStates) yield {println("State " + s.id + ", accepting: " + s.accepting)}
-    println("accepting states: " + d.accepting)
+    for(s <- d.getStates) yield {println(s + ", accepting: " + s.accepting)}
+    //println("accepting states: " + d.accepting)
     d
   }
 }

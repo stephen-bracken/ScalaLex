@@ -64,7 +64,7 @@ class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
   }*/
     override def transition(c: Char): Set[NFAState] = if (transitions contains(c)) transitions(c) else Set()
     def addTransition(c: Char, s:NFAState) = {
-    println(
+    /*println(
       "adding transition (" +
         (c match {
           case '\u0000' => "epsilon"
@@ -72,7 +72,7 @@ class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
           case x        => x
         })
         + ") from state " + id + " to state " + s.id
-    )
+    )*/
     //println("adding transition from state " + id + " to state " + s.id + " via " + c)
     if(transitions exists(x => x._1 == c)){
       transitions = transitions.updated(c, transitions(c).union(Set(s)))
@@ -90,7 +90,7 @@ class DFAState(val nfaStates:Set[NFAState] = Set(), id: Int) extends State(id){
     //override def transition(c: Char): Set[DFAState] = transitions(c)
     def nextState(c: Char): DFAState = transition(c).head
     def addTransition(c: Char, s:DFAState) = {
-    println(
+    /*println(
       "adding DFA transition (" +
         (c match {
           case '\u0000' => "epsilon"
@@ -98,7 +98,7 @@ class DFAState(val nfaStates:Set[NFAState] = Set(), id: Int) extends State(id){
           case x        => x
         })
         + ") from state " + id + " to state " + s.id
-    )
+    )*/
     //println("adding transition from state " + id + " to state " + s.id + " via " + c)
     transitions = transitions.updated(c,Set(s))
 
