@@ -11,6 +11,14 @@ class LexerSuite {
         val lexer = lexerGenerator.Generator.ReadRules(rules)
     }
 
+    @Test def `StateEqualityExample`:Unit = {
+        val s1 = new NFAState(0)
+        val s2 = new NFAState(1)
+        val s3 = new NFAState(0)
+        assert(s1 == s3,"s1 == s3")
+        assert(s1 != s2,"s1 != s2")
+    }
+
     @Test def `StateSetExample`:Unit = {
         val s1 = new NFAState(0)
         val s2 = new NFAState(1)
