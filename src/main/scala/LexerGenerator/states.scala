@@ -55,7 +55,7 @@ class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
   /*def removeEpsilon = {
     transitions = transitions filter (t => t._1 != '\u0000')
   }*/
-    override def transition(c: Char): Set[NFAState] = (transitions(c).union(transitions('\u0000')))
+    override def transition(c: Char): Set[NFAState] = if (transitions contains(c)) transitions(c) else Set()
     def addTransition(c: Char, s:NFAState) = {
     println(
       "adding transition (" +
