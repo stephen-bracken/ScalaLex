@@ -11,7 +11,7 @@ class LexerSuite {
         val lexer = lexerGenerator.Generator.ReadRules(rules)
     }
 
-    @Test def `StateEqualityExample`:Unit = {
+    @Test def `StateEquality`:Unit = {
         val s1 = new NFAState(0)
         val s2 = new NFAState(1)
         val s3 = new NFAState(0)
@@ -19,7 +19,7 @@ class LexerSuite {
         assert(s1 != s2,"s1 != s2")
     }
 
-    @Test def `StateSetExample`:Unit = {
+    @Test def `StateSet`:Unit = {
         val s1 = new NFAState(0)
         val s2 = new NFAState(1)
         //s3 should be equivalent in the set to s1
@@ -29,13 +29,32 @@ class LexerSuite {
         assert((nfaSet.contains(s3)),"s3")
     }
 
-    @Test def `DFAEvalExample`:Unit = {
+    @Test def `DFAConcat`:Unit = {
+        println("#########DFAConcat#########")
         val seq1 = "a"
         val seq2 = "ba"
         val seq3 = "abb"
-        val dfa = expressions.translateRegex("a")
-        assert(dfa.eval(seq1),"Seq1")
+        val dfa = expressions.translateRegex("abb")
+        assert(!dfa.eval(seq1),"Seq1")
         assert(!dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+    }
+
+    @Test def `DFAConcat2`:Unit = {
+        println("#########DFAConcat2#########")
+        val seq = "hello"
+        val dfa = expressions.translateRegex("hello")
+        assert(dfa.eval(seq),"Seq hello")
+    }
+
+    @Ignore @Test def `DFAUnion`:Unit = {
+        println("#########DFAUnion#########")
+        val seq1 = "a"
+        val seq2 = "b"
+        val seq3 = "c"
+        val dfa = expressions.translateRegex("a|b")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
         assert(!dfa.eval(seq3),"Seq3")
     }
 
