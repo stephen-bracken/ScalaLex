@@ -14,8 +14,7 @@ object expressions {
     val illegal: List[Char] = List(epsilon, backspace)
     val special: List[Char] = List('|', '*', '+', '(', ')', epsilon, backspace)
     var nextId: Int = 0
-    val inputSet = r.toSet.diff(special.toSet)
-    println("character set: " + inputSet)
+    var inputSet:Set[Char] = Set()
 
     ///adds backspace chars to string for concatenation
     def concatExpand(s: String): List[Char] = {
@@ -119,6 +118,7 @@ object expressions {
     }
 
     def push(c: Char): Unit = {
+      inputSet = inputSet.union(Set(c))
       val s0 = new NFAState(nextId)
       val s1 = new NFAState(nextId + 1)
       nextId = nextId + 2
