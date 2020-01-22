@@ -75,7 +75,7 @@ class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
   }
 }
 
-class DFAState(val nfaStates:Set[NFAState], id: Int) extends State(id){
+class DFAState(val nfaStates:Set[NFAState] = Set(), id: Int) extends State(id){
   override type S = DFAState
   override var accepting = (nfaStates exists(p => p.accepting))
   override var transitions: Map[Char,Set[S]] = Map()//.withDefaultValue(Set())
@@ -84,7 +84,7 @@ class DFAState(val nfaStates:Set[NFAState], id: Int) extends State(id){
     def nextState(c: Char): DFAState = transition(c).head
     def addTransition(c: Char, s:DFAState) = {
     println(
-      "adding transition (" +
+      "adding DFA transition (" +
         (c match {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
