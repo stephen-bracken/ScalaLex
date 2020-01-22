@@ -261,7 +261,15 @@ object expressions {
       }
       new DFA(result)
     }
-  
+    def dfaReduce(d:DFA) = {
+      def deadEnd(s: DFAState):Boolean = {
+       if(s.accepting) false
+       else
+       if(s.transitions.keySet.isEmpty) true
+       else s.transitions.exists(p => !(p._2.diff(Set(s)).isEmpty))
+      }
+
+    }
     if (!translateToNFA(concatExpand(r))._2)
       throw new FSAError("failed to parse regex")
     if (stack isEmpty) throw new FSAError("no NFA found")
