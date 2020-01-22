@@ -6,7 +6,7 @@ import scala.language.postfixOps
 object expressions {
   //def program: Parser[Any] = definitions ~ "%%" ~ rules ~ "%%" ~ routines
   def translateRegex(r: String) = {
-    val inputSet = r.toSet
+    //initialisation
     var stack: List[NFA] = List()
     var opStack: List[Char] = List()
     def epsilon: Char = '\u0000'
@@ -14,6 +14,8 @@ object expressions {
     val illegal: List[Char] = List(epsilon, backspace)
     val special: List[Char] = List('|', '*', '+', '(', ')', epsilon, backspace)
     var nextId: Int = 0
+    val inputSet = r.toSet.diff(special.toSet)
+    println("character set: " + inputSet)
 
     ///adds backspace chars to string for concatenation
     def concatExpand(s: String): List[Char] = {
@@ -233,16 +235,19 @@ object expressions {
       var result:List[DFAState] = List(dfaStartState)
       while (!(unmarked isEmpty)){
         processing = unmarked.head
+        println("processing state " + processing.id)
         unmarked = unmarked.tail
         for{c <- inputSet
-            if processing.transitions.contains(c)
+            //if processing.transitions.contains(c)
             } yield {
+              println("processing epsilon closure of " + c)
               val move = processing nfaMove c
               val closure = epsilonClosure(move.toList)
               if(!(result exists(x => x.nfaStates == closure)))
               {
                 nextId += 1
                 val state = new DFAState(closure,nextId)
+                println("adding state" + state.id + "for epsilon closure")
                 processing.addTransition(c,state)
                 result = state :: result
                 unmarked = state :: unmarked
