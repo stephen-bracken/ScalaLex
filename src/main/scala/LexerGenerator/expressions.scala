@@ -210,8 +210,8 @@ object expressions {
     //Subset construction algorithm
     //gets all the epsilon transitions for a single state
 
-    def epsilonClosure(t: List[NFAState]): Set[NFAState] = {
-      println("epsilon closure")
+    def epsilonClosure(t: Set[NFAState]): Set[NFAState] = {
+      println("epsilon closure of " + t)
       var result = t.toList
       var unprocessed = t.toList
       while(!(unprocessed isEmpty)){
@@ -229,7 +229,7 @@ object expressions {
       nextId = 0
       println("dTranslate")
       //starting state of DFA is epsilon closure of first state of NFA
-      val dfaStartState = new DFAState(epsilonClosure(List(s)),nextId)
+      val dfaStartState = new DFAState(epsilonClosure(Set(s)),nextId)
       var unmarked = List(dfaStartState)
       var processing:DFAState = dfaStartState
       var result:List[DFAState] = List(dfaStartState)
@@ -242,7 +242,7 @@ object expressions {
             } yield {
               println("processing epsilon closure of " + c)
               val move = processing nfaMove c
-              val closure = epsilonClosure(move.toList)
+              val closure = epsilonClosure(move)
               if(!(result exists(x => x.nfaStates == closure)))
               {
                 nextId += 1
