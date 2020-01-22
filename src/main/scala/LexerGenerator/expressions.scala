@@ -46,7 +46,7 @@ object expressions {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
           case x        => x
-        }) + "'")
+        }) + '\'')
         //add a state pair to represent a standard input symbol
         def parenth: Boolean = {
           if (opStack.head != '(')
