@@ -78,6 +78,7 @@ object expressions {
         if ((for (op <- opStack) yield eval).exists(x => x == false)) false
         val fsa = stack.head
         //add the final state as an accepting state
+        fsa.finalState.accepting = true
         fsa.addAccepting(fsa.finalState)
         (fsa, true)
       } else {
