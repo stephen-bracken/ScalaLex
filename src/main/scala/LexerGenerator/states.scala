@@ -116,6 +116,7 @@ abstract class State(val id:Int){
   override def toString(): String = {
     "state no. " + id
   }
+  override def equals(x: Any): Boolean = id == x.asInstanceOf[S].id
 }
 
 class FSAError(msg: String) extends Error(msg)
