@@ -11,6 +11,16 @@ class LexerSuite {
         val lexer = lexerGenerator.Generator.ReadRules(rules)
     }
 
+    @Test def `StateSetExample`:Unit = {
+        val s1 = new NFAState(0)
+        val s2 = new NFAState(1)
+        //s3 should be equivalent in the set to s1
+        val s3 = new NFAState(0)
+        val nfaSet = Set(s1,s2)
+        assert(nfaSet.contains(s1) && nfaSet.contains(s2),"s1s2")
+        assert((nfaSet.contains(s3)),"s3")
+    }
+
     @Ignore @Test def `StateTransitionExample`:Unit = {
         val seq1 = "a"
         val seq2 = "ba"
