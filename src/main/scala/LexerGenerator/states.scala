@@ -48,8 +48,7 @@ abstract class FSA[A<:State](s:List[A]) {
 
 }
 
-class NFAState(i: Int, var accepting: Boolean = false) extends State {
-  override val id: Int = i
+class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
   override type S = NFAState
   override var transitions: Map[Char, Set[NFAState]] = Map('\u0000' -> Set(this))//.withDefaultValue(Set())
   //override def getTransitions(c: Char): Map[Char,Set[NFAState]] = transitions filter(t => t._1 == c)
@@ -76,7 +75,7 @@ class NFAState(i: Int, var accepting: Boolean = false) extends State {
   }
 }
 
-class DFAState(val nfaStates:Set[NFAState], override val id: Int) extends State{
+class DFAState(val nfaStates:Set[NFAState], id: Int) extends State(id){
   override type S = DFAState
   override var accepting = (nfaStates exists(p => p.accepting))
   override var transitions: Map[Char,Set[S]] = Map()//.withDefaultValue(Set())
@@ -107,8 +106,7 @@ class DFAState(val nfaStates:Set[NFAState], override val id: Int) extends State{
   }
 }
 
-trait State{
-  val id:Int
+abstract class State(val id:Int){
   type S <: State
   var accepting: Boolean
   var transitions: Map[Char,Set[S]]
