@@ -117,7 +117,7 @@ abstract class State(val id:Int){
 
   def transition(c: Char):Set[S] = transitions(c)
   override def toString(): String = {
-    "state no. " + id
+    "state " + id
   }
   override def equals(x: Any): Boolean = id == x.asInstanceOf[S].id
 }
