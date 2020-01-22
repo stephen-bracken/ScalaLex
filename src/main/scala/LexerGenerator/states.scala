@@ -2,11 +2,13 @@ package lexerGenerator
 import scala.language.postfixOps
 
 class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
+  //NFA Evaluation is not implemented but NFA and NFAStates are used in construction of DFAs
+  override def eval(s: String): Boolean = false
 }
 
 class DFA(states: List[DFAState])
     extends FSA[DFAState](states) {
-    def eval(s: String): Boolean = {
+    override def eval(s: String): Boolean = {
       def e(s:String,st:DFAState):Boolean = {
         if (s isEmpty) st.accepting
         else {
@@ -46,6 +48,7 @@ abstract class FSA[A<:State](s:List[A]) {
     accepting = (s :: (accepting).toList).toSet
   }
 
+  def eval(s:String):Boolean
 }
 
 class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
