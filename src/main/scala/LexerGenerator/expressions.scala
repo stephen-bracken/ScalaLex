@@ -199,11 +199,14 @@ object expressions {
         lstB addTransition (epsilon, s1)
 
         //create new FSAs with s1 and s0
-        val newB = new NFA(b.getStates ++ List(s1))
+        val newB = new NFA(b.getStates)
+        newB.addState(s1)
         val newA = new NFA(s0 :: a.getStates)
 
         //add to the result set
-        stack = (new NFA(newA.getStates ++ newB.getStates)) :: stack
+        val s = new NFA (newA.getStates)
+        s.addStates(newB.getStates)
+        stack = s :: stack
         true
       }
     }
