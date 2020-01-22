@@ -8,9 +8,9 @@ class DFA(states: List[DFAState])
     extends FSA[DFAState](states) {
     def eval(s: String): Boolean = {
       def e(s:String,st:DFAState):Boolean = {
-        println("eval state " + st.id + " with '" + s.head + "'")
         if (s isEmpty) st.accepting
         else {
+          println("eval state " + st.id + " with '" + s.head + "'")
           if (!(st.transitions.exists(x => x._1 == s.head))) false
           else {
             val next = st.nextState(s.head)
