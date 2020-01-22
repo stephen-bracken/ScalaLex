@@ -45,7 +45,7 @@ abstract class FSA[A<:State](s:List[A]) {
 
   def addAccepting(s: A) = {
     s accepting = true
-    accepting = (s :: (accepting).toList).toSet
+    accepting = accepting.union(Set(s))
   }
 
   def eval(s:String):Boolean
