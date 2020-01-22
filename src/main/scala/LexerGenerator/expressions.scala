@@ -277,6 +277,6 @@ object expressions {
     val d = dTranslate(nfa initialState, nfa accepting)
     println("included states" + d.getStates)
     println("accepting states: " + d.accepting)
-    nfa
+    d
   }
 }
