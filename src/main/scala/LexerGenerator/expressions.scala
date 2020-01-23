@@ -213,6 +213,7 @@ object expressions {
       * @return success value
       */
     def star: Boolean = {
+      //TODO: Work out why * doesn't accept no input
       println("star *")
       //pop one result off the stack
       val (a, t) = pop
@@ -230,7 +231,10 @@ object expressions {
         s0 addTransition (epsilon, fst)
         lst addTransition (epsilon, s1)
         lst addTransition (epsilon, fst)
-        stack = (new NFA(s0 :: a.getStates ++ List(s1))) :: stack
+        val s = new NFA(List(s0))
+        s.addStates(a.getStates)
+        s.addState(s1)
+        stack = s :: stack
         true
       }
     }
