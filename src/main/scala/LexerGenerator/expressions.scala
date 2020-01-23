@@ -22,6 +22,7 @@ object expressions {
         case Nil       => Nil
         case ')' :: xs => ')' :: checkRight(xs)
         case '*' :: xs => '*' :: checkRight(xs)
+        case '+' :: xs => '+' :: checkRight(xs)
         case x :: xs =>
           if (!isInput(x)) x :: checkLeft(xs)
           else x :: checkRight(xs)
