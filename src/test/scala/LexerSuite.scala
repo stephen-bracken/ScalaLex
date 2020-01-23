@@ -74,5 +74,13 @@ class LexerSuite {
 
     }
 
+    @Ignore @Test def `DFABracket`:Unit = {
+        val seq1 = "abcd"
+        val seq2 = "(ab)(cd)"
+        val dfa = expressions.translateRegex("(ab)(cd)")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(!dfa.eval(seq2),"Seq2")
+    }
+
     @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
 }

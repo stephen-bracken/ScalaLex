@@ -72,6 +72,8 @@ object expressions {
           case '\u0008' => "backspace"
           case x        => x
         }) + '\'')
+        //TODO: fix bracketing
+        /** handles parentheses translation */
         def parenth: Boolean = {
           if (opStack.head != '(')
             if (eval) parenth
