@@ -65,12 +65,14 @@ class LexerSuite {
         val seq1 = "a"
         val seq2 = "aa"
         val seq3 = "aaa"
-        val seq4 = "aab"
+        val seq4 = "aaaa"
+        val seq5 = "aab"
         val dfa = expressions.translateRegex("a*")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(dfa.eval(seq3),"Seq3")
-        assert(!dfa.eval(seq4),"Seq4")
+        assert(dfa.eval(seq4),"Seq4")
+        assert(!dfa.eval(seq5),"Seq5")
 
     }
 
