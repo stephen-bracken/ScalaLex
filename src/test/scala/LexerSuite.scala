@@ -76,6 +76,15 @@ class LexerSuite {
 
     }
 
+    @Ignore @Test def `DFAStarUnion`:Unit = {
+        println("#########DFAStarUnion#########")
+        val seq1 = "aaa"
+        val seq2 = "aa"
+        val dfa = expressions.translateRegex("b|a*")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+    }
+
     @Ignore @Test def `DFABracket`:Unit = {
         val seq1 = "abcd"
         val seq2 = "(ab)(cd)"
