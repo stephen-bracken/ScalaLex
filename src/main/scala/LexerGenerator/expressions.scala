@@ -231,7 +231,13 @@ object expressions {
       result.toSet
     }
 
-    def dTranslate(s: NFAState,a: Set[NFAState]): DFA = {
+    /**
+      * uses the subset construction algorithm to create a DFA from the initial state of an NFA.
+      *
+      * @param s initial state of NFA
+      * @return DFA of NFA s
+      */
+    def dTranslate(s: NFAState): DFA = {
       var dfaStates: List[DFAState] = List()
       nextId = 0
       println("dTranslate")
@@ -289,7 +295,7 @@ object expressions {
             s <- f.getStates
           } yield s.id)
       )
-    val d = dTranslate(nfa initialState, nfa accepting)
+    val d = dTranslate(nfa initialState)
     println("included states" + d.getStates)
     for(s <- d.getStates) yield {println(s + ", accepting: " + s.accepting)}
     //println("accepting states: " + d.accepting)
