@@ -11,6 +11,7 @@ class LexerSuite {
         val lexer = lexerGenerator.Generator.ReadRules(rules)
     }
 
+    //###### State tests ######
     @Test def `StateEquality`:Unit = {
         val s1 = new NFAState(0)
         val s2 = new NFAState(1)
@@ -29,6 +30,7 @@ class LexerSuite {
         assert((nfaSet.contains(s3)),"s3")
     }
 
+    //###### DFA Construction ######
     @Test def `DFAConcat`:Unit = {
         println("#########DFAConcat#########")
         val seq1 = "a"
