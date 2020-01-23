@@ -58,5 +58,18 @@ class LexerSuite {
         assert(!dfa.eval(seq3),"Seq3")
     }
 
+    @Ignore @Test def `DFAStar`:Unit = {
+        val seq1 = "a"
+        val seq2 = "aa"
+        val seq3 = "aaa"
+        val seq4 = "aab"
+        val dfa = expressions.translateRegex("aa*")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+        assert(!dfa.eval(seq4),"Seq4")
+
+    }
+
     @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
 }
