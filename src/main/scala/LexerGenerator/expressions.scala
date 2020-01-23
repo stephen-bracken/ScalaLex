@@ -267,8 +267,8 @@ object expressions {
         //create new FSAs with s1 and s0
         val newB = new NFA(b.getStates)
         newB.addState(s1)
-        val newA = new NFA(s0 :: a.getStates)
-
+        val newA = new NFA(List(s0))
+        newA.addStates(a.getStates)
         //add to the result set
         val s = new NFA (newA.getStates)
         s.addStates(newB.getStates)
