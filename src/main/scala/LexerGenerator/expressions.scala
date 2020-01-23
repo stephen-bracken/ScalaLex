@@ -3,10 +3,18 @@ import scala.util.Try
 import scala.collection.immutable.Nil
 import scala.language.postfixOps
 
+/**Thompson construction algorithm and subset construction algorithm implemented to produce a DFA from a given regular expression string
+ */
 object expressions {
   //def program: Parser[Any] = definitions ~ "%%" ~ rules ~ "%%" ~ routines
+  /**
+    * Translates a Regular Expression into a DFA implementation
+    *
+    * @param r The regular Expression
+    * @return DFA of r
+    */
   def translateRegex(r: String) = {
-    //initialisation
+    //###### Setup ######
     var stack: List[NFA] = List()
     var opStack: List[Char] = List()
     val epsilon: Char = '\u0000'
@@ -16,8 +24,19 @@ object expressions {
     var nextId: Int = 0
     var inputSet:Set[Char] = Set()
 
-    ///adds backspace chars to string for concatenation
+    /**
+     * edits the input string to add concatenation
+     * 
+     * @param s the input string
+     * @return input string with concatenations inserted
+     */
     def concatExpand(s: String): List[Char] = {
+      /**
+        * checks for brackets or other operators
+        *
+        * @param s
+        * @return 
+        */
       def checkLeft(s: List[Char]): List[Char] = s match {
         case Nil       => Nil
         case ')' :: xs => ')' :: checkRight(xs)
@@ -38,17 +57,21 @@ object expressions {
       checkLeft(s.toList)
     }
 
-    /// create an NFA from a regular expression string, return success or failure, store result on operatorStack
+    //###### Thompson construction algorithm ######
+    /**
+      * Translates the input string into a NFA
+      *
+      * @param s input string
+      * @return (NFA of s or null,success value)
+      */
     def translateToNFA(s: List[Char]): (NFA, Boolean) = {
-      //stack = List()
-      //opStack = List()
+      /**translates a single character into an NFA and adds it to the stack.*/
       def translateAction(c: Char): Boolean = {
         println("translating '" + (c match {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
           case x        => x
         }) + '\'')
-        //add a state pair to represent a standard input symbol
         def parenth: Boolean = {
           if (opStack.head != '(')
             if (eval) parenth
@@ -90,9 +113,43 @@ object expressions {
         else translateToNFA(s.tail)
       }
     }
+    //###### Stack operations ######
+    /**
+      * adds a character to the stack in the form of a two state NFA
+      * NFA is constructed as follows:
+      * state 0 (c) -> state 1
+      *
+      * @param c character to add
+      */
+    def push(c: Char): Unit = {
+      inputSet = inputSet.union(Set(c))
+      val s0 = new NFAState(nextId)
+      val s1 = new NFAState(nextId + 1)
+      nextId = nextId + 2
+      s0.addTransition(c, s1)
+      stack = (new NFA(List(s1, s0))) :: stack
+    }
+    /**
+      * retrieves an NFA from the stack with a success value
+      *
+      * @return (NFA or null,success value)
+      */
+    def pop: (NFA, Boolean) = {
+      if (stack isEmpty) (null, false)
+      else {
+        val p = stack.head
+        stack = stack.tail
+        (p, true)
+      }
+    }
+
+    //###### Character evaluation ######
+
+    /** checks if a character is an input or not */
     def isInput(c: Char) = !isOperator(c)
+    /** checks if a character is in the set of operators or not */
     def isOperator(c: Char) = special.contains(c)
-    //enforces operator precedence
+    /** enforces operator precedence on the stack */
     def precedence(l: Char, r: Char) = {
       if (l == r) true
       else if (l == '*') false
@@ -103,6 +160,11 @@ object expressions {
       true
     }
 
+    //###### operator processing ######
+
+    /** takes an operator from the stack and calls the appropriate method. 
+     * @return success value from chosen operation
+     */
     def eval: Boolean = {
       //evaluating operators and executing the correct action
       if (opStack isEmpty) false
@@ -119,24 +181,13 @@ object expressions {
       }
     }
 
-    def push(c: Char): Unit = {
-      inputSet = inputSet.union(Set(c))
-      val s0 = new NFAState(nextId)
-      val s1 = new NFAState(nextId + 1)
-      nextId = nextId + 2
-      s0.addTransition(c, s1)
-      stack = (new NFA(List(s1, s0))) :: stack
-    }
-    def pop: (NFA, Boolean) = {
-      if (stack isEmpty) (null, false)
-      else {
-        val p = stack.head
-        stack = stack.tail
-        (p, true)
-      }
-    }
-
-    //translate concatenation (__)
+    /**
+      * translates concatenation of characters using Thompson construction
+      * and adds the result to the stack. 
+      * Requires at least two NFAs on the stack.
+      *
+      * @return success value
+      */
     def concat: Boolean = {
       println("concat")
       val (b, t1) = pop
@@ -154,7 +205,13 @@ object expressions {
       }
     }
 
-    //translate kleene star (*)
+    /**
+      * translates Kleene star (*) into an NFA using Thompson construction, 
+      * adds the result to the stack. 
+      * Requires at least one NFA on the stack.
+      *
+      * @return success value
+      */
     def star: Boolean = {
       println("star *")
       //pop one result off the stack
@@ -178,7 +235,13 @@ object expressions {
       }
     }
 
-    ///translate union (|)
+    /**
+      * translates union (|) into an NFA using Thompson construction 
+      * and adds the result to the stack. 
+      * Requires at least two NFAs on the stack.
+      *
+      * @return success value
+      */
     def union: Boolean = {
       println("union |")
       //pop two sub-results A and B
@@ -214,9 +277,13 @@ object expressions {
       }
     }
 
-    //Subset construction algorithm
-    //gets all the epsilon transitions for a single state
-
+    //###### Subset construction algorithm ######
+    /**
+      * takes the epsilon closure of a set of NFAStates.
+      *
+      * @param t Set of NFAStates
+      * @return Set of reachable NFAStates
+      */
     def epsilonClosure(t: Set[NFAState]): Set[NFAState] = {
       println("epsilon closure of " + t)
       var result = t.toList
@@ -273,7 +340,17 @@ object expressions {
       }
       new DFA(result)
     }
+
+    //###### DFA Optimisation ######
+
+    /**
+      * removes redundant/dead end states from the DFA
+      *
+      * @param d DFA to reduce
+      * @return optimised DFA
+      */
     def dfaReduce(d:DFA) = {
+      /** checks if the State is a dead end */
       def deadEnd(s: DFAState):Boolean = {
        if(s.accepting) false
        else
@@ -281,7 +358,9 @@ object expressions {
        else s.transitions.exists(p => !(p._2.diff(Set(s)).isEmpty))
       }
 
+
     }
+    //###### Execution ######
     if (!translateToNFA(concatExpand(r))._2)
       throw new FSAError("failed to parse regex")
     if (stack isEmpty) throw new FSAError("no NFA found")
