@@ -31,7 +31,7 @@ class LexerSuite {
     }
 
     //###### DFA Construction ######
-    @Ignore @Test def `DFAConcat`:Unit = {
+    @Test def `DFAConcat`:Unit = {
         println("#########DFAConcat#########")
         val seq1 = "a"
         val seq2 = "ba"
@@ -42,14 +42,14 @@ class LexerSuite {
         assert(dfa.eval(seq3),"Seq3")
     }
 
-    @Ignore @Test def `DFAConcat2`:Unit = {
+    @Test def `DFAConcat2`:Unit = {
         println("#########DFAConcat2#########")
         val seq = "hello"
         val dfa = expressions.translateRegex("hello")
         assert(dfa.eval(seq),"Seq hello")
     }
 
-    @Ignore @Test def `DFAUnion`:Unit = {
+    @Test def `DFAUnion`:Unit = {
         println("#########DFAUnion#########")
         val seq1 = "a"
         val seq2 = "b"
