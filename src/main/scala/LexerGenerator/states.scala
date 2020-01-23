@@ -63,23 +63,7 @@ class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
     transitions = transitions filter (t => t._1 != '\u0000')
   }*/
     override def transition(c: Char): Set[NFAState] = if (transitions contains(c)) transitions(c) else Set()
-    def addTransition(c: Char, s:NFAState) = {
-    /*println(
-      "adding transition (" +
-        (c match {
-          case '\u0000' => "epsilon"
-          case '\u0008' => "backspace"
-          case x        => x
-        })
-        + ") from state " + id + " to state " + s.id
-    )*/
-    //println("adding transition from state " + id + " to state " + s.id + " via " + c)
-    if(transitions exists(x => x._1 == c)){
-      transitions = transitions.updated(c, transitions(c).union(Set(s)))
-    }
-    else
-    transitions = transitions.updated(c,Set(s))
-  }
+
 }
 
 class DFAState(val nfaStates:Set[NFAState] = Set(), id: Int) extends State(id){
@@ -89,7 +73,8 @@ class DFAState(val nfaStates:Set[NFAState] = Set(), id: Int) extends State(id){
   def included(s:NFAState) = nfaStates contains s
     //override def transition(c: Char): Set[DFAState] = transitions(c)
     def nextState(c: Char): DFAState = transition(c).head
-    def addTransition(c: Char, s:DFAState) = {
+  /** sets the transition from this state via c to s */
+  override def addTransition(c: Char, s:DFAState) = {
     /*println(
       "adding DFA transition (" +
         (c match {
@@ -120,6 +105,21 @@ abstract class State(val id:Int){
   //def getTransitions(c: Char) = transitions filter (t => t._1 == c)
 
   def transition(c: Char):Set[S] = transitions(c)
+  def addTransition(c: Char, s:S) = {
+    /*println(
+      "adding transition (" +
+        (c match {
+          case '\u0000' => "epsilon"
+          case '\u0008' => "backspace"
+          case x        => x
+        })
+        + ") from state " + id + " to state " + s.id
+    )*/
+    if(transitions exists(x => x._1 == c)){
+      transitions = transitions.updated(c, transitions(c).union(Set(s)))
+    }
+    else transitions = transitions.updated(c,Set(s))
+  }
   /** removes all of the transitions from this state to s*/
   def removeTransitions(s: Any) = {for ((k,v) <- transitions) yield {transitions = transitions.updated(k,v.diff(Set(s)))}}
   override def toString(): String = {
