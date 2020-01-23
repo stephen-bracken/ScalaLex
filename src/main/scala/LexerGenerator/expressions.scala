@@ -342,14 +342,14 @@ object expressions {
     }
 
     //###### DFA Optimisation ######
-
+    //TODO:Debug and verify correctness
     /**
       * removes redundant/dead end states from the DFA
       *
       * @param d DFA to reduce
       * @return optimised DFA
       */
-    def dfaReduce(d:DFA) = {
+    def dfaReduce(d:DFA):DFA = {
       /** checks if the State is a dead end */
       def deadEnd(s: DFAState):Boolean = {
        if(s.accepting) false
@@ -357,8 +357,10 @@ object expressions {
        if(s.transitions.keySet.isEmpty) true
        else s.transitions.exists(p => !(p._2.diff(Set(s)).isEmpty))
       }
-
-
+      for (state <- d.states if(deadEnd(state))) yield {
+        d.states = d.states diff List(state)
+        for (s <- d.states) yield {s.removeTransitions(state)}}
+      d
     }
     //###### Execution ######
     if (!translateToNFA(concatExpand(r))._2)
