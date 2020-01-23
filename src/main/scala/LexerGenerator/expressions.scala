@@ -191,7 +191,7 @@ object expressions {
       * @return success value
       */
     def concat: Boolean = {
-      println("concat")
+      //println("concat")
       val (b, t1) = pop
       val (a, t2) = pop
       if (!t1 || !t2) false
@@ -216,7 +216,7 @@ object expressions {
       */
     def star: Boolean = {
       //TODO: Work out why * doesn't accept no input
-      println("star *")
+      //println("star *")
       //pop one result off the stack
       val (a, t) = pop
       if (!t) false
@@ -249,7 +249,7 @@ object expressions {
       * @return success value
       */
     def union: Boolean = {
-      println("union |")
+      //println("union |")
       //pop two sub-results A and B
       val (b, t1) = pop
       val (a, t2) = pop
@@ -291,7 +291,7 @@ object expressions {
       * @return Set of reachable NFAStates
       */
     def epsilonClosure(t: Set[NFAState]): Set[NFAState] = {
-      println("epsilon closure of " + t)
+      //println("epsilon closure of " + t)
       var result = t.toList
       var unprocessed = t.toList
       while(!(unprocessed isEmpty)){
@@ -300,7 +300,7 @@ object expressions {
         val epsilons = fst transition(epsilon)
         for {u <- epsilons if !result.contains(u)} yield {result = u::result; unprocessed = u::unprocessed}
       }
-      println(result)
+      //println(result)
       result.toSet
     }
 
@@ -313,7 +313,7 @@ object expressions {
     def dTranslate(s: NFAState): DFA = {
       var dfaStates: List[DFAState] = List()
       nextId = 0
-      println("dTranslate")
+      //println("dTranslate")
       //starting state of DFA is epsilon closure of first state of NFA
       val dfaStartState = new DFAState(epsilonClosure(Set(s)),nextId)
       var unmarked = List(dfaStartState)
@@ -326,7 +326,7 @@ object expressions {
         for{c <- inputSet
             //if processing.transitions.contains(c)
             } yield {
-              // println("processing epsilon closure of " + c + " on " + processing)
+              //println("processing epsilon closure of " + c + " on " + processing)
               val move = processing nfaMove c
               val closure = epsilonClosure(move)
               if(!(result exists(x => x.nfaStates == closure)))
