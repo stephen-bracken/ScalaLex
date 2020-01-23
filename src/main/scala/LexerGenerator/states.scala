@@ -120,6 +120,8 @@ abstract class State(val id:Int){
   //def getTransitions(c: Char) = transitions filter (t => t._1 == c)
 
   def transition(c: Char):Set[S] = transitions(c)
+  /** removes all of the transitions from this state to s*/
+  def removeTransitions(s: Any) = {for ((k,v) <- transitions) yield {transitions = transitions.updated(k,v.diff(Set(s)))}}
   override def toString(): String = {
     "state " + id
   }
