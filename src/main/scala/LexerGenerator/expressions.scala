@@ -365,7 +365,6 @@ object expressions {
       throw new FSAError("failed to parse regex")
     if (stack isEmpty) throw new FSAError("no NFA found")
     val nfa = stack.head
-    //println("Included states: " + (for (s <- stack.head.states) yield s.id))
     if (!stack.tail.isEmpty)
       throw new FSAError(
         "unresolved states: " +
@@ -377,7 +376,6 @@ object expressions {
     val d = dTranslate(nfa initialState)
     println("included states" + d.getStates)
     for(s <- d.getStates) yield {println(s + ", accepting: " + s.accepting)}
-    //println("accepting states: " + d.accepting)
     d
   }
 }
