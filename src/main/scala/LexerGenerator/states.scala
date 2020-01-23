@@ -1,13 +1,16 @@
 package lexerGenerator
 import scala.language.postfixOps
 
+/** Represents a Non-deterministic Finite State Automata */
 class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
-  //NFA Evaluation is not implemented but NFA and NFAStates are used in construction of DFAs
+  //NFA Evaluation is not implemented but NFA and NFAStates are used in construction of 
+  @deprecated("evaluation of NFAs is not implemented","")
   override def eval(s: String): Boolean = false
 }
 
-class DFA(states: List[DFAState])
-    extends FSA[DFAState](states) {
+/** Represents a Deterministic Finite State Automata */
+class DFA(s: List[DFAState])
+    extends FSA[DFAState](s) {
     override def eval(s: String): Boolean = {
       def e(s:String,st:DFAState):Boolean = {
         if (s isEmpty) st.accepting
@@ -26,17 +29,36 @@ class DFA(states: List[DFAState])
   //for (s <- states) yield { s removeEpsilon }
 }
 
+/**
+  * Represents a Finite State Automata
+  *
+  * @param s List of states in order
+  */
 abstract class FSA[A<:State](s:List[A]) {
+  /** the set of states in this FSA */
   var states:List[A] = s
+  /** the set of accepting states in this FSA */
   var accepting:Set[A] = (for {s <- states if s.accepting} yield s).toSet
+  /** the starting state for this FSA */
   val initialState: A = states.last
+  /** the last state in this FSA */
   var finalState:A = states.head
 
   def getStates = states
+
+  /** gets a state from this FSA by id */
+  def getState(i: Int):A = states.find(a => a.id == i) match {
+    case None => throw new FSAError("State not found: " + i)
+    case Some(v) => v
+  }
+
+  /** adds a state to this FSA */
   def addState(s: A) = {
     states = s :: states
     finalState = s
   }
+
+  /** adds a series of states to this FSA */
   def addStates(s:List[A]):Unit = {
     def add(s:List[A]):Unit = {
     if(!s.isEmpty){
@@ -47,11 +69,13 @@ abstract class FSA[A<:State](s:List[A]) {
     add(s.reverse)
   }
 
+  /** adds a given state to the set of accepting states for this FSA */
   def addAccepting(s: A) = {
     s accepting = true
     accepting = accepting.union(Set(s))
   }
 
+  /** checks an input string against this FSA */
   def eval(s:String):Boolean
 }
 
@@ -62,17 +86,19 @@ class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
   /*def removeEpsilon = {
     transitions = transitions filter (t => t._1 != '\u0000')
   }*/
-    override def transition(c: Char): Set[NFAState] = if (transitions contains(c)) transitions(c) else Set()
+  override def transition(c: Char): Set[NFAState] = if (transitions contains(c)) transitions(c) else Set()
 
 }
 
-class DFAState(val nfaStates:Set[NFAState] = Set(), id: Int) extends State(id){
+class DFAState(n:Set[NFAState] = Set(), id: Int) extends State(id){
+  /** the set of NFAStates that this DFAState was constructed from */
+  val nfaStates = n
   override type S = DFAState
   override var accepting = (nfaStates exists(p => p.accepting))
   override var transitions: Map[Char,Set[S]] = Map()//.withDefaultValue(Set())
   def included(s:NFAState) = nfaStates contains s
-    //override def transition(c: Char): Set[DFAState] = transitions(c)
-    def nextState(c: Char): DFAState = transition(c).head
+  /** gets the next DFAState using this transition symbol */
+  def nextState(c: Char): DFAState = transition(c).head
   /** sets the transition from this state via c to s */
   override def addTransition(c: Char, s:DFAState) = {
     /*println(
@@ -84,10 +110,9 @@ class DFAState(val nfaStates:Set[NFAState] = Set(), id: Int) extends State(id){
         })
         + ") from state " + id + " to state " + s.id
     )*/
-    //println("adding transition from state " + id + " to state " + s.id + " via " + c)
     transitions = transitions.updated(c,Set(s))
-
   }
+  /** gets all of the visible NFAStates using a single transition on a character input*/
   def nfaMove(c:Char):Set[NFAState] = {
     def move(s: List[NFAState]):Set[NFAState] = {
       if(s isEmpty) Set()
@@ -100,10 +125,12 @@ class DFAState(val nfaStates:Set[NFAState] = Set(), id: Int) extends State(id){
 
 abstract class State(val id:Int){
   type S <: State
+  /** indicates whether or not this state is an accepting state in the FSA */
   var accepting: Boolean
+  /** a map of state transitions using valid symbols */
   var transitions: Map[Char,Set[S]]
-  //def getTransitions(c: Char) = transitions filter (t => t._1 == c)
 
+  /** yields the possible state transitions from a given character */
   def transition(c: Char):Set[S] = transitions(c)
   def addTransition(c: Char, s:S) = {
     /*println(
