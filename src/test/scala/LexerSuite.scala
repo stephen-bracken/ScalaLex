@@ -47,7 +47,7 @@ class LexerSuite {
         assert(dfa.eval(seq),"Seq hello")
     }
 
-    @Ignore @Test def `DFAUnion`:Unit = {
+    @Test def `DFAUnion`:Unit = {
         println("#########DFAUnion#########")
         val seq1 = "a"
         val seq2 = "b"
