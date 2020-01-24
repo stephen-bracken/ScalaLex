@@ -7,12 +7,14 @@ class LexerSuite {
     import lexerGenerator._
 
     @Ignore @Test def `LexSimpleInt`:Unit = {
+        println("#########LexSimpleInt#########")
         val rules:String = "%%      \n      int k;\n[0-9]+   {\n        k = atoi(yytext);\n     if (k%7 == 0)\n             printf(\"%d\", k+3);\n      else\n          printf(\"%d\",k);\n         }"
         val lexer = lexerGenerator.Generator.ReadRules(rules)
     }
 
     //###### State tests ######
     @Test def `StateEquality`:Unit = {
+        println("#########StateEquality#########")
         val s1 = new NFAState(0)
         val s2 = new NFAState(1)
         val s3 = new NFAState(0)
@@ -21,6 +23,7 @@ class LexerSuite {
     }
 
     @Test def `StateSet`:Unit = {
+        println("#########StateSet#########")
         val s1 = new NFAState(0)
         val s2 = new NFAState(1)
         //s3 should be equivalent in the set to s1
@@ -32,6 +35,7 @@ class LexerSuite {
 
     //###### Char tests ######
     @Test def `OperatorPrecedence`:Unit = {
+        println("#########OperatorPrecedence#########")
         assert(!expressions.precedence(expressions.backspace,'('))
     }
 
@@ -91,6 +95,7 @@ class LexerSuite {
     }
 
     @Ignore @Test def `DFADoubleStar`:Unit = {
+        println("#########DFADoubleStar#########")
         val seq1 = "aaabbb"
         val seq2 = "aabb"
         val seq3 = "abc"
@@ -101,6 +106,7 @@ class LexerSuite {
     }
 
     @Ignore @Test def `DFABracket`:Unit = {
+        println("#########DFABracket#########")
         val seq1 = "abcd"
         val seq2 = "(ab)(cd)"
         val dfa = expressions.translateRegex("(ab)(cd)")
