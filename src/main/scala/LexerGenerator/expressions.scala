@@ -104,6 +104,7 @@ object expressions {
           opStack = opStack.tail
           true
         }
+        
         if (isInput(c)) {
           push(c); true
         } else if (opStack.isEmpty) {
