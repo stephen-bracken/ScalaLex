@@ -6,6 +6,30 @@ import scala.language.postfixOps
 /**Thompson construction algorithm and subset construction algorithm implemented to produce a DFA from a given regular expression string
  */
 object expressions {
+
+    //###### Character evaluation ######
+
+    val epsilon: Char = '\u0000'
+    val backspace: Char = '\u0008'
+    val illegal: Set[Char] = Set(epsilon, backspace)
+    val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')')
+
+    /** checks if a character is an input or not */
+    def isInput(c: Char) = !isOperator(c)
+    /** checks if a character is in the set of operators or not */
+    def isOperator(c: Char) = operators.contains(c)
+    /** enforces operator precedence on the stack */
+    def precedence(l: Char, r: Char) = {
+      println("-- precedence " + l + " - " + r + " --")
+      if (l == r) true
+      else if (l == '*') false
+      else if (r == '*') true
+      else if (l == backspace) false
+      else if (r == backspace) true
+      else if (l == '|') false
+      else true
+    }
+    
   //def program: Parser[Any] = definitions ~ "%%" ~ rules ~ "%%" ~ routines
   /**
     * Translates a Regular Expression into a DFA implementation
@@ -17,10 +41,6 @@ object expressions {
     //###### Setup ######
     var stack: List[NFA] = List()
     var opStack: List[Char] = List()
-    val epsilon: Char = '\u0000'
-    val backspace: Char = '\u0008'
-    val illegal: List[Char] = List(epsilon, backspace)
-    val special: List[Char] = List('|', '*', '+', '(', ')', epsilon, backspace)
     var nextId: Int = 0
     var inputSet:Set[Char] = Set()
 
@@ -145,22 +165,6 @@ object expressions {
       }
     }
 
-    //###### Character evaluation ######
-
-    /** checks if a character is an input or not */
-    def isInput(c: Char) = !isOperator(c)
-    /** checks if a character is in the set of operators or not */
-    def isOperator(c: Char) = special.contains(c)
-    /** enforces operator precedence on the stack */
-    def precedence(l: Char, r: Char) = {
-      if (l == r) true
-      else if (l == '*') false
-      else if (r == '*') true
-      else if (l == backspace) false
-      else if (r == backspace) true
-      else if (l == '|') false
-      true
-    }
 
     //###### operator processing ######
 
