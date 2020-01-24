@@ -44,6 +44,8 @@ object expressions {
     var nextId: Int = 0
     var inputSet:Set[Char] = Set()
 
+
+    //###### Preprocessing ######
     /**
      * edits the input string to add concatenation
      * 
@@ -95,13 +97,12 @@ object expressions {
         //TODO: fix bracketing
         /** handles parentheses translation */
         def parenth: Boolean = {
-          if (opStack.head != '(')
-            if (eval) parenth
-            else false
-          else {
-            opStack = opStack.tail
-            true
+          println("-- pareth --")
+          while(opStack.head != '('){
+            if(!eval) false
           }
+          opStack = opStack.tail
+          true
         }
         if (isInput(c)) {
           push(c); true
