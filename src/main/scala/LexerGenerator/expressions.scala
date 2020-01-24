@@ -2,11 +2,15 @@ package lexerGenerator
 import scala.util.Try
 import scala.collection.immutable.Nil
 import scala.language.postfixOps
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**Thompson construction algorithm and subset construction algorithm implemented to produce a DFA from a given regular expression string
  */
 object expressions {
 
+
+    val logger = LoggerFactory.getLogger(expressions.getClass())
     //###### Character evaluation ######
 
     val epsilon: Char = '\u0000'
@@ -20,7 +24,7 @@ object expressions {
     def isOperator(c: Char) = operators.contains(c)
     /** enforces operator precedence on the stack */
     def precedence(l: Char, r: Char) = {
-      println("-- precedence " + l + " - " + r + " --")
+      logger.atTrace.addKeyValue("l",l).addKeyValue("r",r).log("-- precedence --")
       if (l == r) true
       else if (l == '*') false
       else if (r == '*') true
@@ -38,12 +42,17 @@ object expressions {
     * @return DFA of r
     */
   def translateRegex(r: String) = {
+    logger.atInfo().addArgument(r).log("Translating regular expression \"{}\"")
     //###### Setup ######
     var stack: List[NFA] = List()
     var opStack: List[Char] = List()
     var nextId: Int = 0
     var inputSet:Set[Char] = Set()
-
+    def input(c:Char) = c match {
+          case '\u0000' => "epsilon"
+          case '\u0008' => "backspace"
+          case x        => x
+        }
 
     //###### Preprocessing ######
     /**
@@ -89,29 +98,25 @@ object expressions {
     def translateToNFA(s: List[Char]): (NFA, Boolean) = {
       /**translates a single character into an NFA and adds it to the stack.*/
       def translateAction(c: Char): Boolean = {
-        println("## translating '" + (c match {
-          case '\u0000' => "epsilon"
-          case '\u0008' => "backspace"
-          case x        => x
-        }) + "\' ##")
+        logger.atDebug.addArgument(input(c)).log("## translating '{}' ##")
         //TODO: fix bracketing
         /** handles parentheses translation */
         def parenth: Boolean = {
-          println("-- pareth --")
+          logger.atTrace.log("-- pareth --")
           while(opStack.head != '('){
             if(!eval) false
           }
           opStack = opStack.tail
           true
         }
-        
+
         if (isInput(c)) {
           push(c); true
         } else if (opStack.isEmpty) {
-          println("-- insert operator " + c + " --")
+          logger.atTrace.addArgument(input(c)).log("-- insert operator '{}' --")
           opStack = c :: opStack; true
         } else if (c == '(') {
-          println("adding ( to stack")
+          logger.atTrace.log("adding ( to stack")
           opStack = c :: opStack; true
         } else if (c == ')') parenth
         else {
@@ -129,7 +134,7 @@ object expressions {
         if ((for (op <- opStack) yield eval).exists(x => x == false)) false
         val fsa = stack.head
         //add the final state as an accepting state
-        println("accepting NFA state: " + fsa.finalState)
+        logger.atDebug.log("accepting NFA state: " + fsa.finalState)
         fsa.finalState.accepting = true
         fsa.addAccepting(fsa.finalState)
         (fsa, true)
@@ -148,7 +153,7 @@ object expressions {
       * @param c character to add
       */
     def push(c: Char): Unit = {
-      println("-- Push " + c + " --")
+      logger.atTrace.addArgument(input(c)).log("-- Push '{}' --")
       inputSet = inputSet.union(Set(c))
       val s0 = new NFAState(nextId)
       val s1 = new NFAState(nextId + 1)
@@ -162,7 +167,7 @@ object expressions {
       * @return (NFA or null,success value)
       */
     def pop: (NFA, Boolean) = {
-      println("-- Pop --")
+      logger.atTrace.log("-- Pop --")
       if (stack isEmpty) (null, false)
       else {
         val p = stack.head
@@ -182,7 +187,7 @@ object expressions {
       if (opStack isEmpty) false
       else {
         val o = opStack.head
-        println("-- eval '" + o + "' --")
+        logger.atTrace.addArgument(input(o)).log("-- eval '{}' --")
         opStack = opStack.tail
         o match {
           case '*'      => star
@@ -202,7 +207,7 @@ object expressions {
       * @return success value
       */
     def concat: Boolean = {
-      println("-- concat --")
+      logger.atTrace.log("-- concat --")
       val (b, t1) = pop
       val (a, t2) = pop
       if (!t1 || !t2) false
@@ -227,7 +232,7 @@ object expressions {
       */
     def star: Boolean = {
       //TODO: Work out why * doesn't accept no input
-      println("-- star --")
+      logger.atTrace.log("-- star --")
       //pop one result off the stack
       val (a, t) = pop
       if (!t) false
@@ -260,7 +265,7 @@ object expressions {
       * @return success value
       */
     def union: Boolean = {
-      println("-- union --")
+      logger.atTrace.log("-- union --")
       //pop two sub-results A and B
       val (b, t1) = pop
       val (a, t2) = pop
@@ -302,7 +307,7 @@ object expressions {
       * @return Set of reachable NFAStates
       */
     def epsilonClosure(t: Set[NFAState]): Set[NFAState] = {
-      //println("epsilon closure of " + t)
+      logger.atTrace.addArgument(t).log("epsilon closure of {}")
       var result = t.toList
       var unprocessed = t.toList
       while(!(unprocessed isEmpty)){
@@ -324,7 +329,7 @@ object expressions {
     def dTranslate(s: NFAState): DFA = {
       var dfaStates: List[DFAState] = List()
       nextId = 0
-      //println("dTranslate")
+      logger.atDebug.log("dTranslate")
       //starting state of DFA is epsilon closure of first state of NFA
       val dfaStartState = new DFAState(epsilonClosure(Set(s)),nextId)
       var unmarked = List(dfaStartState)
@@ -332,12 +337,12 @@ object expressions {
       var result:List[DFAState] = List(dfaStartState)
       while (!(unmarked isEmpty)){
         processing = unmarked.head
-        // println("processing " + processing)
+        logger.atTrace.addArgument(processing).log("processing {}")
         unmarked = unmarked.tail
         for{c <- inputSet
             //if processing.transitions.contains(c)
             } yield {
-              //println("processing epsilon closure of " + c + " on " + processing)
+              logger.atTrace.addKeyValue("processing state",processing).addKeyValue("transition",c).log("processing epsilon closure")
               val move = processing nfaMove c
               val closure = epsilonClosure(move)
               if(!(result exists(x => x.nfaStates == closure)))
@@ -393,8 +398,8 @@ object expressions {
           } yield s.id)
       )
     val d = dTranslate(nfa initialState)
-    println("included states" + d.getStates)
-    for(s <- d.getStates) yield {println(s + ", accepting: " + s.accepting)}
+    logger.atDebug.addArgument(d.getStates).log("included states: {}")
+    for(s <- d.getStates) yield {logger.atTrace.addKeyValue("state",s).addKeyValue("accepting",s.accepting).log("")}
     d
   }
 }

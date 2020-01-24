@@ -1,11 +1,13 @@
 package lexerGenerator
 import scala.language.postfixOps
+import org.slf4j.LoggerFactory
+import org.slf4j.Logger
 
 /** Represents a Non-deterministic Finite State Automata */
 class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
   //NFA Evaluation is not implemented but NFA and NFAStates are used in construction of 
   @deprecated("evaluation of NFAs is not implemented","")
-  override def eval(s: String): Boolean = false
+  override def eval(s: String): Boolean =  {logger.atError.log("attempted evaluation on NFA");false}
 }
 
 /** Represents a Deterministic Finite State Automata */
@@ -15,11 +17,11 @@ class DFA(s: List[DFAState])
       def e(s:String,st:DFAState):Boolean = {
         if (s isEmpty) st.accepting
         else {
-          println("eval state " + st + " with '" + s.head + "'")
+          logger.atTrace.addKeyValue("symbol",s.head).addKeyValue("state",st).log("evaluating symbol")
           if (!(st.transitions.exists(x => x._1 == s.head))) false
           else {
             val next = st.nextState(s.head)
-            println("transition to " + next)
+            logger.atTrace.addArgument(next).log("transition to {}")
             e(s.tail,next)
           }
         }
@@ -35,6 +37,7 @@ class DFA(s: List[DFAState])
   * @param s List of states in order
   */
 abstract class FSA[A<:State](s:List[A]) {
+  val logger = LoggerFactory.getLogger(this.getClass)
   /** the set of states in this FSA */
   var states:List[A] = s
   /** the set of accepting states in this FSA */
@@ -124,6 +127,7 @@ class DFAState(n:Set[NFAState] = Set(), id: Int) extends State(id){
 }
 
 abstract class State(val id:Int){
+  val logger = LoggerFactory.getLogger(this.getClass)
   type S <: State
   /** indicates whether or not this state is an accepting state in the FSA */
   var accepting: Boolean
@@ -133,15 +137,12 @@ abstract class State(val id:Int){
   /** yields the possible state transitions from a given character */
   def transition(c: Char):Set[S] = transitions(c)
   def addTransition(c: Char, s:S) = {
-    /*println(
-      "adding transition (" +
-        (c match {
+    logger.atTrace
+      .addArgument((c match {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
           case x        => x
-        })
-        + ") from state " + id + " to state " + s.id
-    )*/
+        })).addKeyValue("state",this).addKeyValue("destination",s).log("adding transition '{}'")
     if(transitions exists(x => x._1 == c)){
       transitions = transitions.updated(c, transitions(c).union(Set(s)))
     }
