@@ -89,11 +89,11 @@ object expressions {
     def translateToNFA(s: List[Char]): (NFA, Boolean) = {
       /**translates a single character into an NFA and adds it to the stack.*/
       def translateAction(c: Char): Boolean = {
-        println("translating '" + (c match {
+        println("## translating '" + (c match {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
           case x        => x
-        }) + '\'')
+        }) + "\' ##")
         //TODO: fix bracketing
         /** handles parentheses translation */
         def parenth: Boolean = {
@@ -107,8 +107,10 @@ object expressions {
         if (isInput(c)) {
           push(c); true
         } else if (opStack.isEmpty) {
+          println("-- insert operator " + c + " --")
           opStack = c :: opStack; true
         } else if (c == '(') {
+          println("adding ( to stack")
           opStack = c :: opStack; true
         } else if (c == ')') parenth
         else {
@@ -126,7 +128,7 @@ object expressions {
         if ((for (op <- opStack) yield eval).exists(x => x == false)) false
         val fsa = stack.head
         //add the final state as an accepting state
-        //println("accepting NFA state: " + fsa.finalState)
+        println("accepting NFA state: " + fsa.finalState)
         fsa.finalState.accepting = true
         fsa.addAccepting(fsa.finalState)
         (fsa, true)
@@ -145,6 +147,7 @@ object expressions {
       * @param c character to add
       */
     def push(c: Char): Unit = {
+      println("-- Push " + c + " --")
       inputSet = inputSet.union(Set(c))
       val s0 = new NFAState(nextId)
       val s1 = new NFAState(nextId + 1)
@@ -158,6 +161,7 @@ object expressions {
       * @return (NFA or null,success value)
       */
     def pop: (NFA, Boolean) = {
+      println("-- Pop --")
       if (stack isEmpty) (null, false)
       else {
         val p = stack.head
@@ -177,6 +181,7 @@ object expressions {
       if (opStack isEmpty) false
       else {
         val o = opStack.head
+        println("-- eval '" + o + "' --")
         opStack = opStack.tail
         o match {
           case '*'      => star
@@ -196,7 +201,7 @@ object expressions {
       * @return success value
       */
     def concat: Boolean = {
-      //println("concat")
+      println("-- concat --")
       val (b, t1) = pop
       val (a, t2) = pop
       if (!t1 || !t2) false
@@ -221,7 +226,7 @@ object expressions {
       */
     def star: Boolean = {
       //TODO: Work out why * doesn't accept no input
-      //println("star *")
+      println("-- star --")
       //pop one result off the stack
       val (a, t) = pop
       if (!t) false
@@ -254,7 +259,7 @@ object expressions {
       * @return success value
       */
     def union: Boolean = {
-      //println("union |")
+      println("-- union --")
       //pop two sub-results A and B
       val (b, t1) = pop
       val (a, t2) = pop
