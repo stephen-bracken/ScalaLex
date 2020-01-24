@@ -30,6 +30,11 @@ class LexerSuite {
         assert((nfaSet.contains(s3)),"s3")
     }
 
+    //###### Char tests ######
+    @Test def `OperatorPrecedence`:Unit = {
+        assert(!expressions.precedence(expressions.backspace,'('))
+    }
+
     //###### DFA Construction ######
     @Test def `DFAConcat`:Unit = {
         println("#########DFAConcat#########")
