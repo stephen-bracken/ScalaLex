@@ -44,6 +44,7 @@ class LexerSuite {
         println("#########DFAEmpty#########")
         val dfa = expressions.translateRegex("")
         assert(dfa.eval(""),"Empty")
+        assert(!dfa.eval("a"),"Not Empty")
     }
 
     @Test def `DFAConcat`:Unit = {
