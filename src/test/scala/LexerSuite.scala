@@ -89,7 +89,19 @@ class LexerSuite {
         assert(dfa.eval(seq3),"Seq3")
         assert(dfa.eval(seq4),"Seq4")
         assert(!dfa.eval(seq5),"Seq5")
+    }
 
+    @Ignore @Test def `DFAConcatStar`:Unit = {
+        println("#########DFAConcatStar#########")
+        val seq1 = "a"
+        val seq2 = "ab"
+        val seq3 = "abb"
+        val seq4 = "abc"
+        val dfa = expressions.translateRegex("ab*")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+        assert(!dfa.eval(seq4),"Seq4")
     }
 
     @Ignore @Test def `DFAStarUnion`:Unit = {
