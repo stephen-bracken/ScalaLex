@@ -77,6 +77,7 @@ class LexerSuite {
         val seq4 = "aaaa"
         val seq5 = "aab"
         val dfa = expressions.translateRegex("a*")
+        assert(dfa.eval(""),"empty")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(dfa.eval(seq3),"Seq3")
