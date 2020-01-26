@@ -62,30 +62,26 @@ object expressions {
      * @return input string with concatenations inserted
      */
     def concatExpand(s: String): List[Char] = {
+      val o:List[Char] = List('*','+',')')
       /**
         * checks for brackets or other operators
         *
         * @param s
         * @return 
         */
-      def checkLeft(s: List[Char]): List[Char] = s match {
-        case Nil       => Nil
-        case ')' :: xs => ')' :: checkRight(xs)
-        case '*' :: xs => '*' :: checkRight(xs)
-        case '+' :: xs => '+' :: checkRight(xs)
-        case x :: xs =>
-          if (!isInput(x)) x :: checkLeft(xs)
-          else x :: checkRight(xs)
-      }
-      def checkRight(s: List[Char]): List[Char] = {
-        if (s isEmpty) Nil
-        else {
-          val c = s.head
-          if (isInput(c) || c == '(') backspace :: checkLeft(s)
-          else s
+      def checkchars(s: List[Char]):List[Char] = {
+        if(s.length > 1){
+          val c1 = s.head
+          val c2 = s.tail.head
+          val xs = s.tail.tail
+          val b1 = isInput(c1) || o.contains(c1)
+          val b2 = isInput(c2) || c2 == ')'
+          if(b1 && b2) c1 :: backspace :: checkchars(c2 :: xs)
+          else c1 :: checkchars(s.tail)
         }
+        else s
       }
-      checkLeft(s.toList)
+      checkchars(s.toList)
     }
 
     //###### Thompson construction algorithm ######
