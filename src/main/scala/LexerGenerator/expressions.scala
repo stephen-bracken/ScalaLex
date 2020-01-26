@@ -385,6 +385,15 @@ object expressions {
       d
     }
     //###### Execution ######
+    //handling of empty regex
+    if(r.isEmpty){
+      val s = new NFAState(0)
+      s.accepting = true
+      val d = new DFAState(Set(s),0)
+      val dfa = new DFA(List(d))
+      dfa
+    }
+    else {
     if (!translateToNFA(concatExpand(r))._2)
       throw new FSAError("failed to parse regex")
     if (stack isEmpty) throw new FSAError("no NFA found")
@@ -401,5 +410,6 @@ object expressions {
     logger.atDebug.addArgument(d.getStates).log("included states: {}")
     for(s <- d.getStates) yield {logger.atTrace.addKeyValue("state",s).addKeyValue("accepting",s.accepting).log("")}
     d
+    }
   }
 }
