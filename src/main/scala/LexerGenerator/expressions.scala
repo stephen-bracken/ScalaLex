@@ -76,7 +76,9 @@ object expressions {
           val xs = s.tail.tail
           val b1 = isInput(c1) || o.contains(c1)
           val b2 = isInput(c2) || c2 == ')'
-          if(b1 && b2) c1 :: backspace :: checkchars(c2 :: xs)
+          if(b1 && b2) { 
+           logger.atTrace.addKeyValue("left",c1).addKeyValue("right",c2).log("adding concatenation between chars");
+           c1 :: backspace :: checkchars(c2 :: xs)}
           else c1 :: checkchars(s.tail)
         }
         else s
