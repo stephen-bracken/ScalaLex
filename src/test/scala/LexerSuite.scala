@@ -40,6 +40,12 @@ class LexerSuite {
     }
 
     //###### DFA Construction ######
+    @Test def `DFAEmpty`:Unit = {
+        println("#########DFAEmpty#########")
+        val dfa = expressions.translateRegex("")
+        assert(dfa.eval(""),"Empty")
+    }
+
     @Test def `DFAConcat`:Unit = {
         println("#########DFAConcat#########")
         val seq1 = "a"
