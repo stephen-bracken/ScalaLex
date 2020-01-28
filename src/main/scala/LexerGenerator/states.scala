@@ -7,7 +7,7 @@ import org.slf4j.Logger
 class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
   //NFA Evaluation is not implemented but NFA and NFAStates are used in construction of 
   @deprecated("evaluation of NFAs is not implemented","")
-  override def eval(s: String): Boolean =  {logger.atError.log("attempted evaluation on NFA");false}
+  override def eval(s: String): Boolean =  {logger.error("attempted evaluation on NFA");false}
 }
 
 /** Represents a Deterministic Finite State Automata */
@@ -17,11 +17,11 @@ class DFA(s: List[DFAState])
       def e(s:String,st:DFAState):Boolean = {
         if (s isEmpty) st.accepting
         else {
-          logger.atTrace.addKeyValue("symbol",s.head).addKeyValue("state",st).log("evaluating symbol")
+          logger.trace("evaluating symbol "+s.head+" in "+st)
           if (!(st.transitions.exists(x => x._1 == s.head))) false
           else {
             val next = st.nextState(s.head)
-            logger.atTrace.addArgument(next).log("transition to {}")
+            logger.trace("transition to "+next)
             e(s.tail,next)
           }
         }
@@ -137,12 +137,11 @@ abstract class State(val id:Int){
   /** yields the possible state transitions from a given character */
   def transition(c: Char):Set[S] = transitions(c)
   def addTransition(c: Char, s:S) = {
-    logger.atTrace
-      .addArgument((c match {
+    logger.trace("adding transition from "+this+" to "+s+" via '"+(c match {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
           case x        => x
-        })).addKeyValue("state",this).addKeyValue("destination",s).log("adding transition '{}'")
+        })+'\'')
     if(transitions exists(x => x._1 == c)){
       transitions = transitions.updated(c, transitions(c).union(Set(s)))
     }
