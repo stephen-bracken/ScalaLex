@@ -156,4 +156,7 @@ abstract class State(val id:Int){
   override def equals(x: Any): Boolean = id == x.asInstanceOf[S].id
 }
 
-class FSAError(msg: String) extends Error(msg)
+class FSAError(msg: String) extends Error(msg){
+  val logger = LoggerFactory.getLogger(this.getClass)
+  logger.error(msg)
+}
