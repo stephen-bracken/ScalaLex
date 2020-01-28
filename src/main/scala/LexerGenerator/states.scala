@@ -1,7 +1,6 @@
 package lexerGenerator
 import scala.language.postfixOps
-import org.slf4j.LoggerFactory
-import org.slf4j.Logger
+import com.typesafe.scalalogging.LazyLogging
 
 /** Represents a Non-deterministic Finite State Automata */
 class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
@@ -36,8 +35,7 @@ class DFA(s: List[DFAState])
   *
   * @param s List of states in order
   */
-abstract class FSA[A<:State](s:List[A]) {
-  val logger = LoggerFactory.getLogger(this.getClass)
+abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
   /** the set of states in this FSA */
   var states:List[A] = s
   /** the set of accepting states in this FSA */
@@ -126,8 +124,7 @@ class DFAState(n:Set[NFAState] = Set(), id: Int) extends State(id){
   }
 }
 
-abstract class State(val id:Int){
-  val logger = LoggerFactory.getLogger(this.getClass)
+abstract class State(val id:Int) extends LazyLogging{
   type S <: State
   /** indicates whether or not this state is an accepting state in the FSA */
   var accepting: Boolean
@@ -155,7 +152,6 @@ abstract class State(val id:Int){
   override def equals(x: Any): Boolean = id == x.asInstanceOf[S].id
 }
 
-class FSAError(msg: String) extends Error(msg){
-  val logger = LoggerFactory.getLogger(this.getClass)
+class FSAError(msg: String) extends Error(msg) with LazyLogging{
   logger.error(msg)
 }

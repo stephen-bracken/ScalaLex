@@ -2,17 +2,17 @@ package lexerGenerator
 import scala.util.Try
 import scala.collection.immutable.Nil
 import scala.language.postfixOps
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.util.StatusPrinter
+import com.typesafe.scalalogging.LazyLogging
 
 /**Thompson construction algorithm and subset construction algorithm implemented to produce a DFA from a given regular expression string
  */
-object expressions {
+object expressions extends LazyLogging {
 
 
-    val logger = LoggerFactory.getLogger(expressions.getClass())
+    //val logger = Logger(LoggerFactory.getLogger(expressions.getClass()))
     //###### Character evaluation ######
     // assume SLF4J is bound to logback in the current environment
     val lc:LoggerContext = LoggerFactory.getILoggerFactory().asInstanceOf[LoggerContext]
@@ -411,7 +411,7 @@ object expressions {
       )
     val d = dTranslate(nfa initialState)
     logger.debug("included states: "+d.getStates)
-    for(s <- d.getStates) yield {logger.trace("State: " + s + ", accepting: " + s.accepting)}
+    logger.whenTraceEnabled{for(s <- d.getStates) yield {logger.trace(s"State: " + s + ", accepting: " + s.accepting)}}
     d
     }
   }
