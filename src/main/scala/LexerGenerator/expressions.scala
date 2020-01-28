@@ -11,34 +11,35 @@ import com.typesafe.scalalogging.LazyLogging
  */
 object expressions extends LazyLogging {
 
+  //###### Logging ######
+  //val logger = Logger(LoggerFactory.getLogger(expressions.getClass()))
 
-    //val logger = Logger(LoggerFactory.getLogger(expressions.getClass()))
-    //###### Character evaluation ######
-    // assume SLF4J is bound to logback in the current environment
-    val lc:LoggerContext = LoggerFactory.getILoggerFactory().asInstanceOf[LoggerContext]
-    // print logback's internal status
-    StatusPrinter.print(lc)
-    val epsilon: Char = '\u0000'
-    val backspace: Char = '\u0008'
-    private val illegal: Set[Char] = Set(epsilon, backspace)
-    private val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')')
+  // assume SLF4J is bound to logback in the current environment
+  val lc:LoggerContext = LoggerFactory.getILoggerFactory().asInstanceOf[LoggerContext]
+  // print logback's internal status
+  StatusPrinter.print(lc)
+  //###### Character evaluation ######
+  val epsilon: Char = '\u0000'
+  val backspace: Char = '\u0008'
+  private val illegal: Set[Char] = Set(epsilon, backspace)
+  private val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')')
 
-    /** checks if a character is an input or not */
-    def isInput(c: Char) = !isOperator(c)
-    /** checks if a character is in the set of operators or not */
-    def isOperator(c: Char) = operators.contains(c)
-    /** enforces operator precedence on the stack */
-    def precedence(l: Char, r: Char) = {
-      logger.trace("-- precedence '" + l + "' '" + r + '\'')
-      if (l == r) true
-      else if (l == '*') false
-      else if (r == '*') true
-      else if (l == backspace) false
-      else if (r == backspace) true
-      else if (l == '|') false
-      else true
-    }
-    
+  /** checks if a character is an input or not */
+  def isInput(c: Char) = !isOperator(c)
+  /** checks if a character is in the set of operators or not */
+  def isOperator(c: Char) = operators.contains(c)
+  /** enforces operator precedence on the stack */
+  def precedence(l: Char, r: Char) = {
+    logger.trace("-- precedence '" + l + "' '" + r + '\'')
+    if (l == r) true
+    else if (l == '*') false
+    else if (r == '*') true
+    else if (l == backspace) false
+    else if (r == backspace) true
+    else if (l == '|') false
+    else true
+  }
+  
   //def program: Parser[Any] = definitions ~ "%%" ~ rules ~ "%%" ~ routines
   /**
     * Translates a Regular Expression into a DFA implementation
