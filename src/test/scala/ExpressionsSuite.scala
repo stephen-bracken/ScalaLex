@@ -114,6 +114,18 @@ class ExpressionsSuite {
         assert(!dfa.eval(seq3),"Seq3")
     }
 
+    //###### DFA Union tests ######
+    @Ignore @Test def `DFADoubleUnion`:Unit = {
+        val seq1 = "a"
+        val seq2 = "b"
+        val seq3 = "c"
+        val dfa = expressions.translateRegex("a|b|c")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+    }
+
+    //###### DFA Bracketing tests ######
     @Ignore @Test def `DFABracket`:Unit = {
         println("#########DFABracket#########")
         val seq1 = "abcd"
