@@ -30,7 +30,7 @@ object expressions extends LazyLogging {
   def isOperator(c: Char) = operators.contains(c)
   /** enforces operator precedence on the stack */
   def precedence(l: Char, r: Char) = {
-    logger.trace("-- precedence '" + l + "' '" + r + '\'')
+    logger.trace("precedence '" + l + "' '" + r + '\'')
     if (l == r) true
     else if (l == '*') false
     else if (r == '*') true
@@ -48,7 +48,7 @@ object expressions extends LazyLogging {
     * @return DFA of r
     */
   def translateRegex(r: String) = {
-    logger.info("Translating regular expression \""+r+"\"")
+    logger.info("Translating regular expression \""+r+"\" to NFA")
     //###### Setup ######
     var stack: List[NFA] = List()
     var opStack: List[Char] = List()
@@ -83,7 +83,7 @@ object expressions extends LazyLogging {
           val b1 = isInput(c1) || o.contains(c1)
           val b2 = isInput(c2) || c2 == ')'
           if(b1 && b2) { 
-           logger.trace("adding concatenation between chars '" + c1 + "' and '" + c2 + '\'');
+           logger.trace("adding concatenation between '" + c1 + "' and '" + c2 + '\'');
            c1 :: backspace :: checkchars(c2 :: xs)}
           else c1 :: checkchars(s.tail)
         }
@@ -102,11 +102,11 @@ object expressions extends LazyLogging {
     def translateToNFA(s: List[Char]): (NFA, Boolean) = {
       /**translates a single character into an NFA and adds it to the stack.*/
       def translateAction(c: Char): Boolean = {
-        logger.debug("## translating '" + input(c) + "' ##")
+        logger.debug("translating '" + input(c) + '\'')
         //TODO: fix bracketing
         /** handles parentheses translation */
         def parenth: Boolean = {
-          logger.trace("-- parenth --")
+          logger.trace("parenth")
           while(opStack.head != '('){
             if(!eval) false
           }
@@ -117,7 +117,7 @@ object expressions extends LazyLogging {
         if (isInput(c)) {
           push(c); true
         } else if (opStack.isEmpty) {
-          logger.trace("-- insert operator '"+input(c)+"' --")
+          logger.trace("insert operator '"+input(c)+'\'')
           opStack = c :: opStack; true
         } else if (c == '(') {
           logger.trace("adding ( to stack")
@@ -157,7 +157,7 @@ object expressions extends LazyLogging {
       * @param c character to add
       */
     def push(c: Char): Unit = {
-      logger.trace("-- Push '"+input(c)+"' --")
+      logger.trace("Push '"+input(c)+'\'')
       inputSet = inputSet.union(Set(c))
       val s0 = new NFAState(nextId)
       val s1 = new NFAState(nextId + 1)
@@ -171,7 +171,7 @@ object expressions extends LazyLogging {
       * @return (NFA or null,success value)
       */
     def pop: (NFA, Boolean) = {
-      logger.trace("-- Pop --")
+      logger.trace("Pop")
       if (stack isEmpty) (null, false)
       else {
         val p = stack.head
@@ -191,7 +191,7 @@ object expressions extends LazyLogging {
       if (opStack isEmpty) false
       else {
         val o = opStack.head
-        logger.trace("-- eval '"+input(o)+"' --")
+        logger.trace("eval '"+input(o)+'\'')
         opStack = opStack.tail
         o match {
           case '*'      => star
@@ -211,7 +211,7 @@ object expressions extends LazyLogging {
       * @return success value
       */
     def concat: Boolean = {
-      logger.trace("-- concat --")
+      logger.trace("concat")
       val (b, t1) = pop
       val (a, t2) = pop
       if (!t1 || !t2) false
@@ -236,7 +236,7 @@ object expressions extends LazyLogging {
       */
     def star: Boolean = {
       //TODO: Work out why * doesn't accept no input
-      logger.trace("-- star --")
+      logger.trace("star")
       //pop one result off the stack
       val (a, t) = pop
       if (!t) false
@@ -269,7 +269,7 @@ object expressions extends LazyLogging {
       * @return success value
       */
     def union: Boolean = {
-      logger.trace("-- union --")
+      logger.trace("union")
       //pop two sub-results A and B
       val (b, t1) = pop
       val (a, t2) = pop
@@ -333,7 +333,7 @@ object expressions extends LazyLogging {
     def dTranslate(s: NFAState): DFA = {
       var dfaStates: List[DFAState] = List()
       nextId = 0
-      logger.debug("dTranslate")
+      logger.debug("Translating NFA to DFA")
       //starting state of DFA is epsilon closure of first state of NFA
       val dfaStartState = new DFAState(epsilonClosure(Set(s)),nextId)
       var unmarked = List(dfaStartState)
@@ -346,7 +346,7 @@ object expressions extends LazyLogging {
         for{c <- inputSet
             //if processing.transitions.contains(c)
             } yield {
-              logger.trace("processing epsilon closure of "+processing+"on '"+c + '\'')
+              logger.trace("processing epsilon closure of "+processing+" on '"+c + '\'')
               val move = processing nfaMove c
               val closure = epsilonClosure(move)
               if(!(result exists(x => x.nfaStates == closure)))

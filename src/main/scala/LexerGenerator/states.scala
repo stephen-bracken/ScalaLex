@@ -25,6 +25,7 @@ class DFA(s: List[DFAState])
           }
         }
       }
+      logger.debug("DFA evaluating string " + s)
       e(s,initialState)
     }
   //for (s <- states) yield { s removeEpsilon }
