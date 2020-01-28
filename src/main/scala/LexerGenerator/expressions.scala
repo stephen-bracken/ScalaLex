@@ -4,6 +4,8 @@ import scala.collection.immutable.Nil
 import scala.language.postfixOps
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.core.util.StatusPrinter
 
 /**Thompson construction algorithm and subset construction algorithm implemented to produce a DFA from a given regular expression string
  */
@@ -12,11 +14,14 @@ object expressions {
 
     val logger = LoggerFactory.getLogger(expressions.getClass())
     //###### Character evaluation ######
-
+    // assume SLF4J is bound to logback in the current environment
+    val lc:LoggerContext = LoggerFactory.getILoggerFactory().asInstanceOf[LoggerContext]
+    // print logback's internal status
+    StatusPrinter.print(lc)
     val epsilon: Char = '\u0000'
     val backspace: Char = '\u0008'
-    val illegal: Set[Char] = Set(epsilon, backspace)
-    val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')')
+    private val illegal: Set[Char] = Set(epsilon, backspace)
+    private val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')')
 
     /** checks if a character is an input or not */
     def isInput(c: Char) = !isOperator(c)

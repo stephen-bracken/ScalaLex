@@ -2,10 +2,13 @@ name := "Year3Project"
 
 version := "1.0"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.10"
 
 libraryDependencies ++= Seq(
-    "org.slf4j"%"slf4j-simple"%"2.0.0-alpha1",
+    "org.slf4j"%"slf4j-api"%"1.7.25",
+    "ch.qos.logback"%"logback-classic"%"1.2.3",
+    "ch.qos.logback"%"logback-core"%"1.2.3",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
     "com.novocode" % "junit-interface" % "0.11" % Test
