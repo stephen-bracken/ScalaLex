@@ -320,7 +320,7 @@ object expressions extends LazyLogging {
         val epsilons = fst transition(epsilon)
         for {u <- epsilons if !result.contains(u)} yield {result = u::result; unprocessed = u::unprocessed}
       }
-      //println(result)
+      logger.trace(result.toString)
       result.toSet
     }
 
