@@ -19,9 +19,13 @@ object expressions extends LazyLogging {
   // print logback's internal status
   StatusPrinter.print(lc)
   //###### Character evaluation ######
+  /** unicode for an empty character - used to represent an epsilon transition*/
   val epsilon: Char = '\u0000'
+  /** unicode for a backspace character - used to represent concatenation*/
   val backspace: Char = '\u0008'
+  /** the characters that are not allowed in the input string*/
   private val illegal: Set[Char] = Set(epsilon, backspace)
+  /** chars that represent regex operators */
   private val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')')
 
   /** checks if a character is an input or not */
