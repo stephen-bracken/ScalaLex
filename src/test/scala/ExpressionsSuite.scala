@@ -139,5 +139,17 @@ class ExpressionsSuite {
         assert(!dfa.eval(seq2),"Seq2")
     }
 
+    @Test def `DFAStarBracket`:Unit = {
+        println("#########DFAStarBracket#########")
+        val seq1 = "abcd"
+        val seq2 = "abcdabcd"
+        val seq3 = "abcdefgh"
+        val dfa = expressions.translateRegex("(abcd)*")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(!dfa.eval(seq3),"Seq3")
+        assert(dfa.eval(""),"Empty")
+    }
+
     @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
 }
