@@ -98,9 +98,13 @@ class ExpressionsSuite {
         println("#########DFAStarUnion#########")
         val seq1 = "aaa"
         val seq2 = "aa"
+        val seq3 = "b"
+        val seq4 = "bb"
         val dfa = expressions.translateRegex("b|a*")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+        assert(!dfa.eval(seq4),"Seq4")
     }
 
     @Ignore @Test def `DFADoubleStar`:Unit = {
