@@ -3,18 +3,18 @@ package lexerGenerator
 import org.junit._
 import org.junit.Assert.assertEquals
 
-class ExpressionsSuite {
+class regexParserSuite {
 
     //###### Char tests ######
     @Test def `OperatorPrecedence`:Unit = {
         println("#########OperatorPrecedence#########")
-        assert(!expressions.precedence(expressions.backspace,'('))
+        assert(!regexParser.precedence(regexParser.backspace,'('))
     }
 
     //###### DFA Construction ######
     @Test def `DFAEmpty`:Unit = {
         println("#########DFAEmpty#########")
-        val dfa = expressions.translateRegex("")
+        val dfa = regexParser.translateRegex("")
         assert(dfa.eval(""),"Empty")
         assert(!dfa.eval("a"),"Not Empty")
     }
@@ -24,7 +24,7 @@ class ExpressionsSuite {
         val seq1 = "a"
         val seq2 = "ba"
         val seq3 = "abb"
-        val dfa = expressions.translateRegex("abb")
+        val dfa = regexParser.translateRegex("abb")
         assert(!dfa.eval(seq1),"Seq1")
         assert(!dfa.eval(seq2),"Seq2")
         assert(dfa.eval(seq3),"Seq3")
@@ -33,7 +33,7 @@ class ExpressionsSuite {
     @Test def `DFAConcat2`:Unit = {
         println("#########DFAConcat2#########")
         val seq = "hello"
-        val dfa = expressions.translateRegex("hello")
+        val dfa = regexParser.translateRegex("hello")
         assert(dfa.eval(seq),"Seq hello")
     }
 
@@ -42,7 +42,7 @@ class ExpressionsSuite {
         val seq1 = "a"
         val seq2 = "b"
         val seq3 = "c"
-        val dfa = expressions.translateRegex("a|b")
+        val dfa = regexParser.translateRegex("a|b")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(!dfa.eval(seq3),"Seq3")
@@ -56,7 +56,7 @@ class ExpressionsSuite {
         val seq3 = "aaa"
         val seq4 = "aaaa"
         val seq5 = "aab"
-        val dfa = expressions.translateRegex("a*")
+        val dfa = regexParser.translateRegex("a*")
         assert(dfa.eval(""),"Empty")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
@@ -72,7 +72,7 @@ class ExpressionsSuite {
         val seq3 = "aaa"
         val seq4 = "aaaa"
         val seq5 = "aab"
-        val dfa = expressions.translateRegex("a+")
+        val dfa = regexParser.translateRegex("a+")
         assert(!dfa.eval(""),"Empty")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
@@ -87,7 +87,7 @@ class ExpressionsSuite {
         val seq2 = "ab"
         val seq3 = "abb"
         val seq4 = "abc"
-        val dfa = expressions.translateRegex("ab*")
+        val dfa = regexParser.translateRegex("ab*")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(dfa.eval(seq3),"Seq3")
@@ -100,7 +100,7 @@ class ExpressionsSuite {
         val seq2 = "aa"
         val seq3 = "b"
         val seq4 = "bb"
-        val dfa = expressions.translateRegex("b|a*")
+        val dfa = regexParser.translateRegex("b|a*")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(dfa.eval(seq3),"Seq3")
@@ -112,7 +112,7 @@ class ExpressionsSuite {
         val seq1 = "aaabbb"
         val seq2 = "aabb"
         val seq3 = "abc"
-        val dfa = expressions.translateRegex("a*b*")
+        val dfa = regexParser.translateRegex("a*b*")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(!dfa.eval(seq3),"Seq3")
@@ -123,7 +123,7 @@ class ExpressionsSuite {
         val seq1 = "a"
         val seq2 = "b"
         val seq3 = "c"
-        val dfa = expressions.translateRegex("a|b|c")
+        val dfa = regexParser.translateRegex("a|b|c")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(dfa.eval(seq3),"Seq3")
@@ -134,7 +134,7 @@ class ExpressionsSuite {
         println("#########DFABracket#########")
         val seq1 = "abcd"
         val seq2 = "(ab)(cd)"
-        val dfa = expressions.translateRegex("(ab)(cd)")
+        val dfa = regexParser.translateRegex("(ab)(cd)")
         assert(dfa.eval(seq1),"Seq1")
         assert(!dfa.eval(seq2),"Seq2")
     }
@@ -144,7 +144,7 @@ class ExpressionsSuite {
         val seq1 = "abcd"
         val seq2 = "abcdabcd"
         val seq3 = "abcdefgh"
-        val dfa = expressions.translateRegex("(abcd)*")
+        val dfa = regexParser.translateRegex("(abcd)*")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(!dfa.eval(seq3),"Seq3")
@@ -156,7 +156,7 @@ class ExpressionsSuite {
         val seq1 = "abcd"
         val seq2 = "efgh"
         val seq3 = "abcdefgh"
-        val dfa = expressions.translateRegex("(abcd)|(efgh)")
+        val dfa = regexParser.translateRegex("(abcd)|(efgh)")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(!dfa.eval(seq3),"Seq3")
@@ -168,7 +168,7 @@ class ExpressionsSuite {
         val seq2 = "efgh"
         val seq3 = "abcdefgh"
         val seq4 = "efghefgh"
-        val dfa = expressions.translateRegex("(abcd)|(efgh)*")
+        val dfa = regexParser.translateRegex("(abcd)|(efgh)*")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
         assert(!dfa.eval(seq3),"Seq3")

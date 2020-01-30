@@ -7,9 +7,9 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.util.StatusPrinter
 import com.typesafe.scalalogging.LazyLogging
 
-/**Thompson construction algorithm and subset construction algorithm implemented to produce a DFA from a given regular expression string
+/**Thompson construction and subset construction implemented using shunting yard algorithm to produce a DFA from a given regular expression string
  */
-object expressions extends LazyLogging {
+object regexParser extends LazyLogging {
 
   //###### Logging ######
   //val logger = Logger(LoggerFactory.getLogger(expressions.getClass()))
