@@ -365,12 +365,13 @@ object expressions extends LazyLogging {
               {
                 nextId += 1
                 val state = new DFAState(closure,nextId)
-                // println("adding state " + state.id + " to result")
+                logger.trace("adding " + state + " to result")
                 processing.addTransition(c,state)
                 result = state :: result
                 unmarked = state :: unmarked
               }
               else{
+                logger.trace("Subset already exists")
                 val res = result.head
                 res.addTransition(c,processing)
               }
