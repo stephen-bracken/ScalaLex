@@ -126,7 +126,7 @@ class ExpressionsSuite {
     }
 
     //###### DFA Bracketing tests ######
-    @Ignore @Test def `DFABracket`:Unit = {
+    @Test def `DFABracket`:Unit = {
         println("#########DFABracket#########")
         val seq1 = "abcd"
         val seq2 = "(ab)(cd)"

@@ -81,7 +81,7 @@ object expressions extends LazyLogging {
           val c2 = s.tail.head
           val xs = s.tail.tail
           val b1 = isInput(c1) || o.contains(c1)
-          val b2 = isInput(c2) || c2 == ')'
+          val b2 = isInput(c2) || c2 == '('
           if(b1 && b2) { 
            logger.trace("adding concatenation between '" + c1 + "' and '" + c2 + '\'');
            c1 :: backspace :: checkchars(c2 :: xs)}
@@ -100,18 +100,21 @@ object expressions extends LazyLogging {
       * @return (NFA of s or null,success value)
       */
     def translateToNFA(s: List[Char]): (NFA, Boolean) = {
-      /**translates a single character into an NFA and adds it to the stack.*/
+      /**translates a single character into a NFA using the shunting yard algorithm and adds it to the stack.*/
       def translateAction(c: Char): Boolean = {
         logger.debug("translating '" + input(c) + '\'')
         //TODO: fix bracketing
         /** handles parentheses translation */
         def parenth: Boolean = {
           logger.trace("parenth")
-          while(opStack.head != '('){
-            if(!eval) false
+          if(opStack.isEmpty) throw new FSAError("mismatched brackets")
+          else{
+            while(opStack.head != '('){
+              if(!eval) false
+            }
+            opStack = opStack.tail
+            true
           }
-          opStack = opStack.tail
-          true
         }
 
         if (isInput(c)) {
