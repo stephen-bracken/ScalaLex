@@ -94,7 +94,7 @@ class ExpressionsSuite {
         assert(!dfa.eval(seq4),"Seq4")
     }
 
-    @Ignore @Test def `DFAStarUnion`:Unit = {
+    @Test def `DFAStarUnion`:Unit = {
         println("#########DFAStarUnion#########")
         val seq1 = "aaa"
         val seq2 = "aa"
@@ -107,7 +107,7 @@ class ExpressionsSuite {
         assert(!dfa.eval(seq4),"Seq4")
     }
 
-    @Ignore @Test def `DFADoubleStar`:Unit = {
+    @Test def `DFADoubleStar`:Unit = {
         println("#########DFADoubleStar#########")
         val seq1 = "aaabbb"
         val seq2 = "aabb"

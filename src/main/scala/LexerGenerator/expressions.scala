@@ -360,6 +360,7 @@ object expressions extends LazyLogging {
             } yield {
               logger.trace("processing epsilon closure of "+processing+" on '"+c + '\'')
               val move = processing nfaMove c
+              if(!move.isEmpty){
               val closure = epsilonClosure(move)
               if(!(result exists(x => x.nfaStates == closure)))
               {
@@ -372,10 +373,15 @@ object expressions extends LazyLogging {
               }
               else{
                 logger.trace("Subset already exists")
-                val res = result.head
-                res.addTransition(c,processing)
+                val res = result.find(x => x.nfaStates == closure) match {
+                  case None => throw new FSAError("could not find matched DFAState for epsilon closure")
+                  case Some(value) => value
+                }
+                processing.addTransition(c,res)
               }
             }
+            else{logger.trace("Transition not found")}
+          }
       }
       new DFA(result)
     }
