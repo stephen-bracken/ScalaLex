@@ -1,9 +1,8 @@
 package lexerGenerator
-import scala.util.parsing.combinator.RegexParsers
 
-trait rule extends RegexParsers{
-    val rule: Parser[Any]
-    def parse = {
-        
-    }
+abstract class rule(r: String, t:Token, a:Action){
+    private val dfa:DFA = regexParser.translateRegex(r)
+    def parse(s: String) = dfa.eval(s)
 }
+
+abstract class Action{}
