@@ -81,7 +81,7 @@ class ExpressionsSuite {
         assert(!dfa.eval(seq5),"Seq5")
     }
 
-    @Ignore @Test def `DFAConcatStar`:Unit = {
+    @Test def `DFAConcatStar`:Unit = {
         println("#########DFAConcatStar#########")
         val seq1 = "a"
         val seq2 = "ab"
@@ -115,7 +115,7 @@ class ExpressionsSuite {
     }
 
     //###### DFA Union tests ######
-    @Ignore @Test def `DFADoubleUnion`:Unit = {
+    @Test def `DFADoubleUnion`:Unit = {
         val seq1 = "a"
         val seq2 = "b"
         val seq3 = "c"

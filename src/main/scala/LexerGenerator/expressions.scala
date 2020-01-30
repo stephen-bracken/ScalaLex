@@ -318,7 +318,7 @@ object expressions extends LazyLogging {
       var result = t.toList
       var unprocessed = t.toList
       while(!(unprocessed isEmpty)){
-        val fst = t.head
+        val fst = unprocessed.head
         unprocessed = unprocessed tail
         val epsilons = fst transition(epsilon)
         for {u <- epsilons if !result.contains(u)} yield {result = u::result; unprocessed = u::unprocessed}
