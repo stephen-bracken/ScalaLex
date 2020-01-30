@@ -5,12 +5,6 @@ import org.junit.Assert.assertEquals
 
 class regexParserSuite {
 
-    //###### Char tests ######
-    @Test def `OperatorPrecedence`:Unit = {
-        println("#########OperatorPrecedence#########")
-        assert(!regexParser.precedence(regexParser.backspace,'('))
-    }
-
     //###### DFA Construction ######
     @Test def `DFAEmpty`:Unit = {
         println("#########DFAEmpty#########")
