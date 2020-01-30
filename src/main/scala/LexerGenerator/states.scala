@@ -103,7 +103,7 @@ class DFAState(n:Set[NFAState] = Set(), id: Int) extends State(id){
   def nextState(c: Char): DFAState = transition(c).head
   /** sets the transition from this state via c to s */
   override def addTransition(c: Char, s:DFAState) = {
-    /*println(
+    logger.trace(
       "adding DFA transition (" +
         (c match {
           case '\u0000' => "epsilon"
@@ -111,7 +111,7 @@ class DFAState(n:Set[NFAState] = Set(), id: Int) extends State(id){
           case x        => x
         })
         + ") from state " + id + " to state " + s.id
-    )*/
+    )
     transitions = transitions.updated(c,Set(s))
   }
   /** gets all of the visible NFAStates using a single transition on a character input*/
