@@ -15,25 +15,25 @@ object regexParser extends LazyLogging {
   //val logger = Logger(LoggerFactory.getLogger(expressions.getClass()))
 
   // assume SLF4J is bound to logback in the current environment
-  val lc:LoggerContext = LoggerFactory.getILoggerFactory().asInstanceOf[LoggerContext]
+  private val lc:LoggerContext = LoggerFactory.getILoggerFactory().asInstanceOf[LoggerContext]
   // print logback's internal status
   StatusPrinter.print(lc)
   //###### Character evaluation ######
   /** unicode for an empty character - used to represent an epsilon transition*/
-  val epsilon: Char = '\u0000'
+  private val epsilon: Char = '\u0000'
   /** unicode for a backspace character - used to represent concatenation*/
-  val backspace: Char = '\u0008'
+  private val backspace: Char = '\u0008'
   /** the characters that are not allowed in the input string*/
   private val illegal: Set[Char] = Set(epsilon, backspace)
   /** chars that represent regex operators */
   private val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')')
 
   /** checks if a character is an input or not */
-  def isInput(c: Char) = !isOperator(c)
+  private def isInput(c: Char) = !isOperator(c)
   /** checks if a character is in the set of operators or not */
-  def isOperator(c: Char) = operators.contains(c)
+  private def isOperator(c: Char) = operators.contains(c)
   /** enforces operator precedence on the stack */
-  def precedence(l: Char, r: Char) = {
+  private def precedence(l: Char, r: Char) = {
     logger.trace("precedence '" + l + "' '" + r + '\'')
     if (l == r) true
     else if (l == '*') false
