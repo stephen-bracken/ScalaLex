@@ -54,6 +54,7 @@ object expressions extends LazyLogging {
     var opStack: List[Char] = List()
     var nextId: Int = 0
     var inputSet:Set[Char] = Set()
+    var previous:Char = backspace
     def input(c:Char) = c match {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
@@ -118,7 +119,7 @@ object expressions extends LazyLogging {
         }
 
         if (isInput(c)) {
-          push(c); true
+          push(c); previous = c; true
         } else if (opStack.isEmpty) {
           logger.trace("insert operator '"+input(c)+'\'')
           opStack = c :: opStack; true
@@ -199,7 +200,7 @@ object expressions extends LazyLogging {
         o match {
           case '*'      => star
           case '|'      => union
-          case '+'      => concat; star
+          case '+'      => plus
           case '\u0008' => concat
           case _        => false
         }
@@ -264,6 +265,14 @@ object expressions extends LazyLogging {
       }
     }
 
+    def plus: Boolean = {
+      if(previous == backspace) false
+      else
+      push(previous)
+      star
+      concat
+      true
+    }
     /**
       * translates union (|) into an NFA using Thompson construction 
       * and adds the result to the stack. 

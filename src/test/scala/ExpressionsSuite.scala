@@ -65,7 +65,7 @@ class ExpressionsSuite {
         assert(!dfa.eval(seq5),"Seq5")
     }
 
-    @Ignore @Test def `DFAPlus`:Unit = {
+    @Test def `DFAPlus`:Unit = {
         println("#########DFAStar#########")
         val seq1 = "a"
         val seq2 = "aa"
