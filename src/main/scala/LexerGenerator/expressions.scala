@@ -112,7 +112,7 @@ object expressions extends LazyLogging {
         /** handles parentheses translation */
         def parenth: Boolean = {
           logger.trace("parenth")
-          if(opStack.isEmpty) throw new FSAError("mismatched brackets")
+          if(opStack.isEmpty) throw new RegexError("mismatched brackets",r)
           else{
             while(opStack.head != '('){
               if(!eval) false
@@ -144,6 +144,7 @@ object expressions extends LazyLogging {
       if (s.isEmpty) {
         //eval remaining operators
         if ((for (op <- opStack) yield eval).exists(x => x == false)) false
+        if(stack.isEmpty) throw new RegexError("Translation ended with empty stack",r)
         val fsa = stack.head
         //add the final state as an accepting state
         logger.debug("accepting NFA state: " + fsa.finalState)
@@ -378,7 +379,7 @@ object expressions extends LazyLogging {
               else{
                 logger.trace("Subset already exists")
                 val res = result.find(x => x.nfaStates == closure) match {
-                  case None => throw new FSAError("could not find matched DFAState for epsilon closure")
+                  case None => throw new RegexError("could not find matched DFAState for epsilon closure",r)
                   case Some(value) => value
                 }
                 processing.addTransition(c,res)
@@ -422,21 +423,25 @@ object expressions extends LazyLogging {
     }
     else {
     if (!translateToNFA(concatExpand(r))._2)
-      throw new FSAError("failed to parse regex")
-    if (stack isEmpty) throw new FSAError("no NFA found")
+      throw new RegexError("failed to parse regex",r)
+    if (stack isEmpty) throw new RegexError("no NFA found",r)
     val nfa = stack.head
     if (!stack.tail.isEmpty)
-      throw new FSAError(
+      throw new RegexError(
         "unresolved states: " +
           (for {
             f <- stack.tail
             s <- f.getStates
           } yield s.id)
-      )
+          ,r)
     val d = dTranslate(nfa initialState)
     logger.debug("included states: "+d.getStates)
     logger.whenTraceEnabled{for(s <- d.getStates) yield {logger.trace(s"State: " + s + ", accepting: " + s.accepting)}}
     d
     }
   }
+}
+
+class RegexError(msg: String,input: String) extends Error("Failed to translate Regular Expression: " + msg + ", input:\"" + input + '"') with LazyLogging{
+  logger.error("Failed to translate Regular Expression: " + msg + ", input:\"" + input + '"')
 }
