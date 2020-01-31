@@ -74,12 +74,7 @@ object regexParser extends LazyLogging {
      */
     def concatExpand(s: String): List[Char] = {
       val o:List[Char] = List('*','+',')')
-      /**
-        * checks for brackets or other operators
-        *
-        * @param s
-        * @return 
-        */
+      /** checks for brackets or other operators */
       def checkchars(s: List[Char]):List[Char] = {
         if(s.length > 1){
           val c1 = s.head
