@@ -60,7 +60,7 @@ class regexParserSuite {
     }
 
     @Test def `DFAPlus`:Unit = {
-        println("#########DFAStar#########")
+        println("#########DFAPlus#########")
         val seq1 = "a"
         val seq2 = "aa"
         val seq3 = "aaa"
