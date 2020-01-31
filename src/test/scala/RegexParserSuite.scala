@@ -169,5 +169,21 @@ class regexParserSuite {
         assert(dfa.eval(seq4),"Seq4")
     }
 
+    //###### Error tests ######
+    @Test def `DFABadUnion`:Unit = {
+        var b = false
+        println("#########DFABadUnion#########")
+        try{
+            regexParser.translateRegex("a*|*")
+        }
+        catch{
+            case e: Throwable => {
+                val ex = new RegexError("a","b")
+                assert(e.getClass==ex.getClass(),"getClass")
+                b = true
+            }
+        }
+        assert(b,"Catch")
+    }
     @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
 }
