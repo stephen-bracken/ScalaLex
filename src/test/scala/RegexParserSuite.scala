@@ -197,6 +197,15 @@ class regexParserSuite {
         assert(dfa.eval(seq2),"Seq2")
     }
 
+    @Test def `DFADoubleBackslash`:Unit = {
+        println("#########DFABackslashBrackets#########")
+        val seq1 = "\\"
+        val seq2 = "\\\\"
+        val dfa = regexParser.translateRegex("\\\\")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(!dfa.eval(seq2),"Seq2")
+    }
+
     //###### Char range tests ######
     @Test def `DFARange`:Unit = {
         println("#########DFARange#########")
