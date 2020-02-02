@@ -189,11 +189,20 @@ class regexParserSuite {
     }
 
     @Test def `DFABackslashBrackets`:Unit = {
+        println("#########DFABackslashBrackets#########")
         val seq1 = "abc"
         val seq2 = "a(b)c"
         val dfa = regexParser.translateRegex("a\\(b\\)c")
         assert(!dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
+    }
+
+    //###### Char range tests ######
+    @Test def `DFARange`:Unit = {
+        println("#########DFARange#########")
+        val r = 0 to 9
+        val dfa = regexParser.translateRegex("[0-9]")
+        for(i <- r) yield {assert(dfa.eval(i.toString),i.toString)}
     }
 
     //###### Error tests ######

@@ -73,13 +73,49 @@ object regexParser extends LazyLogging {
         }
 
     //###### Preprocessing ######
+    /** Expands brace expressions into union versions */
+    def braceExpand(s: String): List[Char] = {
+      var previous = backspace
+      /** creates a union operator between each character in the string */
+      def createUnions(s: List[Char]):List[Char] = {
+        if(s.isEmpty) List()
+        else if(s.length == 1) List(s.head)
+        else{
+        if(s.head == '-' && previous != '\\') {
+          val n = s.tail.head
+          logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
+          createUnions(asciirun(previous,n) ++ s.tail.tail)
+        }
+        else{
+        previous = s.head
+        logger.trace("adding union after '" + previous + '\'')
+        s.head :: '|' :: createUnions(s.tail)
+        }
+      }
+      }
+      /** converts a character range into it's list representation */
+      def asciirun(start: Char, end: Char):List[Char] = (start to end).toList
+      if(s.isEmpty) List()
+      else{
+        if(s.head == '[')
+        {
+          val t = s.tail.takeWhile(c => c != ']').toList
+          logger.trace("expanding brace expression \"" + t + '"')
+          createUnions(t) ++ braceExpand(s.tail.dropWhile(c => c != ']').tail)
+        }
+        else{
+          s.head :: braceExpand(s.tail)
+        }
+      }
+    }
+
     /**
      * edits the input string to add concatenation
      * 
      * @param s the input string
      * @return input string with concatenations inserted
      */
-    def concatExpand(s: String): List[Char] = {
+    def concatExpand(s: List[Char]): List[Char] = {
       val o:List[Char] = List('*','+',')')
       var escaped:Boolean = false
       /** checks for brackets or other operators */
@@ -432,7 +468,11 @@ object regexParser extends LazyLogging {
       dfa
     }
     else {
-    if (!translateToNFA(concatExpand(r))._2)
+      val b = braceExpand(r)
+      logger.trace("converted braces: \""+b+'"')
+      val c = concatExpand(b)
+      logger.trace("converted concatenations: \""+c+'"')
+    if (!translateToNFA(c)._2)
       throw new RegexError("failed to parse regex",r)
     if (stack isEmpty) throw new RegexError("no NFA found",r)
     val nfa = stack.head
