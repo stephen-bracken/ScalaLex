@@ -188,6 +188,14 @@ class regexParserSuite {
         assert(dfa.eval(seq1),"Seq1")
     }
 
+    @Test def `DFABackslashBrackets`:Unit = {
+        val seq1 = "abc"
+        val seq2 = "a(b)c"
+        val dfa = regexParser.translateRegex("a\\(b\\)c")
+        assert(!dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+    }
+
     //###### Error tests ######
     @Test def `DFABadUnion`:Unit = {
         var b = false
