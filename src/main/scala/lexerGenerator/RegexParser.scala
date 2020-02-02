@@ -104,7 +104,7 @@ object regexParser extends LazyLogging {
         {
           val t = s.tail.takeWhile(c => c != ']').toList
           logger.trace("expanding brace expression \"" + t + '"')
-          createUnions(t) ++ braceExpand(s.tail.dropWhile(c => c != ']').tail)
+          '('::createUnions(t) ++ (')' :: braceExpand(s.tail.dropWhile(c => c != ']').tail))
         }
         else{
           s.head :: braceExpand(s.tail)

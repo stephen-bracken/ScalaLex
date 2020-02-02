@@ -223,6 +223,17 @@ class regexParserSuite {
         assert(dfa.eval(seq2),"Seq2")
     }
 
+    @Test def `DFARangeStar`:Unit = {
+        val seq1 = "123"
+        val seq2 = "456"
+        val seq3 = "789"
+        val dfa = regexParser.translateRegex("[0-9]*")
+        assert(dfa.eval(""),"Empty")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+    }
+
     //###### Error tests ######
     @Test def `DFABadUnion`:Unit = {
         var b = false
