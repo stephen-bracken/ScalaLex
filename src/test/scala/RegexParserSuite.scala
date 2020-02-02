@@ -214,6 +214,15 @@ class regexParserSuite {
         for(i <- r) yield {assert(dfa.eval(i.toString),i.toString)}
     }
 
+    @Test def `DFARangeBackslash`:Unit = {
+        println("#########DFARangeBackslash#########")
+        val seq1 = "-"
+        val seq2 = "9"
+        val dfa = regexParser.translateRegex("[0\\-9]")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+    }
+
     //###### Error tests ######
     @Test def `DFABadUnion`:Unit = {
         var b = false

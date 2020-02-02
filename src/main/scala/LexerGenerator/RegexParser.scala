@@ -81,7 +81,10 @@ object regexParser extends LazyLogging {
         if(s.isEmpty) List()
         else if(s.length == 1) List(s.head)
         else{
-        if(s.head == '-' && previous != '\\') {
+        if (s.head == '\\' && s.tail.head == '-'){
+          '-' :: '|' :: createUnions(s.tail)
+        }
+        else if(s.head == '-' && previous != '\\') {
           val n = s.tail.head
           logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
           createUnions(asciirun(previous,n) ++ s.tail.tail)
