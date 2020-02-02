@@ -34,13 +34,14 @@ object regexParser extends LazyLogging {
   private def isOperator(c: Char) = operators.contains(c)
   /** enforces operator precedence on the stack */
   private def precedence(l: Char, r: Char) = {
+    val o = List('|','*','+')
     logger.trace("precedence '" + l + "' '" + r + '\'')
     if (l == r) true
-    else if (l == '*') false
-    else if (r == '*') true
+    else if (o.contains(l)) false
+    else if (r == '*'|| r == '|') true
+    else if (l == '\\') false
     else if (l == backspace) false
     else if (r == backspace) true
-    else if (l == '|') false
     else true
   }
   
