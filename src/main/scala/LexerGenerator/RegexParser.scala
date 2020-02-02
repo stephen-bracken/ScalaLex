@@ -26,7 +26,7 @@ object regexParser extends LazyLogging {
   /** the characters that are not allowed in the input string*/
   private val illegal: Set[Char] = Set(epsilon, backspace)
   /** chars that represent regex operators */
-  private val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')')
+  private val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')','\\')
 
   /** checks if a character is an input or not */
   private def isInput(c: Char) = !isOperator(c)
@@ -60,6 +60,12 @@ object regexParser extends LazyLogging {
     var nextId: Int = 0
     var inputSet:Set[Char] = Set()
     var previous:Char = backspace
+    var previousInput:Char = backspace
+    /** changes previous symbol stores according to input type */
+    def pushprev(c: Char):Unit = {
+      if(isInput(c)) previousInput = c
+      previous = c
+    }
     def input(c:Char) = c match {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
@@ -75,18 +81,20 @@ object regexParser extends LazyLogging {
      */
     def concatExpand(s: String): List[Char] = {
       val o:List[Char] = List('*','+',')')
+      var escaped:Boolean = false
       /** checks for brackets or other operators */
       def checkchars(s: List[Char]):List[Char] = {
         if(s.length > 1){
           val c1 = s.head
           val c2 = s.tail.head
           val xs = s.tail.tail
-          val b1 = isInput(c1) || o.contains(c1)
-          val b2 = isInput(c2) || c2 == '('
+          val b1 = isInput(c1) || escaped || o.contains(c1)
+          val b2 = isInput(c2) || c2 == '\\' || c2 == '('
           if(b1 && b2) { 
            logger.trace("adding concatenation between '" + c1 + "' and '" + c2 + '\'');
+           escaped = c1 == '\\'
            c1 :: backspace :: checkchars(c2 :: xs)}
-          else c1 :: checkchars(s.tail)
+          else {escaped = c1 == '\\';c1 :: checkchars(s.tail)}
         }
         else s
       }
@@ -119,14 +127,18 @@ object regexParser extends LazyLogging {
         }
 
         if (isInput(c)) {
-          push(c); previous = c; true
-        } else if (opStack.isEmpty) {
-          logger.trace("insert operator '"+input(c)+'\'')
-          opStack = c :: opStack; true
+          push(c); pushprev(c); true
+        } else if(previous == '\\'){
+          logger.trace("escaped operator '" + input(c) + '\'')
+          push(c); pushprev(c); true
         } else if (c == '(') {
           logger.trace("adding ( to stack")
-          opStack = c :: opStack; true
+          opStack = c :: opStack; pushprev(c); true
         } else if (c == ')') parenth
+        else if (opStack.isEmpty) {
+          logger.trace("insert operator '"+input(c)+'\'')
+          opStack = c :: opStack; pushprev(c);  true
+        }
         else {
           if (!isOperator(c)) false
           while (!opStack.isEmpty && precedence(c, opStack.head)) {
@@ -135,6 +147,7 @@ object regexParser extends LazyLogging {
           opStack = c :: opStack
           if (stack isEmpty) false
         }
+        pushprev(c)
         true
       }
       if (s.isEmpty) {
@@ -203,6 +216,7 @@ object regexParser extends LazyLogging {
           case '|'      => union
           case '+'      => plus
           case '\u0008' => concat
+          case '\\'     => true
           case _        => false
         }
       }
@@ -269,7 +283,7 @@ object regexParser extends LazyLogging {
     def plus: Boolean = {
       if(previous == backspace) false
       else
-      push(previous)
+      push(previousInput)
       star
       concat
       true

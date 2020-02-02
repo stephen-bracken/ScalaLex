@@ -169,6 +169,25 @@ class regexParserSuite {
         assert(dfa.eval(seq4),"Seq4")
     }
 
+    //###### Backslash tests ######
+    @Test def `DFABackslashStar`:Unit = {
+        println("#########DFABackslashStar#########")
+        val seq1 = "a*"
+        val seq2 = "a"
+        val seq3 = "aa"
+        val dfa = regexParser.translateRegex("a\\*")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(!dfa.eval(seq2),"Seq2")
+        assert(!dfa.eval(seq3),"Seq3")
+    }
+
+    @Test def `DFABackslashOperators`:Unit = {
+        println("#########DFABackslashOperators#########")
+        val seq1 = "a+*|"
+        val dfa = regexParser.translateRegex("a\\+\\*\\|")
+        assert(dfa.eval(seq1),"Seq1")
+    }
+
     //###### Error tests ######
     @Test def `DFABadUnion`:Unit = {
         var b = false
