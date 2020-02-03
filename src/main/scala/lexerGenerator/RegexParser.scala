@@ -82,6 +82,7 @@ object regexParser extends LazyLogging {
         else if(s.length == 1) List(s.head)
         else{
         if (s.head == '\\' && s.tail.head == '-'){
+          previous = '\\'
           '-' :: '|' :: createUnions(s.tail)
         }
         else if(s.head == '-' && previous != '\\') {
