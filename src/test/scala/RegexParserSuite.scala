@@ -201,6 +201,19 @@ class DFABracketSuite extends RegexParserSuite {
 
 class DFARangeSuite extends RegexParserSuite {
     //###### Char range tests ######
+    @Test def `DFACharSet`:Unit = {
+        println("#########DFACharSet#########")
+        val seq1 = "a"
+        val seq2 = "b"
+        val seq3 = "c"
+        val seq4 = "d"
+        val dfa = regexParser.translateRegex("[abc]")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+        assert(!dfa.eval(seq4),"Seq4")
+    }
+
     @Test def `DFARange`:Unit = {
         println("#########DFARange#########")
         val r = 0 to 9
