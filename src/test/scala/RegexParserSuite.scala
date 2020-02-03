@@ -212,9 +212,11 @@ class DFARangeSuite extends RegexParserSuite {
         println("#########DFARangeBackslash#########")
         val seq1 = "-"
         val seq2 = "9"
+        val seq3 = "5"
         val dfa = regexParser.translateRegex("[0\\-9]")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
+        assert(!dfa.eval(seq3),"Seq3")
     }
 
     @Test def `DFARangeStar`:Unit = {
