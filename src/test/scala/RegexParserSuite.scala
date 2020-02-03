@@ -3,7 +3,11 @@ package lexerGenerator
 import org.junit._
 import org.junit.Assert.assertEquals
 
-class regexParserSuite {
+abstract class RegexParserSuite {
+    @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
+}
+
+class DFASuite extends RegexParserSuite {
 
     //###### DFA Construction ######
     @Test def `DFAEmpty`:Unit = {
@@ -42,6 +46,25 @@ class regexParserSuite {
         assert(!dfa.eval(seq3),"Seq3")
     }
 
+    //###### Error tests ######
+    @Test def `DFABadUnion`:Unit = {
+        var b = false
+        println("#########DFABadUnion#########")
+        try{
+            regexParser.translateRegex("a*|*")
+        }
+        catch{
+            case e: Throwable => {
+                val ex = new RegexError("a","b")
+                assert(e.getClass==ex.getClass(),"getClass")
+                b = true
+            }
+        }
+        assert(b,"Catch")
+    }
+}
+
+class DFAStarSuite extends RegexParserSuite {
     //###### DFA Star tests ######
     @Test def `DFAStar`:Unit = {
         println("#########DFAStar#########")
@@ -111,7 +134,9 @@ class regexParserSuite {
         assert(dfa.eval(seq2),"Seq2")
         assert(!dfa.eval(seq3),"Seq3")
     }
+}
 
+class DFAUnionSuite extends RegexParserSuite {
     //###### DFA Union tests ######
     @Test def `DFADoubleUnion`:Unit = {
         val seq1 = "a"
@@ -123,6 +148,10 @@ class regexParserSuite {
         assert(dfa.eval(seq3),"Seq3")
     }
 
+
+}
+
+class DFABracketSuite extends RegexParserSuite {
     //###### DFA Bracketing tests ######
     @Test def `DFABracket`:Unit = {
         println("#########DFABracket#########")
@@ -168,8 +197,65 @@ class regexParserSuite {
         assert(!dfa.eval(seq3),"Seq3")
         assert(dfa.eval(seq4),"Seq4")
     }
+}
 
-    //###### Backslash tests ######
+class DFARangeSuite extends RegexParserSuite {
+    //###### Char range tests ######
+    @Test def `DFARange`:Unit = {
+        println("#########DFARange#########")
+        val r = 0 to 9
+        val dfa = regexParser.translateRegex("[0-9]")
+        for(i <- r) yield {assert(dfa.eval(i.toString),i.toString)}
+    }
+
+    @Test def `DFARangeBackslash`:Unit = {
+        println("#########DFARangeBackslash#########")
+        val seq1 = "-"
+        val seq2 = "9"
+        val dfa = regexParser.translateRegex("[0\\-9]")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+    }
+
+    @Test def `DFARangeStar`:Unit = {
+        println("#########DFARangeStar#########")
+        val seq1 = "123"
+        val seq2 = "456"
+        val seq3 = "789"
+        val dfa = regexParser.translateRegex("[0-9]*")
+        assert(dfa.eval(""),"Empty")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+    }
+
+    @Test def `DFADoubleRange`:Unit = {
+        println("#########DFADoubleRange#########")
+        val seq1 = "1a"
+        val seq2 = "2b"
+        val seq3 = "3c"
+        val dfa = regexParser.translateRegex("[0-9][a-z]")
+        assert(!dfa.eval(""),"Empty")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+    }
+
+    @Ignore @Test def `DFAMultiRange`:Unit = {
+        println("#########DFAMultiRange#########")
+        val seq1 = "a"
+        val seq2 = "1"
+        val seq3 = "1a"
+        val dfa = regexParser.translateRegex("[0-9a-z]")
+        assert(!dfa.eval(""),"Empty")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+    }
+}
+
+class DFABackslashSuite extends RegexParserSuite {
+        //###### Backslash tests ######
     @Test def `DFABackslashStar`:Unit = {
         println("#########DFABackslashStar#########")
         val seq1 = "a*"
@@ -205,50 +291,4 @@ class regexParserSuite {
         assert(dfa.eval(seq1),"Seq1")
         assert(!dfa.eval(seq2),"Seq2")
     }
-
-    //###### Char range tests ######
-    @Test def `DFARange`:Unit = {
-        println("#########DFARange#########")
-        val r = 0 to 9
-        val dfa = regexParser.translateRegex("[0-9]")
-        for(i <- r) yield {assert(dfa.eval(i.toString),i.toString)}
-    }
-
-    @Test def `DFARangeBackslash`:Unit = {
-        println("#########DFARangeBackslash#########")
-        val seq1 = "-"
-        val seq2 = "9"
-        val dfa = regexParser.translateRegex("[0\\-9]")
-        assert(dfa.eval(seq1),"Seq1")
-        assert(dfa.eval(seq2),"Seq2")
-    }
-
-    @Test def `DFARangeStar`:Unit = {
-        val seq1 = "123"
-        val seq2 = "456"
-        val seq3 = "789"
-        val dfa = regexParser.translateRegex("[0-9]*")
-        assert(dfa.eval(""),"Empty")
-        assert(dfa.eval(seq1),"Seq1")
-        assert(dfa.eval(seq2),"Seq2")
-        assert(dfa.eval(seq3),"Seq3")
-    }
-
-    //###### Error tests ######
-    @Test def `DFABadUnion`:Unit = {
-        var b = false
-        println("#########DFABadUnion#########")
-        try{
-            regexParser.translateRegex("a*|*")
-        }
-        catch{
-            case e: Throwable => {
-                val ex = new RegexError("a","b")
-                assert(e.getClass==ex.getClass(),"getClass")
-                b = true
-            }
-        }
-        assert(b,"Catch")
-    }
-    @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
 }
