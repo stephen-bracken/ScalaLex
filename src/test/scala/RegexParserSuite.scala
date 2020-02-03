@@ -241,7 +241,7 @@ class DFARangeSuite extends RegexParserSuite {
         assert(dfa.eval(seq3),"Seq3")
     }
 
-    @Ignore @Test def `DFAMultiRange`:Unit = {
+    @Test def `DFAMultiRange`:Unit = {
         println("#########DFAMultiRange#########")
         val seq1 = "a"
         val seq2 = "1"
@@ -250,7 +250,7 @@ class DFARangeSuite extends RegexParserSuite {
         assert(!dfa.eval(""),"Empty")
         assert(dfa.eval(seq1),"Seq1")
         assert(dfa.eval(seq2),"Seq2")
-        assert(dfa.eval(seq3),"Seq3")
+        assert(!dfa.eval(seq3),"Seq3")
     }
 }
 
