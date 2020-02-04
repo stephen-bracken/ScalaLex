@@ -55,17 +55,26 @@ object regexParser extends LazyLogging {
   def translateRegex(r: String) = {
     logger.info("Translating regular expression \""+r+"\" to NFA")
     //###### Setup ######
+    /** stores working list of NFAs - used with shunting yard algorithm */
     var stack: List[NFA] = List()
+    /** stores unprocessed operators */
     var opStack: List[Char] = List()
+    /** the id of the next state to be created */
     var nextId: Int = 0
+    /** the set of chars with transitions available - used with subset construction */
     var inputSet:Set[Char] = Set()
+
+    /** the previous symbol including operators - used with backslash (\) */
     var previous:Char = backspace
+    /** the previous input symbol (excluding operators) - used with plus (+) */
     var previousInput:Char = backspace
     /** changes previous symbol stores according to input type */
     def pushprev(c: Char):Unit = {
       if(isInput(c)) previousInput = c
       previous = c
     }
+
+    /** converts an input char into a readable/printable format */
     def input(c:Char) = c match {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
@@ -88,11 +97,13 @@ object regexParser extends LazyLogging {
           previous = '\\'
           createUnions(s.tail)
         }
+        //range conversion
         else if(s.head == '-' && previous != '\\') {
           val n = s.tail.head
           logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
           createUnions(asciirun(previous,n) ++ s.tail.tail)
         }
+        //adding unions
         else{
         previous = s.head
         logger.trace("adding union after '" + previous + '\'')
@@ -102,33 +113,32 @@ object regexParser extends LazyLogging {
       }
       if(s.isEmpty) List()
       else{
+        //get next brace group
         if(s.head == '[')
         {
           val t = s.tail.takeWhile(c => c != ']').toList
           logger.trace("expanding brace expression \"" + t + '"')
           '('::createUnions(t) ++ (')' :: braceExpand(s.tail.dropWhile(c => c != ']').tail))
         }
+        //iterate through string
         else{
           s.head :: braceExpand(s.tail)
         }
       }
     }
 
-    /**
-     * edits the input string to add concatenation
-     * 
-     * @param s the input string
-     * @return input string with concatenations inserted
-     */
+    /** edits the input string to add concatenation operators ('u\0008', or backpace character)*/
     def concatExpand(s: List[Char]): List[Char] = {
       val o:List[Char] = List('*','+',')')
       var escaped:Boolean = false
-      /** checks for brackets or other operators */
+      /** checks for brackets or other operators and adds concatenations */
       def checkchars(s: List[Char]):List[Char] = {
         if(s.length > 1){
+          //get next two symbols
           val c1 = s.head
           val c2 = s.tail.head
           val xs = s.tail.tail
+          //conditions to insert backspace
           val b1 = isInput(c1) || escaped || o.contains(c1)
           val b2 = isInput(c2) || c2 == '\\' || c2 == '('
           if(b1 && b2) { 
@@ -159,14 +169,16 @@ object regexParser extends LazyLogging {
           logger.trace("parenth")
           if(opStack.isEmpty) throw new RegexError("mismatched brackets",r)
           else{
+            //consume operators until bracket found
             while(opStack.head != '('){
               if(!eval) false
             }
+            //remove bracket from stack
             opStack = opStack.tail
             true
           }
         }
-
+        //modified shunting yard algorithm
         if (isInput(c)) {
           push(c); pushprev(c); true
         } else if(previous == '\\'){
@@ -181,6 +193,7 @@ object regexParser extends LazyLogging {
           opStack = c :: opStack; pushprev(c);  true
         }
         else {
+          //eval operators until precedence condition or bottom of stack hit
           if (!isOperator(c)) false
           while (!opStack.isEmpty && precedence(c, opStack.head)) {
             if (!eval) false
@@ -191,6 +204,7 @@ object regexParser extends LazyLogging {
         pushprev(c)
         true
       }
+      //input string consumed
       if (s.isEmpty) {
         //eval remaining operators
         if ((for (op <- opStack) yield eval).exists(x => x == false)) (null,false)
@@ -217,7 +231,9 @@ object regexParser extends LazyLogging {
       */
     def push(c: Char): Unit = {
       logger.trace("Push '"+input(c)+'\'')
+      //add c to inputSet
       inputSet = inputSet.union(Set(c))
+      //create new NFA(s0(c) -> s1)
       val s0 = new NFAState(nextId)
       val s1 = new NFAState(nextId + 1)
       nextId = nextId + 2
@@ -324,7 +340,9 @@ object regexParser extends LazyLogging {
     def plus: Boolean = {
       if(previous == backspace) false
       else
+      //push extra input symbol
       push(previousInput)
+      //concat with star operator
       star
       concat
       true
@@ -372,12 +390,7 @@ object regexParser extends LazyLogging {
     }
 
     //###### Subset construction algorithm ######
-    /**
-      * takes the epsilon closure of a set of NFAStates.
-      *
-      * @param t Set of NFAStates
-      * @return Set of reachable NFAStates
-      */
+    /** takes the epsilon closure of a set of NFAStates */
     def epsilonClosure(t: Set[NFAState]): Set[NFAState] = {
       logger.trace("epsilon closure of "+t)
       var result = t.toList
@@ -392,12 +405,7 @@ object regexParser extends LazyLogging {
       result.toSet
     }
 
-    /**
-      * uses the subset construction algorithm to create a DFA from the initial state of an NFA.
-      *
-      * @param s initial state of NFA
-      * @return DFA of NFA s
-      */
+    /** uses the subset construction algorithm to create a DFA from the initial state of an NFA */
     def dTranslate(s: NFAState): DFA = {
       var dfaStates: List[DFAState] = List()
       nextId = 0
@@ -466,10 +474,12 @@ object regexParser extends LazyLogging {
       dfa
     }
     else {
+      //preprocessing
       val b = braceExpand(r)
       logger.trace("converted braces: \""+b+'"')
       val c = concatExpand(b)
       logger.trace("converted concatenations: \""+c+'"')
+    //Thompson construction
     if (!translateToNFA(c)._2)
       throw new RegexError("failed to parse regex",r)
     if (stack isEmpty) throw new RegexError("no NFA found",r)
@@ -482,6 +492,7 @@ object regexParser extends LazyLogging {
             s <- f.getStates
           } yield s.id)
           ,r)
+    //subset construction
     val d = dTranslate(nfa initialState)
     logger.debug("included states: "+d.getStates)
     logger.whenTraceEnabled{for(s <- d.getStates) yield {logger.trace(s"State: " + s + ", accepting: " + s.accepting)}}
@@ -490,6 +501,12 @@ object regexParser extends LazyLogging {
   }
 }
 
+/**
+  * An error class indicating that the translation of a Regular Expression has failed
+  *
+  * @param msg reason for failure
+  * @param input regex input symbols
+  */
 class RegexError(msg: String,input: String) extends Error("Failed to translate Regular Expression: " + msg + ", input:\"" + input + '"') with LazyLogging{
   logger.error("Failed to translate Regular Expression: " + msg + ", input:\"" + input + '"')
 }
