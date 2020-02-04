@@ -28,7 +28,6 @@ class DFA(s: List[DFAState])
       logger.debug("DFA evaluating string " + s)
       e(s,initialState)
     }
-  //for (s <- states) yield { s removeEpsilon }
 }
 
 /**
@@ -122,6 +121,13 @@ class DFAState(n:Set[NFAState] = Set(), id: Int) extends State(id){
       s.head transition(c) union(move(s tail))
     }
     move(nfaStates.toList)
+  }
+  /** checks if the State is a dead end */
+  def deadEnd:Boolean = {
+       if(accepting) false
+       else
+       if(transitions.keySet.isEmpty) true
+       else !(transitions.exists(p => !(p._2.diff(Set(this)).isEmpty)))
   }
 }
 

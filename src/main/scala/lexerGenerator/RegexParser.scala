@@ -443,7 +443,6 @@ object regexParser extends LazyLogging {
     }
 
     //###### DFA Optimisation ######
-    //TODO:Debug and verify correctness
     /**
       * removes redundant/dead end states from the DFA
       *
@@ -451,14 +450,8 @@ object regexParser extends LazyLogging {
       * @return optimised DFA
       */
     def dfaReduce(d:DFA):DFA = {
-      /** checks if the State is a dead end */
-      def deadEnd(s: DFAState):Boolean = {
-       if(s.accepting) false
-       else
-       if(s.transitions.keySet.isEmpty) true
-       else s.transitions.exists(p => !(p._2.diff(Set(s)).isEmpty))
-      }
-      for (state <- d.states if(deadEnd(state))) yield {
+      for (state <- d.states if(state.deadEnd)) yield {
+        logger.trace("Removing " + state);
         d.states = d.states diff List(state)
         for (s <- d.states) yield {s.removeTransitions(state)}}
       d
@@ -492,7 +485,7 @@ object regexParser extends LazyLogging {
     val d = dTranslate(nfa initialState)
     logger.debug("included states: "+d.getStates)
     logger.whenTraceEnabled{for(s <- d.getStates) yield {logger.trace(s"State: " + s + ", accepting: " + s.accepting)}}
-    d
+    dfaReduce(d)
     }
   }
 }
