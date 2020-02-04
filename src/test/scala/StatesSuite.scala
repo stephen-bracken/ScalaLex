@@ -26,7 +26,7 @@ class StatesSuite {
     }
 
     @Test def `StateDeadEnd`:Unit = {
-        println("#########StateSet#########")
+        println("#########StateDeadEnd#########")
         val s0 = new DFAState(Set(),0)
         val s1 = new DFAState(Set(),1)
         val s2 = new DFAState(Set(),2)
