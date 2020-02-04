@@ -296,8 +296,8 @@ object regexParser extends LazyLogging {
         //println("FSA A: initial state: " + a.initialState + ", final state: " + a.finalState)
         //println("FSA B: initial state: " + b.initialState + ", final state: " + b.finalState)
         a.finalState.addTransition(epsilon, b.initialState)
-        val f = new NFA(a.states)
-        f.addStates(b.states)
+        val f = new NFA(a.getStates)
+        f.addStates(b.getStates)
       stack = f :: stack
       true
       }
@@ -458,10 +458,10 @@ object regexParser extends LazyLogging {
       * @return optimised DFA
       */
     def dfaReduce(d:DFA):DFA = {
-      for (state <- d.states if(state.deadEnd)) yield {
+      for (state <- d.getStates if(state.deadEnd)) yield {
         logger.trace("Removing " + state);
-        d.states = d.states diff List(state)
-        for (s <- d.states) yield {s.removeTransitions(state)}}
+        d.removeState(state)
+        for (s <- d.getStates) yield {s.removeTransitions(state)}}
       d
     }
     //###### Execution ######
