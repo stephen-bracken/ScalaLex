@@ -193,7 +193,7 @@ object regexParser extends LazyLogging {
       }
       if (s.isEmpty) {
         //eval remaining operators
-        if ((for (op <- opStack) yield eval).exists(x => x == false)) false
+        if ((for (op <- opStack) yield eval).exists(x => x == false)) (null,false)
         if(stack.isEmpty) throw new RegexError("Translation ended with empty stack",r)
         val fsa = stack.head
         //add the final state as an accepting state
