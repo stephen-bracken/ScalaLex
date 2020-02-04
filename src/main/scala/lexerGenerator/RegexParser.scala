@@ -75,6 +75,8 @@ object regexParser extends LazyLogging {
     //###### Preprocessing ######
     /** Expands brace expressions into union versions */
     def braceExpand(s: String): List[Char] = {
+      /** converts a character range into it's list representation */
+      def asciirun(start: Char, end: Char):List[Char] = (start to end).toList
       var previous = backspace
       /** creates a union operator between each character in the string */
       def createUnions(s: List[Char]):List[Char] = {
@@ -98,8 +100,6 @@ object regexParser extends LazyLogging {
         }
       }
       }
-      /** converts a character range into it's list representation */
-      def asciirun(start: Char, end: Char):List[Char] = (start to end).toList
       if(s.isEmpty) List()
       else{
         if(s.head == '[')
