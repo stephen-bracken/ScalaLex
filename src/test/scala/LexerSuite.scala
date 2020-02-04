@@ -14,7 +14,7 @@ class LexerSuite {
     @Ignore @Test def `LexSimpleInt`:Unit = {
         println("#########LexSimpleInt#########")
         val rules:String = "%%      \n      int k;\n[0-9]+   {\n        k = atoi(yytext);\n     if (k%7 == 0)\n             printf(\"%d\", k+3);\n      else\n          printf(\"%d\",k);\n         }"
-        val lexer = lexerGenerator.Generator.ReadRules(rules)
+        val lexer = lexerGenerator.Generator.ReadRules(List(rules))
     }
 
     @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)

@@ -12,19 +12,23 @@ object Generator extends LazyLogging{
             val inputFile = args(0)
             logger.info("reading definitions from " + currentDirectory + '/' + inputFile)
             val outputFile = args(1)
-            logger.info("writing output to " + outputFile)
             val bufferedSource = Source.fromFile(inputFile)
+            var lines:List[String] = List()
             for (line <- bufferedSource.getLines) {
-                println(line.toUpperCase)
+                lines = line :: lines
+                logger.trace(line)
             }
             bufferedSource.close
+            lines = lines.reverse
+            logger.trace("final text: " + lines)
+            logger.info("writing output to " + outputFile)
         }
         catch {
             case e:ArrayIndexOutOfBoundsException => usage
             case e:FileNotFoundException => throw new GeneratorError(e.getMessage())
         }
     }
-    def ReadRules(rules:String):Lexer = ???
+    def ReadRules(rules:List[String]):Lexer = ???
     def readTransition() = ???
     def usage = {
         logger.error("Usage: LexerGenerator [Definitions file] [Output filename]")
