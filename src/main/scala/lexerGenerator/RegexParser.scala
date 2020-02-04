@@ -81,9 +81,10 @@ object regexParser extends LazyLogging {
         if(s.isEmpty) List()
         else if(s.length == 1) List(s.head)
         else{
+        //escaping of - operator
         if (s.head == '\\' && s.tail.head == '-'){
           previous = '\\'
-          '-' :: '|' :: createUnions(s.tail)
+          createUnions(s.tail)
         }
         else if(s.head == '-' && previous != '\\') {
           val n = s.tail.head
