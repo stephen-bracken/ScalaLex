@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
+    "org.scala-lang" % "scala-compiler" % "2.12.10",
     "com.novocode" % "junit-interface" % "0.11" % Test
 )
 
