@@ -24,4 +24,20 @@ class StatesSuite {
         assert(nfaSet.contains(s1) && nfaSet.contains(s2),"s1s2")
         assert((nfaSet.contains(s3)),"s3")
     }
+
+    @Test def `StateDeadEnd`:Unit = {
+        println("#########StateDeadEnd#########")
+        val s0 = new DFAState(Set(),0)
+        val s1 = new DFAState(Set(),1)
+        val s2 = new DFAState(Set(),2)
+        val s3 = new DFAState(Set(),3)
+        s0.addTransition('a',s1)
+        s1.accepting = true
+        s2.addTransition('a',s2)
+        assert(!s0.deadEnd,"S0")
+        assert(!s1.deadEnd,"S1")
+        assert(s2.deadEnd,"S2")
+        assert(s3.deadEnd,"S3")
+
+    }
 }

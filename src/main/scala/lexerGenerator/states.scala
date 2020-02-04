@@ -12,6 +12,7 @@ class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
 /** Represents a Deterministic Finite State Automata */
 class DFA(s: List[DFAState])
     extends FSA[DFAState](s) {
+    /** evaluates an input string against this DFA. Returns true if input string results in an accepting state */
     override def eval(s: String): Boolean = {
       def e(s:String,st:DFAState):Boolean = {
         if (s isEmpty) st.accepting
@@ -28,7 +29,6 @@ class DFA(s: List[DFAState])
       logger.debug("DFA evaluating string " + s)
       e(s,initialState)
     }
-  //for (s <- states) yield { s removeEpsilon }
 }
 
 /**
@@ -38,7 +38,7 @@ class DFA(s: List[DFAState])
   */
 abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
   /** the set of states in this FSA */
-  var states:List[A] = s
+  private var states:List[A] = s
   /** the set of accepting states in this FSA */
   var accepting:Set[A] = (for {s <- states if s.accepting} yield s).toSet
   /** the starting state for this FSA */
@@ -79,6 +79,10 @@ abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
 
   /** checks an input string against this FSA */
   def eval(s:String):Boolean
+  /** removes a state from this FSA */
+  def removeState(s: A) = {
+    states = states.filter(x => x != s)
+  }
 }
 
 class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
@@ -122,6 +126,13 @@ class DFAState(n:Set[NFAState] = Set(), id: Int) extends State(id){
       s.head transition(c) union(move(s tail))
     }
     move(nfaStates.toList)
+  }
+  /** checks if the State is a dead end */
+  def deadEnd:Boolean = {
+       if(accepting) false
+       else
+       if(transitions.keySet.isEmpty) true
+       else !(transitions.exists(p => !(p._2.diff(Set(this)).isEmpty)))
   }
 }
 
