@@ -4,6 +4,5 @@ abstract class Lexer(tokens: List[Token], actions: List[Action]){
     def yylex(input:String):List[Token]
 }
 
-trait Token {
-    
+class Token(val name:String) {
 }
