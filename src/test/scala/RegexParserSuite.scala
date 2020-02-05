@@ -267,6 +267,25 @@ class DFARangeSuite extends RegexParserSuite {
         assert(dfa.eval(seq2),"Seq2")
         assert(!dfa.eval(seq3),"Seq3")
     }
+
+    @Test def `DFARangeOperators`:Unit = {
+        println("#########DFARangeOperators#########")
+        val seq1 = "+"
+        val seq2 = "|"
+        val seq3 = "*"
+        val dfa = regexParser.translateRegex("[+|*]")
+        assert(!dfa.eval(""),"Empty")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+    }
+
+    @Test def `DFARangeDoubleBackslash`:Unit = {
+        println("#########DFARangeDoubleBackslash#########")
+        val seq1 = "\\"
+        val dfa = regexParser.translateRegex("[\\\\]")
+        assert(dfa.eval(seq1),"Seq1")
+    }
 }
 
 class DFABackslashSuite extends RegexParserSuite {
@@ -299,11 +318,22 @@ class DFABackslashSuite extends RegexParserSuite {
     }
 
     @Test def `DFADoubleBackslash`:Unit = {
-        println("#########DFABackslashBrackets#########")
+        println("#########DFADoubleBackslash#########")
         val seq1 = "\\"
         val seq2 = "\\\\"
         val dfa = regexParser.translateRegex("\\\\")
         assert(dfa.eval(seq1),"Seq1")
         assert(!dfa.eval(seq2),"Seq2")
+    }
+
+    @Test def `DFADoubleBackslashOperator`:Unit = {
+        println("#########DFABackslashBrackets#########")
+        val seq1 = "\\"
+        val seq2 = "\\\\"
+        val seq3 = "\\*"
+        val dfa = regexParser.translateRegex("\\\\*")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(!dfa.eval(seq3),"Seq3")
     }
 }

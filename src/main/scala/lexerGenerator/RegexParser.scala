@@ -64,6 +64,8 @@ object regexParser extends LazyLogging {
     /** the set of chars with transitions available - used with subset construction */
     var inputSet:Set[Char] = Set()
 
+    /** indicates whether the current character was escaped */
+    var escaped:Boolean = false
     /** the previous symbol including operators - used with backslash (\) */
     var previous:Char = backspace
     /** the previous input symbol (excluding operators) - used with plus (+) */
@@ -90,26 +92,34 @@ object regexParser extends LazyLogging {
       /** creates a union operator between each character in the string */
       def createUnions(s: List[Char]):List[Char] = {
         if(s.isEmpty) List()
-        else if(s.length == 1) List(s.head)
+        else if(s.length == 1){ if(isOperator(s.head)) List('\\',s.head)
+        else List(s.head)}
         else{
-        //escaping of - operator
-        if (s.head == '\\' && s.tail.head == '-'){
-          previous = '\\'
-          createUnions(s.tail)
+          //escaping of - operator
+          if (s.head == '\\' && previous != '\\'){
+            previous = '\\'
+            createUnions(s.tail)
+          }
+          //range conversion
+          else if(s.head == '-' && previous != '\\') {
+            val n = s.tail.head
+            logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
+            createUnions(asciirun(previous,n) ++ s.tail.tail)
+          }
+          //adding unions
+          else{
+            if(isOperator(s.head)) { 
+              previous = s.head
+              logger.trace("adding union after escaped operator '" + previous + '\'')
+              '\\'::s.head :: '|' :: createUnions(s.tail)
+            }
+            else { 
+            previous = s.head
+            logger.trace("adding union after '" + previous + '\'')
+            s.head :: '|' :: createUnions(s.tail)
+            }
+          }
         }
-        //range conversion
-        else if(s.head == '-' && previous != '\\') {
-          val n = s.tail.head
-          logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
-          createUnions(asciirun(previous,n) ++ s.tail.tail)
-        }
-        //adding unions
-        else{
-        previous = s.head
-        logger.trace("adding union after '" + previous + '\'')
-        s.head :: '|' :: createUnions(s.tail)
-        }
-      }
       }
       if(s.isEmpty) List()
       else{
@@ -160,8 +170,8 @@ object regexParser extends LazyLogging {
       * @return (NFA of s or null,success value)
       */
     def translateToNFA(s: List[Char]): (NFA, Boolean) = {
-      /**translates a single character into a NFA using the shunting yard algorithm and adds it to the stack.*/
-      def translateAction(c: Char): Boolean = {
+            /**translates a single character into a NFA using the shunting yard algorithm and adds it to the stack.*/
+      def translateSymbol(c: Char): Boolean = {
         logger.debug("translating '" + input(c) + '\'')
         //TODO: fix bracketing
         /** handles parentheses translation */
@@ -181,16 +191,20 @@ object regexParser extends LazyLogging {
         //modified shunting yard algorithm
         if (isInput(c)) {
           push(c); pushprev(c); true
-        } else if(previous == '\\'){
+        } else if(escaped){
           logger.trace("escaped operator '" + input(c) + '\'')
-          push(c); pushprev(c); true
+          escaped = false; push(c); pushprev(c); true
+        } else if(c == '\\' && !escaped) {
+          logger.trace("escaping next operator")
+          escaped = true
+          pushprev(c)
         } else if (c == '(') {
           logger.trace("adding ( to stack")
           opStack = c :: opStack; pushprev(c); true
         } else if (c == ')') parenth
         else if (opStack.isEmpty) {
           logger.trace("insert operator '"+input(c)+'\'')
-          opStack = c :: opStack; pushprev(c);  true
+          opStack = c :: opStack; pushprev(c); true
         }
         else {
           //eval operators until precedence condition or bottom of stack hit
@@ -216,7 +230,7 @@ object regexParser extends LazyLogging {
         fsa.addAccepting(fsa.finalState)
         (fsa, true)
       } else {
-        val t = translateAction(s.head)
+        val t = translateSymbol(s.head)
         if (!t) (null, false)
         else translateToNFA(s.tail)
       }
@@ -476,9 +490,9 @@ object regexParser extends LazyLogging {
     else {
       //preprocessing
       val b = braceExpand(r)
-      logger.trace("converted braces: \""+b+'"')
+      logger.debug("converted braces: \""+b+'"')
       val c = concatExpand(b)
-      logger.trace("converted concatenations: \""+c+'"')
+      logger.debug("converted concatenations: \""+c+'"')
     //Thompson construction
     if (!translateToNFA(c)._2)
       throw new RegexError("failed to parse regex",r)
