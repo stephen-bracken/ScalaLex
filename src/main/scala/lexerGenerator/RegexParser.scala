@@ -90,37 +90,37 @@ object regexParser extends LazyLogging {
       def asciirun(start: Char, end: Char):List[Char] = (start to end).toList
       var previous = backspace
       /** creates a union operator between each character in the string */
-      def createUnions(s: List[Char]):List[Char] = {
-        if(s.isEmpty) List()
-        else if(s.length == 1){ if(isOperator(s.head)) List('\\',s.head)
-        else List(s.head)}
-        else{
-          //escaping of - operator
-          if (s.head == '\\' && previous != '\\'){
-            previous = '\\'
-            createUnions(s.tail)
-          }
-          //range conversion
-          else if(s.head == '-' && previous != '\\') {
-            val n = s.tail.head
-            logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
-            createUnions(asciirun(previous,n) ++ s.tail.tail)
-          }
-          //adding unions
-          else{
-            if(isOperator(s.head)) { 
-              previous = s.head
-              logger.trace("adding union after escaped operator '" + previous + '\'')
-              '\\'::s.head :: '|' :: createUnions(s.tail)
-            }
-            else { 
-            previous = s.head
-            logger.trace("adding union after '" + previous + '\'')
-            s.head :: '|' :: createUnions(s.tail)
-            }
-          }
+      def createUnions(s: List[Char]):List[Char] = s match {
+            case Nil =>  List()
+            case x::Nil if(isOperator(x)) => List('\\',x)
+            case '\\'::xs if (!escaped) => 
+                //escaping of operators
+                previous = '\\'
+                logger.trace("escaping next symbol")
+                escaped = true
+                createUnions(xs)
+            case x::Nil => List(x)
+            case x::xs if escaped => 
+                logger.trace("escaped brace operator '" + x + '\'')
+                previous = x
+                escaped = false
+                x :: '|' :: createUnions(xs)
+            //range conversion
+            case '-' :: xs if (!escaped)  => 
+                val n = xs.head
+                logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
+                createUnions(asciirun(previous,n) ++ xs.tail)
+            //adding unions
+            case x :: xs if(isOperator(x)) => 
+                previous = x
+                logger.trace("adding union after escaped operator '" + previous + '\'')
+                '\\':: x :: '|' :: createUnions(xs)
+            case x :: xs =>
+                previous = x
+                logger.trace("adding union after '" + previous + '\'')
+                x :: '|' :: createUnions(xs)
+          
         }
-      }
       if(s.isEmpty) List()
       else{
         //get next brace group
@@ -493,6 +493,7 @@ object regexParser extends LazyLogging {
       logger.debug("converted braces: \""+b+'"')
       val c = concatExpand(b)
       logger.debug("converted concatenations: \""+c+'"')
+      escaped = false
     //Thompson construction
     if (!translateToNFA(c)._2)
       throw new RegexError("failed to parse regex",r)
