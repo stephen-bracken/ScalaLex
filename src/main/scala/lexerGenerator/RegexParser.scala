@@ -85,9 +85,7 @@ object regexParser extends LazyLogging {
 
     //###### Preprocessing ######
     /** Expands brace expressions into union versions */
-    def braceExpand(s: String): List[Char] = {
-      /** converts a character range into it's list representation */
-      def asciirun(start: Char, end: Char):List[Char] = (start to end).toList
+    def braceExpand(s: List[Char]): List[Char] = {
       var previous = backspace
       /** creates a union operator between each character in the string */
       def createUnions(s: List[Char]):List[Char] = s match {
@@ -109,7 +107,7 @@ object regexParser extends LazyLogging {
             case '-' :: xs if (!escaped)  => 
                 val n = xs.head
                 logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
-                createUnions(asciirun(previous,n) ++ xs.tail)
+                createUnions((previous to n).toList ++ xs.tail)
             //adding unions
             case x :: xs if(isOperator(x)) => 
                 previous = x
@@ -119,21 +117,17 @@ object regexParser extends LazyLogging {
                 previous = x
                 logger.trace("adding union after '" + previous + '\'')
                 x :: '|' :: createUnions(xs)
-          
         }
-      if(s.isEmpty) List()
-      else{
-        //get next brace group
-        if(s.head == '[')
-        {
-          val t = s.tail.takeWhile(c => c != ']').toList
+      s match {
+      case Nil => List()
+      //get next brace group
+      case '[':: xs =>
+          val t = xs.takeWhile(c => c != ']').toList
           logger.trace("expanding brace expression \"" + t + '"')
-          '('::createUnions(t) ++ (')' :: braceExpand(s.tail.dropWhile(c => c != ']').tail))
-        }
-        //iterate through string
-        else{
-          s.head :: braceExpand(s.tail)
-        }
+          '('::createUnions(t) ++ (')' :: braceExpand(xs.dropWhile(c => c != ']').tail))
+      //iterate through string
+      case x :: xs =>
+         x :: braceExpand(xs)
       }
     }
 
@@ -489,7 +483,7 @@ object regexParser extends LazyLogging {
     }
     else {
       //preprocessing
-      val b = braceExpand(r)
+      val b = braceExpand(r.toList)
       logger.debug("converted braces: \""+b+'"')
       val c = concatExpand(b)
       logger.debug("converted concatenations: \""+c+'"')
