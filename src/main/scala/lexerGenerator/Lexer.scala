@@ -1,6 +1,6 @@
 package lexerGenerator
-abstract class Lexer(tokens: List[Token], actions: List[Action]){
-    val words = tokens
+abstract class Lexer(rules:List[Rule]){
+    val words = for(r <- rules) yield {r.token}
     def yylex(input:String):List[Token]
 }
 
