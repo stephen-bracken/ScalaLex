@@ -8,9 +8,9 @@ abstract class rule(r: String, t:Token, a:Action){
     def parse(s: String) = dfa.eval(s)
 }
 
-class Action(s: String){
-    val tb = currentMirror.mkToolBox()
+class Action(s: String = "{}"){
     def execute = {
+        val tb = currentMirror.mkToolBox()
         tb.eval(tb.parse(s))
     }
 }
