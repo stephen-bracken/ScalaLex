@@ -10,10 +10,10 @@ class LexRule(r: String, val token:Token = new NoToken, private val action:Actio
     def execute:Token = {action.execute; token}
 }
 
-class Action(s: String = "{}") extends LazyLogging {
+class Action(s: String = "") extends LazyLogging {
     def execute = {
         logger.trace("Executing code action: \n" + s)
         val tb = currentMirror.mkToolBox()
-        tb.eval(tb.parse(s))
+        tb.eval(tb.parse('{' + s + '}'))
     }
 }
