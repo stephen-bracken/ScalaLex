@@ -15,9 +15,9 @@ object regexParser extends LazyLogging {
   //val logger = Logger(LoggerFactory.getLogger(expressions.getClass()))
 
   // assume SLF4J is bound to logback in the current environment
-  private val lc:LoggerContext = LoggerFactory.getILoggerFactory().asInstanceOf[LoggerContext]
+  // private val lc:LoggerContext = LoggerFactory.getILoggerFactory().asInstanceOf[LoggerContext]
   // print logback's internal status
-  StatusPrinter.print(lc)
+  // StatusPrinter.print(lc)
   //###### Character evaluation ######
   /** unicode for an empty character - used to represent an epsilon transition*/
   private val epsilon: Char = '\u0000'
