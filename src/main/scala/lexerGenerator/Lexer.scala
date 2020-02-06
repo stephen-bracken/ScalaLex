@@ -6,3 +6,5 @@ abstract class Lexer(tokens: List[Token], actions: List[Action]){
 
 class Token(val name:String) {
 }
+
+class NoToken extends Token("")
