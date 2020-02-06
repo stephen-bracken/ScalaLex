@@ -4,10 +4,11 @@ import scala.reflect.runtime.currentMirror
 import scala.tools.reflect.ToolBox
 import com.typesafe.scalalogging.LazyLogging
 
-class LexRule(r: String, val token:Token = new NoToken, private val action:Action = new Action){
+class LexRule(r: String, private val action:Action = new Action){
     private val dfa:DFA = regexParser.translateRegex(r)
     def parse(s: String) = dfa.eval(s)
-    def execute:Token = {action.execute; token}
+    def execute = action.execute
+    val result = execute
 }
 
 class Action(s: String = "") extends LazyLogging {
