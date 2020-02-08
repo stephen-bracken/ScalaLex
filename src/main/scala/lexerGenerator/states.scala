@@ -10,7 +10,7 @@ class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
 }
 
 /** Represents a Deterministic Finite State Automata */
-class DFA(s: List[DFAState])
+class DFA(s: List[DFAState],val regex:String)
     extends FSA[DFAState](s) {
     /** evaluates an input string against this DFA. Returns true if input string results in an accepting state */
     override def eval(s: String): Boolean = {

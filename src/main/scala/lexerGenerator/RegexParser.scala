@@ -483,7 +483,7 @@ object regexParser extends LazyLogging {
             else{logger.trace("Transition not found")}
           }
       }
-      new DFA(result)
+      new DFA(result,r)
     }
 
     //###### DFA Optimisation ######
@@ -506,7 +506,7 @@ object regexParser extends LazyLogging {
       val s = new NFAState(0)
       s.accepting = true
       val d = new DFAState(Set(s),0)
-      val dfa = new DFA(List(d))
+      val dfa = new DFA(List(d),r)
       dfa
     }
     else {
