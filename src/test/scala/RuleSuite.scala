@@ -3,24 +3,24 @@ package lexerGenerator
 import org.junit._
 import org.junit.Assert.assertEquals
 
-class ActionSuite {
+class RuleSuite {
     @Test def `noAction`:Unit = {
-        val a = new Action
+        val a = new LexRule
         a.execute
     }
 
     @Test def `ActionCompile`:Unit = {
-        val a = new Action("println(\"hello\")")
+        val a = new LexRule(action = "println(\"hello\")")
         a.execute
     }
 
     @Test def `ActionResult`:Unit = {
-        val a = new LexRule("",new Action("{3}"))
+        val a = new LexRule(action = "{3}")
         assert(a.result == 3)
     }
 
     @Test def `ActionAddition`:Unit = {
-        val a = new LexRule("",new Action("{3+4}"))
+        val a = new LexRule(action = "{3+4}")
         assert(a.result == 7)
     }
 
