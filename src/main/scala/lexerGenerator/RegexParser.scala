@@ -138,7 +138,7 @@ object regexParser extends LazyLogging {
       var escaped:Boolean = false
       /** checks for brackets or other operators and adds concatenations */
       @tailrec
-      def checkchars(s: List[Char])(f: List[Char] => List[Char]):List[Char] = {
+      def checkchars(s: List[Char],a: List[Char]):List[Char] = {
         def checkfirst(c: Char):Boolean = c match{
           case x if (isInput(c)||escaped||o.contains(c)) => true
           case x => false
@@ -150,37 +150,19 @@ object regexParser extends LazyLogging {
           case x => false
         }
         s match {
-          case x::Nil => f(List(x))
+          case x::Nil => (x::a).reverse
           case c1 :: c2 :: xs if(checkfirst(c1)&&checknext(c2)) => {
             escaped = c1 == '\\'
             logger.trace("adding concatenation between '" + c1 + "' and '" + c2 + '\'');
-            checkchars(c2::xs){tail => f(c1 :: backspace :: tail)}
+            checkchars(c2::xs, backspace :: c1 :: a)
           }
           case x :: xs => {
             escaped = x == '\\'
-            checkchars(xs){
-            tail => f(x :: tail)
-            }
+            checkchars(xs,x::a)
           }
         }
       }
-        /*if(s.length > 1){
-          //get next two symbols
-          val c1 = s.head
-          val c2 = s.tail.head
-          val xs = s.tail.tail
-          //conditions to insert backspace
-          val b1 = isInput(c1) || escaped || o.contains(c1)
-          val b2 = isInput(c2) || c2 == '\\' || c2 == '('
-          if(b1 && b2) { 
-           logger.trace("adding concatenation between '" + c1 + "' and '" + c2 + '\'');
-           escaped = c1 == '\\'
-           c1 :: backspace :: checkchars(c2 :: xs)}
-          else {escaped = c1 == '\\';c1 :: checkchars(s.tail)}
-        }
-        else s
-      }*/
-      checkchars(s.toList)(identity)
+      checkchars(s.toList,List())
     }
 
     //###### Thompson construction algorithm ######
