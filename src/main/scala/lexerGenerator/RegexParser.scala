@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.util.StatusPrinter
 import com.typesafe.scalalogging.LazyLogging
+import scala.annotation.tailrec
 
 /**Thompson construction and subset construction implemented using shunting yard algorithm to produce a DFA from a given regular expression string
  */
@@ -136,8 +137,34 @@ object regexParser extends LazyLogging {
       val o:List[Char] = List('*','+',')')
       var escaped:Boolean = false
       /** checks for brackets or other operators and adds concatenations */
-      def checkchars(s: List[Char]):List[Char] = {
-        if(s.length > 1){
+      @tailrec
+      def checkchars(s: List[Char])(f: List[Char] => List[Char]):List[Char] = {
+        def checkfirst(c: Char):Boolean = c match{
+          case x if (isInput(c)||escaped||o.contains(c)) => true
+          case x => false
+        }
+        def checknext(c: Char):Boolean = c match {
+          case '(' => true
+          case '\\' => true
+          case x if(isInput(x)) => true
+          case x => false
+        }
+        s match {
+          case x::Nil => f(List(x))
+          case c1 :: c2 :: xs if(checkfirst(c1)&&checknext(c2)) => {
+            escaped = c1 == '\\'
+            logger.trace("adding concatenation between '" + c1 + "' and '" + c2 + '\'');
+            checkchars(c2::xs){tail => f(c1 :: backspace :: tail)}
+          }
+          case x :: xs => {
+            escaped = x == '\\'
+            checkchars(xs){
+            tail => f(x :: tail)
+            }
+          }
+        }
+      }
+        /*if(s.length > 1){
           //get next two symbols
           val c1 = s.head
           val c2 = s.tail.head
@@ -152,8 +179,8 @@ object regexParser extends LazyLogging {
           else {escaped = c1 == '\\';c1 :: checkchars(s.tail)}
         }
         else s
-      }
-      checkchars(s.toList)
+      }*/
+      checkchars(s.toList)(identity)
     }
 
     //###### Thompson construction algorithm ######
@@ -163,6 +190,7 @@ object regexParser extends LazyLogging {
       * @param s input string
       * @return (NFA of s or null,success value)
       */
+    @tailrec
     def translateToNFA(s: List[Char]): (NFA, Boolean) = {
             /**translates a single character into a NFA using the shunting yard algorithm and adds it to the stack.*/
       def translateSymbol(c: Char): Boolean = {
@@ -484,9 +512,9 @@ object regexParser extends LazyLogging {
     else {
       //preprocessing
       val b = braceExpand(r.toList)
-      logger.debug("converted braces: \""+b+'"')
+      logger.debug("converted braces: "+b)
       val c = concatExpand(b)
-      logger.debug("converted concatenations: \""+c+'"')
+      logger.debug("converted concatenations: "+c)
       escaped = false
     //Thompson construction
     if (!translateToNFA(c)._2)
