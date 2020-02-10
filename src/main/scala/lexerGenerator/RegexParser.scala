@@ -77,8 +77,6 @@ object regexParser extends LazyLogging {
     /** the previous input symbol (excluding operators) - used with plus (+) */
     var previousInput:Char = backspace
     /** changes previous symbol stores according to input type */
-    var braceset:Set[Char] = Set.empty
-    var inBrace = false
     def pushprev(c: Char):Unit = {
       if(isInput(c)) previousInput = c
       previous = c
@@ -93,30 +91,35 @@ object regexParser extends LazyLogging {
 
     //###### Preprocessing ######
     /** converts the input string into RegexToken representations */
-    @tailrec
-    def makeSymbols(s: List[Char],a: List[RegexToken]): List[RegexToken] = s match {
-      case Nil => a.reverse
-      case '\\'::xs if !escaped =>
-        escaped = true
-        makeSymbols(xs,a)
-      case '['::xs if !escaped && !inBrace => 
-        inBrace = true
-        makeSymbols(xs,new Operator('[',false,false)::a)
-      case ']'::xs if !escaped && inBrace =>
-        inBrace = false
-        makeSymbols(xs,new Operator(']',false,false)::a)
-      case x::xs if escaped =>
-        escaped = false
-        makeSymbols(xs,new Operator(x,true,inBrace)::a)
-      case x::xs if !escaped && isOperator(x) => 
-        makeSymbols(xs, new Operator(x,false,inBrace)::a)
-      case x:: xs if isInput(x) => 
-        makeSymbols(xs,new Input(x,inBrace)::a)
+    def makeSymbols(s:List[Char]): List[RegexToken] = {
+      var inBrace = false
+      @tailrec
+      def makeSymbol(s: List[Char],a: List[RegexToken]): List[RegexToken] = s match {
+        case Nil => a.reverse
+        case '\\'::xs if !escaped =>
+          escaped = true
+          makeSymbol(xs,a)
+        case '['::xs if !escaped && !inBrace => 
+          inBrace = true
+          makeSymbol(xs,new Operator('[',false,false)::a)
+        case ']'::xs if !escaped && inBrace =>
+          inBrace = false
+          makeSymbol(xs,new Operator(']',false,false)::a)
+        case x::xs if escaped =>
+          escaped = false
+          makeSymbol(xs,new Operator(x,true,inBrace)::a)
+        case x::xs if !escaped && isOperator(x) => 
+          makeSymbol(xs, new Operator(x,false,inBrace)::a)
+        case x:: xs if isInput(x) => 
+          makeSymbol(xs,new Input(x,inBrace)::a)
+      }
+      makeSymbol(s,Nil)
     }
 
 
     /** Expands brace expressions into full character sets */
     def braceExpand(s: List[RegexToken]):List[RegexToken]= {
+      var inBrace = false
       var invertedBrace = false
       var braceSymbols:List[RegexToken] = Nil
       logger.debug("processing character sets")
@@ -575,7 +578,7 @@ object regexParser extends LazyLogging {
     else {
       //preprocessing
       logger.debug("preprocessing symbols")
-      val s = makeSymbols(r.toList,Nil)
+      val s = makeSymbols(r.toList)
       logger.debug("symbol list: " + s)
       val b = braceExpand(s)
       logger.debug("converted braces: "+b)
