@@ -4,15 +4,20 @@ version := "2.0"
 
 scalaVersion := "2.12.10"
 
+resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases"
+
+addSbtPlugin("com.artima.supersafe" % "sbtplugin" % "1.1.3")
+
 libraryDependencies ++= Seq(
     "org.slf4j"%"slf4j-api"%"1.7.25",
     "ch.qos.logback"%"logback-classic"%"1.2.3",
     "ch.qos.logback"%"logback-core"%"1.2.3",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+    "org.scalactic" %% "scalactic" % "3.1.0",
+    "org.scalatest" %% "scalatest" % "3.1.0" % "test",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
     "org.scala-lang" % "scala-compiler" % "2.12.10",
-    "com.novocode" % "junit-interface" % "0.11" % Test
+    //"com.novocode" % "junit-interface" % "0.11" % Test
 )
 
 testOptions in Test += Tests.Argument(TestFrameworks.JUnit, "-a", "-v", "-s")

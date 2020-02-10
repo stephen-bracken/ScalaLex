@@ -1,28 +1,28 @@
 package lexerGenerator
 
-import org.junit._
-import org.junit.Assert.assertEquals
+//import org.junit._
+//import org.junit.Assert.assertEquals
 
-class RuleSuite {
-    @Test def `noAction`:Unit = {
+class RuleSuite extends UnitSpec {
+    "an empty code block" should "execute with no actions" in {
         val a = new LexRule
         a.execute
     }
 
-    @Test def `ActionCompile`:Unit = {
+    "a code block" should "compile and run on match" in {
         val a = new LexRule(action = "println(\"hello\")")
         a.execute
     }
 
-    @Test def `ActionResult`:Unit = {
+    it should "have an accessible result value" in {
         val a = new LexRule(action = "{3}")
         assert(a.result == 3)
     }
 
-    @Test def `ActionAddition`:Unit = {
+    it should "be able to perform operations at runtime" in {
         val a = new LexRule(action = "{3+4}")
         assert(a.result == 7)
     }
 
-    @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
+    //@Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
 }
