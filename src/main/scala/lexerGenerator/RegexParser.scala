@@ -27,8 +27,12 @@ object regexParser extends LazyLogging {
   /** the characters that are not allowed in the input string*/
   private val illegal: Set[Char] = Set(epsilon, backspace)
   /** chars that represent regex operators */
-  private val operators: Set[Char] = Set('|', '*', '+', epsilon, backspace,'(',')','\\')
+  private val operators: Set[Char] = Set('-','^','|', '*', '+', epsilon, backspace,'(',')','\\','[',']')
 
+  private val allChars:Set[RegexToken] = {
+    val chars = Char.MinValue to Char.MaxValue
+    (for(c <- chars) yield (new Input(c,true))).toSet
+  }
   /** checks if a character is an input or not */
   private def isInput(c: Char) = !isOperator(c)
   /** checks if a character is in the set of operators or not */
@@ -57,13 +61,13 @@ object regexParser extends LazyLogging {
     logger.info("Translating regular expression \""+r+"\" to NFA")
     //###### Setup ######
     /** stores working list of NFAs - used with shunting yard algorithm */
-    var stack: List[NFA] = List()
+    var stack: List[NFA] = Nil
     /** stores unprocessed operators */
-    var opStack: List[Char] = List()
+    var opStack: List[Char] = Nil
     /** the id of the next state to be created */
     var nextId: Int = 0
     /** the set of chars with transitions available - used with subset construction */
-    var inputSet:Set[Char] = Set()
+    var inputSet:Set[Char] = Set.empty
 
     /** indicates whether the current character was escaped */
     var escaped:Boolean = false
@@ -72,6 +76,8 @@ object regexParser extends LazyLogging {
     /** the previous input symbol (excluding operators) - used with plus (+) */
     var previousInput:Char = backspace
     /** changes previous symbol stores according to input type */
+    var braceset:Set[Char] = Set.empty
+    var inBrace = false
     def pushprev(c: Char):Unit = {
       if(isInput(c)) previousInput = c
       previous = c
@@ -85,86 +91,243 @@ object regexParser extends LazyLogging {
         }
 
     //###### Preprocessing ######
+    @tailrec
+    def makeSymbols(s: List[Char],a: List[RegexToken]): List[RegexToken] = s match {
+      case Nil => a.reverse
+      case '\\'::xs if !escaped =>
+        escaped = true
+        makeSymbols(xs,a)
+      case '['::xs if !escaped && !inBrace => 
+        inBrace = true
+        makeSymbols(xs,new Operator('[',false,false)::a)
+      case ']'::xs if !escaped && inBrace =>
+        inBrace = false
+        makeSymbols(xs,new Operator(']',false,false)::a)
+      case x::xs if escaped =>
+        escaped = false
+        makeSymbols(xs,new Operator(x,true,inBrace)::a)
+      case x::xs if !escaped && isOperator(x) => 
+        makeSymbols(xs, new Operator(x,false,inBrace)::a)
+      case x:: xs if isInput(x) => 
+        makeSymbols(xs,new Input(x,inBrace)::a)
+    }
+
+
+    def braceExpand(s: List[RegexToken]):List[RegexToken]= {
+      var invertedBrace = false
+      var braceSymbols:List[RegexToken] = Nil
+      logger.debug("processing character sets")
+      @tailrec
+      def findBraces(s: List[RegexToken],a: List[RegexToken]): List[RegexToken] = {
+        @tailrec
+        def createRange(s: List[RegexToken],a: List[RegexToken]): List[RegexToken] = 
+        {
+          s match{
+            case Nil => a.reverse
+            case x0::Operator('-',false,true)::x1::xs if x0.inRange && x1.inRange =>
+              logger.trace("creating character range from " + x0.symbol + " to " + x1.symbol)
+              val b = Math.min(x0.symbol,x1.symbol)
+              val e = Math.max(x0.symbol,x1.symbol)
+              val range = b to e
+              var a0:Seq[RegexToken] = a
+              for (i <- range) yield{a0 = new Input(i.toChar,true)+:a0}
+              //logger.trace("a0: " + a0)
+              createRange(xs,a0.toList)
+            case x::xs if !x.inRange =>
+              throw new RegexError("Unexpected symbol in range: " + x,r)
+            case x::xs if x.inRange =>
+              createRange(xs,x::a)
+          }
+        }
+        def invertChars(s:List[RegexToken]): List[RegexToken] = {
+          var charSet:Set[RegexToken] = allChars
+          for(c <- s) yield(charSet = charSet.diff(Set(c)))
+          charSet.toList
+        }
+        s match {
+          case Nil => a.reverse
+          case x :: Nil => 
+            if(x.inRange) {
+              braceSymbols = x :: braceSymbols
+              logger.trace("processing range expression " + braceSymbols.reverse)
+              val c = createRange(braceSymbols,Nil)
+              logger.trace("adding sequence " + c)
+              if(invertedBrace) findBraces(Nil,invertChars(c) ++ a)
+              else findBraces(Nil,c++a)
+            }
+            else findBraces(Nil,x::a)
+          case x@Operator('[',false,false)::Operator('^',false,true)::xs =>
+            invertedBrace = true
+            inBrace = true
+            findBraces(xs,x.head::a)
+          case x@Operator('[',false,false)::x1::xs if x1.inRange =>
+            inBrace = true
+            //braceSymbols = List(x1)
+            findBraces(x1::xs,x.head::a)
+          case x@ x0 :: Operator(']',false,false) :: xs if x0.inRange =>
+            inBrace = false
+            braceSymbols = x0 :: braceSymbols
+            logger.trace("processing range expression " + braceSymbols.reverse)
+            val c = createRange(braceSymbols,Nil)
+            logger.trace("adding sequence " + c)
+            if(invertedBrace) {
+              logger.trace("inverting range")
+              findBraces(x.tail,invertChars(c)++a)
+            }
+            else findBraces(x.tail,c ++ a)
+          case x :: xs if x.inRange =>
+            logger.trace("adding " + input(x.symbol) + " to range set")
+            braceSymbols = x :: braceSymbols
+            findBraces(xs,a)
+          case x :: xs if !x.inRange =>
+            logger.trace("skipping character " + input(x.symbol))
+            findBraces(xs,x::a)
+        }
+      }
+      findBraces(s,Nil)
+    }
     /** Expands brace expressions into union versions */
-    def braceExpand(s: List[Char]): List[Char] = {
+    /*def braceExpand(s: List[Char]): List[Char] = {
       var previous = backspace
+      var inverse = false
       /** creates a union operator between each character in the string */
       def createUnions(s: List[Char]):List[Char] = s match {
-            case Nil =>  List()
-            case x::Nil if(isOperator(x)) => List('\\',x)
-            case '\\'::xs if (!escaped) => 
+            case Nil =>  Nil
+            //case x::Nil if(isOperator(x)) => List('\\',x)
+            case '\\'::xs if !escaped => 
                 //escaping of operators
                 previous = '\\'
                 logger.trace("escaping next symbol")
                 escaped = true
                 createUnions(xs)
+            case '\\' :: '\\' :: xs if !escaped =>
+                '\\' :: '\\' :: createUnions(xs)
             case x::Nil => List(x)
-            case x::xs if escaped => 
+            case x::xs if (escaped) =>
                 logger.trace("escaped brace operator '" + x + '\'')
                 previous = x
                 escaped = false
-                x :: '|' :: createUnions(xs)
+                x :: createUnions(xs)
             //range conversion
             case '-' :: xs if (!escaped)  => 
                 val n = xs.head
                 logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
-                createUnions((previous to n).toList ++ xs.tail)
-            //adding unions
-            case x :: xs if(isOperator(x)) => 
-                previous = x
-                logger.trace("adding union after escaped operator '" + previous + '\'')
-                '\\':: x :: '|' :: createUnions(xs)
+                createUnions((previous to n).toList.tail ++ xs.tail)
             case x :: xs =>
+                logger.trace("adding '" + x + "' to inverse character set")
                 previous = x
-                logger.trace("adding union after '" + previous + '\'')
-                x :: '|' :: createUnions(xs)
+                x :: createUnions(xs)
         }
+      def invertUnion(t: List[Char]):List[Char] = {
+        var chars = (Char.MinValue to Char.MaxValue).toSet
+        def invertChars(t: List[Char]):Unit = t match {
+            case Nil => {}
+            case '|' :: '|' :: xs => {
+              chars = chars diff(Set('|'))
+              invertChars(xs)
+            }
+            case '|' :: xs => {invertChars(xs)}
+            case x :: xs => {
+              chars = chars diff(Set(x))
+              invertChars(xs)
+            }
+        }
+        invertChars(t)
+        chars.toList
+      }
       s match {
-      case Nil => List()
+      case Nil => Nil
       //get next brace group
       case '[':: xs =>
           val t = xs.takeWhile(c => c != ']').toList
-          logger.trace("expanding brace expression \"" + t + '"')
-          '('::createUnions(t) ++ (')' :: braceExpand(xs.dropWhile(c => c != ']').tail))
+          val rest = braceExpand(xs.dropWhile(c => c != ']').tail)
+          inverse = t.head == '^'
+          if(inverse) {
+            logger.trace("inverting character union")
+            '[' :: invertUnion(createUnions(t.tail)) ++ (']':: rest)
+          }
+          else {  logger.trace("expanding brace expression \"" + t + '"')
+          '[':: createUnions(t) ++ (']' :: rest)  
+        }
       //iterate through string
       case x :: xs =>
          x :: braceExpand(xs)
       }
+    }*/
+
+    def concatExpand(s: List[RegexToken]):List[RegexToken]= {
+      val o:List[Char] = List('*','+',')')
+      @tailrec
+      def checkchars(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = {
+        def checkfirst(c: RegexToken):Boolean = c match {
+          case x if x.inRange => false
+          case Input(x,false) => true
+          case Operator(']',false,false) => true
+          case Operator(x,e,false) if o.contains(x)||e => true
+          case x => false
+        }
+        def checknext(c: RegexToken):Boolean = c match {
+          case x if x.inRange => false
+          case Operator('[',false,false) => true
+          case Operator('(',e,false) => true
+          case Operator(x, true, false) => true
+          case Input(x, false) => true
+          case x => false
+        }
+        s match {
+          case Nil => a.reverse
+          case x :: Nil => checkchars(Nil,x::a)
+          case c1 :: c2 :: xs if(checkfirst(c1)&&checknext(c2)) => 
+            logger.trace("adding concatenation between '" + c1.symbol + "' and '" + c2.symbol + '\'');
+            checkchars(c2::xs,new Operator(backspace,false,false)::c1::a)
+          case c1 :: c2 :: xs if !(checkfirst(c1)&&checknext(c2)) =>
+            checkchars(c2::xs,c1::a)
+        }
+      }
+      checkchars(s,Nil)
     }
 
-    /** edits the input string to add concatenation operators ('u\0008', or backpace character)*/
+    /*/** edits the input string to add concatenation operators ('u\0008', or backpace character)*/
     def concatExpand(s: List[Char]): List[Char] = {
       val o:List[Char] = List('*','+',')')
       var escaped:Boolean = false
+      var inBrace:Boolean = s.head == '['
       /** checks for brackets or other operators and adds concatenations */
       @tailrec
       def checkchars(s: List[Char],a: List[Char]):List[Char] = {
         def checkfirst(c: Char):Boolean = c match{
+          case x if inBrace => false
+          case ']' if !escaped =>
+            inBrace = false
+            true
           case x if (isInput(c)||escaped||o.contains(c)) => true
           case x => false
         }
         def checknext(c: Char):Boolean = c match {
+          case x if inBrace => false
           case '(' => true
+          case '[' => 
+            inBrace = true
+            true
           case '\\' => true
           case x if(isInput(x)) => true
           case x => false
         }
         s match {
-          case x::Nil => (x::a).reverse
-          case c1 :: c2 :: xs if(checkfirst(c1)&&checknext(c2)) => {
+          case Nil => a.reverse
+          case x::Nil => checkchars(Nil,x::a)
+          case c1 :: c2 :: xs if(checkfirst(c1)&&checknext(c2)) =>
             escaped = c1 == '\\'
             logger.trace("adding concatenation between '" + c1 + "' and '" + c2 + '\'');
             checkchars(c2::xs, backspace :: c1 :: a)
-          }
-          case x :: xs => {
+          case x :: xs => 
             escaped = x == '\\'
             checkchars(xs,x::a)
-          }
         }
       }
-      checkchars(s.toList,List())
+      checkchars(s.toList,Nil)
     }
-
+    */
     //###### Thompson construction algorithm ######
     /**
       * Translates the input string into a NFA
@@ -172,10 +335,10 @@ object regexParser extends LazyLogging {
       * @param s input string
       * @return (NFA of s or null,success value)
       */
-    @tailrec
-    def translateToNFA(s: List[Char]): (NFA, Boolean) = {
+    //@tailrec
+    //def translateToNFA(s: List[Char]): (NFA, Boolean) = {
             /**translates a single character into a NFA using the shunting yard algorithm and adds it to the stack.*/
-      def translateSymbol(c: Char): Boolean = {
+      /*def translateSymbol(c: Char): Boolean = {
         logger.debug("translating '" + input(c) + '\'')
         //TODO: fix bracketing
         /** handles parentheses translation */
@@ -223,7 +386,7 @@ object regexParser extends LazyLogging {
         true
       }
       //input string consumed
-      if (s.isEmpty) {
+      /*if (s.isEmpty) {
         //eval remaining operators
         if ((for (op <- opStack) yield eval).exists(x => x == false)) (null,false)
         if(stack.isEmpty) throw new RegexError("Translation ended with empty stack",r)
@@ -234,10 +397,129 @@ object regexParser extends LazyLogging {
         fsa.addAccepting(fsa.finalState)
         (fsa, true)
       } else {
+        if(s.head == '['){
+          val l = s.takeWhile(x => x != ']')
+          pushAll(l.tail)
+          translateToNFA(s.dropWhile(x => x != ']').tail)
+        }
+        else{
         val t = translateSymbol(s.head)
         if (!t) (null, false)
         else translateToNFA(s.tail)
+        }
+      }*/
+      s match {
+        case Nil => 
+          if ((for (op <- opStack) yield eval).exists(x => x == false)) (null,false)
+          if(stack.isEmpty) throw new RegexError("Translation ended with empty stack",r)
+          val fsa = stack.head
+          //add the final state as an accepting state
+          logger.debug("accepting NFA state: " + fsa.finalState)
+          fsa.finalState.accepting = true
+          fsa.addAccepting(fsa.finalState)
+          (fsa, true)
+        case '[' :: xs if(!inBrace) => 
+          inBrace = true
+          translateToNFA(xs)
+        case '\\' :: xs if (inBrace && !escaped) => 
+          escaped = true
+          translateToNFA(xs)
+        case '\\' :: xs if (inBrace && escaped) =>
+          escaped = false
+          braceset = braceset.union(Set('\\'))
+          translateToNFA(xs)
+        case ']' :: xs if(escaped && inBrace) => 
+          escaped = false
+          braceset = braceset.union(Set(']'))
+          translateToNFA(xs)
+        case ']' :: xs if(!escaped && inBrace) =>
+          inBrace = false
+          pushAll(braceset.toList)
+          translateToNFA(xs)
+        case x :: xs if inBrace =>
+          braceset = braceset.union(Set(x))
+          translateToNFA(xs)
+        case x :: xs =>
+          val t = translateSymbol(x)
+          if (!t) (null,false)
+          else translateToNFA(xs)
       }
+    }*/
+    def translateToNFA(s: List[RegexToken]): (NFA,Boolean) = {
+      var braceSymbols:Set[RegexToken] = Set.empty
+      @tailrec
+      def translateSymbols(s: List[RegexToken]): (NFA,Boolean) = {
+        def translateSymbol(c: RegexToken): Boolean = {
+          def parenth: Boolean = {
+          logger.trace("parenth")
+          if(opStack.isEmpty) throw new RegexError("mismatched brackets",r)
+          else{
+            //consume operators until bracket found
+            while(opStack.head != '('){
+              if(!eval) false
+            }
+            //remove bracket from stack
+            opStack = opStack.tail
+            true
+          }
+        }
+          c match {
+            case x if x.inRange => 
+              throw new RegexError("Failed to process character set",r)
+            case Input(x, false) => 
+              push(x); pushprev(x); true
+            case Operator(x,true,false) =>
+              logger.trace("escaped operator '" + input(x) + '\'')
+              push(x); pushprev(x); true
+            case Operator('(', false, false) => 
+              logger.trace("adding ( to stack")
+              opStack = '(' :: opStack; pushprev('('); true
+            case Operator(')', false, false) => parenth
+            case Operator('[',false,false) => pushprev('[');true
+            case Operator(']',false,false) => pushprev(']');true
+            case Operator(x, false, false) if opStack isEmpty => 
+              logger.trace("insert operator '"+input(x)+'\'')
+              opStack = x :: opStack; pushprev(x); true
+            case Operator(x,false,false) => 
+              while (!opStack.isEmpty && precedence(x, opStack.head)) {
+                if (!eval) false
+              }
+              opStack = x :: opStack
+              if (stack isEmpty) false
+              else {
+                pushprev(x)
+                true
+              }
+          }
+        }
+        s match {
+          case Nil => 
+            if ((for (op <- opStack) yield eval).exists(x => x == false)) (null,false)
+            if(stack.isEmpty) throw new RegexError("Translation ended with empty stack",r)
+            val fsa = stack.head
+            //add the final state as an accepting state
+            logger.debug("accepting NFA state: " + fsa.finalState)
+            fsa.finalState.accepting = true
+            fsa.addAccepting(fsa.finalState)
+            (fsa, true)
+          case x@ Operator('[',false,false)::x1::xs if x1.inRange =>
+            braceSymbols = Set(x1)
+            translateSymbols(x.tail)
+          case x0::Operator(']',false,false)::xs if x0.inRange =>
+            braceSymbols = braceSymbols.union(Set(x0))
+            val b = for(c <- braceSymbols) yield (c.symbol)
+            pushAll(b.toList)
+            translateSymbols(xs)
+          case x::xs if x.inRange =>
+            braceSymbols = braceSymbols.union(Set(x))
+            translateSymbols(xs)
+          case x::xs if !x.inRange =>
+            val t = translateSymbol(x)
+            if(!t) (null,false)
+            else translateSymbols(xs)
+        }
+      }
+      translateSymbols(s)
     }
     //###### Stack operations ######
     /**
@@ -258,6 +540,18 @@ object regexParser extends LazyLogging {
       s0.addTransition(c, s1)
       stack = (new NFA(List(s1, s0))) :: stack
     }
+
+    def pushAll(l: List[Char]):Unit = {
+      logger.trace("PushAll{")
+      inputSet = inputSet.union(l.toSet)
+      val s0 = new NFAState(nextId)
+      val s1 = new NFAState(nextId + 1)
+      nextId = nextId + 2
+      for(c <- l) yield (s0.addTransition(c,s1))
+      stack = (new NFA(List(s1,s0))) :: stack
+      logger.trace("}\\PushAll")
+    }
+
     /**
       * retrieves an NFA from the stack with a success value
       *
@@ -493,7 +787,10 @@ object regexParser extends LazyLogging {
     }
     else {
       //preprocessing
-      val b = braceExpand(r.toList)
+      logger.debug("preprocessing symbols")
+      val s = makeSymbols(r.toList,Nil)
+      logger.debug("symbol list: " + s)
+      val b = braceExpand(s)
       logger.debug("converted braces: "+b)
       val c = concatExpand(b)
       logger.debug("converted concatenations: "+c)
@@ -519,6 +816,29 @@ object regexParser extends LazyLogging {
     }
   }
 }
+
+private abstract class RegexToken(val symbol: Char, val inRange: Boolean) {
+  override def equals(x: Any): Boolean = {
+    if (!x.isInstanceOf[RegexToken]) false
+    else{
+      val s = x.asInstanceOf[RegexToken]
+      this.symbol == s.symbol && this.inRange == s.inRange
+    }
+  }
+  override def toString(): String = symbol.toString + ":" + inRange
+}
+
+private case class Operator(s: Char,escaped: Boolean,r: Boolean) extends RegexToken(s,r) {
+  override def equals(x: Any): Boolean = {if (!x.isInstanceOf[Operator]) false
+    else {
+      val s = x.asInstanceOf[Operator]
+      this.symbol == s.symbol && this.escaped == s.escaped && this.inRange == s.inRange
+    }
+  }
+  override def toString(): String = if(escaped) "\\"+symbol + ":" + inRange else symbol + ":" + inRange
+}
+
+private case class Input(s: Char, r: Boolean) extends RegexToken(s,r)
 
 /**
   * An error class indicating that the translation of a Regular Expression has failed

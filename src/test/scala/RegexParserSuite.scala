@@ -2,6 +2,7 @@ package lexerGenerator
 
 import org.junit._
 import org.junit.Assert.assertEquals
+import org.junit.rules.Timeout
 
 abstract class RegexParserSuite {
     @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
@@ -286,6 +287,19 @@ class DFARangeSuite extends RegexParserSuite {
         val dfa = regexParser.translateRegex("[\\\\]")
         assert(dfa.eval(seq1),"Seq1")
     }
+
+    @Test def `DFAInverseRange`:Unit = {
+        println("#########DFARangeDoubleBackslash#########")
+        val seq1 = "0"
+        val seq2 = "a"
+        val seq3 = "z"
+        val dfa = regexParser.translateRegex("[^a-z]")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(!dfa.eval(seq2),"Seq2")
+        assert(!dfa.eval(seq3),"Seq3")
+    }
+    
+    override def individualTestTimeout: Timeout = new org.junit.rules.Timeout(600000)
 }
 
 class DFABackslashSuite extends RegexParserSuite {
