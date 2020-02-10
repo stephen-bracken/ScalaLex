@@ -289,7 +289,7 @@ class DFARangeSuite extends RegexParserSuite {
     }
 
     @Test def `DFAInverseRange`:Unit = {
-        println("#########DFARangeDoubleBackslash#########")
+        println("#########DFAInverseRange#########")
         val seq1 = "0"
         val seq2 = "a"
         val seq3 = "z"
