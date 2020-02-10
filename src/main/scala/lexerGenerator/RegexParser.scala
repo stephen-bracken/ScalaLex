@@ -95,21 +95,28 @@ object regexParser extends LazyLogging {
       var inBrace = false
       @tailrec
       def makeSymbol(s: List[Char],a: List[RegexToken]): List[RegexToken] = s match {
+        //return symbols
         case Nil => a.reverse
+        //escape next character
         case '\\'::xs if !escaped =>
           escaped = true
           makeSymbol(xs,a)
+        //start char set
         case '['::xs if !escaped && !inBrace => 
           inBrace = true
           makeSymbol(xs,new Operator('[',false,false)::a)
+        //end char set
         case ']'::xs if !escaped && inBrace =>
           inBrace = false
           makeSymbol(xs,new Operator(']',false,false)::a)
+        //escaped operator
         case x::xs if escaped =>
           escaped = false
           makeSymbol(xs,new Operator(x,true,inBrace)::a)
+        //normal operator
         case x::xs if !escaped && isOperator(x) => 
           makeSymbol(xs, new Operator(x,false,inBrace)::a)
+        //normal input symbol
         case x:: xs if isInput(x) => 
           makeSymbol(xs,new Input(x,inBrace)::a)
       }
@@ -129,7 +136,9 @@ object regexParser extends LazyLogging {
         def createRange(s: List[RegexToken],a: List[RegexToken]): List[RegexToken] = 
         {
           s match{
+            //return symbols
             case Nil => a.reverse
+            //convert character range e.g. [a-z]
             case x0::Operator('-',false,true)::x1::xs if x0.inRange && x1.inRange =>
               logger.trace("creating character range from " + x0.symbol + " to " + x1.symbol)
               val b = Math.min(x0.symbol,x1.symbol)
@@ -139,8 +148,10 @@ object regexParser extends LazyLogging {
               for (i <- range) yield{a0 = new Input(i.toChar,true)+:a0}
               //logger.trace("a0: " + a0)
               createRange(xs,a0.toList)
+            //badly formed char set
             case x::xs if !x.inRange =>
               throw new RegexError("Unexpected symbol in range: " + x,r)
+            //continue
             case x::xs if x.inRange =>
               createRange(xs,x::a)
           }
@@ -151,7 +162,9 @@ object regexParser extends LazyLogging {
           charSet.toList
         }
         s match {
+          //return symbols
           case Nil => a.reverse
+          //process single symbol
           case x :: Nil => 
             if(x.inRange) {
               braceSymbols = x :: braceSymbols
@@ -162,14 +175,17 @@ object regexParser extends LazyLogging {
               else findBraces(Nil,c++a)
             }
             else findBraces(Nil,x::a)
+          //finds start of inverted char set
           case x@Operator('[',false,false)::Operator('^',false,true)::xs =>
             invertedBrace = true
             inBrace = true
             findBraces(xs,x.head::a)
+          //finds start of normal char set
           case x@Operator('[',false,false)::x1::xs if x1.inRange =>
             inBrace = true
             //braceSymbols = List(x1)
             findBraces(x1::xs,x.head::a)
+          //finds end of char set
           case x@ x0 :: Operator(']',false,false) :: xs if x0.inRange =>
             inBrace = false
             braceSymbols = x0 :: braceSymbols
@@ -181,10 +197,12 @@ object regexParser extends LazyLogging {
               findBraces(x.tail,invertChars(c)++a)
             }
             else findBraces(x.tail,c ++ a)
+          //add symbol to char set
           case x :: xs if x.inRange =>
             logger.trace("adding " + input(x.symbol) + " to range set")
             braceSymbols = x :: braceSymbols
             findBraces(xs,a)
+          //continue
           case x :: xs if !x.inRange =>
             logger.trace("skipping character " + input(x.symbol))
             findBraces(xs,x::a)
@@ -198,27 +216,44 @@ object regexParser extends LazyLogging {
       val o:List[Char] = List('*','+',')')
       @tailrec
       def checkchars(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = {
+        /** checks the first symbol to add a concatenation */
         def checkfirst(c: RegexToken):Boolean = c match {
+          //ignore charsets
           case x if x.inRange => false
+          //input
           case Input(x,false) => true
+          //end of char set
           case Operator(']',false,false) => true
+          //one of o operators
           case Operator(x,e,false) if o.contains(x)||e => true
+          //else false
           case x => false
         }
+        /** checks the next symbol to add a concatenation */
         def checknext(c: RegexToken):Boolean = c match {
+          //ignore char sets
           case x if x.inRange => false
+          //start of char set
           case Operator('[',false,false) => true
+          //start of parentheses
           case Operator('(',e,false) => true
+          //escaped operator
           case Operator(x, true, false) => true
+          //input
           case Input(x, false) => true
+          //otherwise false
           case x => false
         }
         s match {
+          //return symbols
           case Nil => a.reverse
+          //ignore single symbol
           case x :: Nil => checkchars(Nil,x::a)
+          //add concatenation
           case c1 :: c2 :: xs if(checkfirst(c1)&&checknext(c2)) => 
             logger.trace("adding concatenation between '" + c1.symbol + "' and '" + c2.symbol + '\'');
             checkchars(c2::xs,new Operator(backspace,false,false)::c1::a)
+          //do not add concatenation
           case c1 :: c2 :: xs if !(checkfirst(c1)&&checknext(c2)) =>
             checkchars(c2::xs,c1::a)
         }
@@ -254,22 +289,29 @@ object regexParser extends LazyLogging {
           }
         }
           c match {
+            //bad charset translation
             case x if x.inRange => 
               throw new RegexError("Failed to process character set",r)
+            //input
             case Input(x, false) => 
               push(x); pushprev(x); true
+            //escaped operator
             case Operator(x,true,false) =>
               logger.trace("escaped operator '" + input(x) + '\'')
               push(x); pushprev(x); true
+            //parentheses
             case Operator('(', false, false) => 
               logger.trace("adding ( to stack")
               opStack = '(' :: opStack; pushprev('('); true
             case Operator(')', false, false) => parenth
+            //char sets
             case Operator('[',false,false) => pushprev('[');true
             case Operator(']',false,false) => pushprev(']');true
+            //empty operator stack
             case Operator(x, false, false) if opStack isEmpty => 
               logger.trace("insert operator '"+input(x)+'\'')
               opStack = x :: opStack; pushprev(x); true
+            //otherwise
             case Operator(x,false,false) => 
               while (!opStack.isEmpty && precedence(x, opStack.head)) {
                 if (!eval) false
@@ -283,6 +325,7 @@ object regexParser extends LazyLogging {
           }
         }
         s match {
+          //empty input
           case Nil => 
             if ((for (op <- opStack) yield eval).exists(x => x == false)) (null,false)
             if(stack.isEmpty) throw new RegexError("Translation ended with empty stack",r)
@@ -292,6 +335,7 @@ object regexParser extends LazyLogging {
             fsa.finalState.accepting = true
             fsa.addAccepting(fsa.finalState)
             (fsa, true)
+          //char set
           case x@ Operator('[',false,false)::x1::xs if x1.inRange =>
             braceSymbols = Set(x1)
             translateSymbols(x.tail)
@@ -303,6 +347,7 @@ object regexParser extends LazyLogging {
           case x::xs if x.inRange =>
             braceSymbols = braceSymbols.union(Set(x))
             translateSymbols(xs)
+          //non char set
           case x::xs if !x.inRange =>
             val t = translateSymbol(x)
             if(!t) (null,false)
