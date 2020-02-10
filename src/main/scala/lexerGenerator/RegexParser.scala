@@ -660,7 +660,7 @@ private abstract class RegexToken(val symbol: Char, val inRange: Boolean) {
       this.symbol == s.symbol && this.inRange == s.inRange
     }
   }
-  override def toString(): String = symbol.toString + ":" + inRange
+  override def toString(): String = symbol.toString // + ":" + inRange
 }
 
 private case class Operator(s: Char,escaped: Boolean,r: Boolean) extends RegexToken(s,r) {
@@ -670,7 +670,7 @@ private case class Operator(s: Char,escaped: Boolean,r: Boolean) extends RegexTo
       this.symbol == s.symbol && this.escaped == s.escaped && this.inRange == s.inRange
     }
   }
-  override def toString(): String = if(escaped) "\\"+symbol + ":" + inRange else symbol + ":" + inRange
+  override def toString(): String = if(escaped) "\\"+symbol /* + ":" + inRange */ else symbol.toString // + ":" + inRange
 }
 
 private case class Input(s: Char, r: Boolean) extends RegexToken(s,r)
