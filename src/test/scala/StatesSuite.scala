@@ -1,11 +1,11 @@
 package lexerGenerator
 
-import org.junit._
-import org.junit.Assert.assertEquals
+//import org.junit._
+//import org.junit.Assert.assertEquals
 
-class StatesSuite {
+class StatesSuite extends UnitSpec {
     //###### State tests ######
-    @Test def `StateEquality`:Unit = {
+    "A State" should "Be comparable by id" in  {
         println("#########StateEquality#########")
         val s1 = new NFAState(0)
         val s2 = new NFAState(1)
@@ -14,7 +14,7 @@ class StatesSuite {
         assert(s1 != s2,"s1 != s2")
     }
 
-    @Test def `StateSet`:Unit = {
+    it should "be comparable in a set" in {
         println("#########StateSet#########")
         val s1 = new NFAState(0)
         val s2 = new NFAState(1)
@@ -25,7 +25,7 @@ class StatesSuite {
         assert((nfaSet.contains(s3)),"s3")
     }
 
-    @Test def `StateDeadEnd`:Unit = {
+    "A dead end state" should "have no state transitions that do not result in itself" in {
         println("#########StateDeadEnd#########")
         val s0 = new DFAState(Set(),0)
         val s1 = new DFAState(Set(),1)
