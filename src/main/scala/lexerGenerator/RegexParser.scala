@@ -29,6 +29,7 @@ object regexParser extends LazyLogging {
   /** chars that represent regex operators */
   private val operators: Set[Char] = Set('-','^','|', '*', '+', epsilon, backspace,'(',')','\\','[',']')
 
+  /** a set of all possible characters */
   private val allChars:Set[RegexToken] = {
     val chars = Char.MinValue to Char.MaxValue
     (for(c <- chars) yield (new Input(c,true))).toSet
@@ -91,6 +92,7 @@ object regexParser extends LazyLogging {
         }
 
     //###### Preprocessing ######
+    /** converts the input string into RegexToken representations */
     @tailrec
     def makeSymbols(s: List[Char],a: List[RegexToken]): List[RegexToken] = s match {
       case Nil => a.reverse
@@ -113,6 +115,7 @@ object regexParser extends LazyLogging {
     }
 
 
+    /** Expands brace expressions into full character sets */
     def braceExpand(s: List[RegexToken]):List[RegexToken]= {
       var invertedBrace = false
       var braceSymbols:List[RegexToken] = Nil
@@ -186,75 +189,8 @@ object regexParser extends LazyLogging {
       }
       findBraces(s,Nil)
     }
-    /** Expands brace expressions into union versions */
-    /*def braceExpand(s: List[Char]): List[Char] = {
-      var previous = backspace
-      var inverse = false
-      /** creates a union operator between each character in the string */
-      def createUnions(s: List[Char]):List[Char] = s match {
-            case Nil =>  Nil
-            //case x::Nil if(isOperator(x)) => List('\\',x)
-            case '\\'::xs if !escaped => 
-                //escaping of operators
-                previous = '\\'
-                logger.trace("escaping next symbol")
-                escaped = true
-                createUnions(xs)
-            case '\\' :: '\\' :: xs if !escaped =>
-                '\\' :: '\\' :: createUnions(xs)
-            case x::Nil => List(x)
-            case x::xs if (escaped) =>
-                logger.trace("escaped brace operator '" + x + '\'')
-                previous = x
-                escaped = false
-                x :: createUnions(xs)
-            //range conversion
-            case '-' :: xs if (!escaped)  => 
-                val n = xs.head
-                logger.trace("creating union range between '" + previous + "' and '" + n + '\'')
-                createUnions((previous to n).toList.tail ++ xs.tail)
-            case x :: xs =>
-                logger.trace("adding '" + x + "' to inverse character set")
-                previous = x
-                x :: createUnions(xs)
-        }
-      def invertUnion(t: List[Char]):List[Char] = {
-        var chars = (Char.MinValue to Char.MaxValue).toSet
-        def invertChars(t: List[Char]):Unit = t match {
-            case Nil => {}
-            case '|' :: '|' :: xs => {
-              chars = chars diff(Set('|'))
-              invertChars(xs)
-            }
-            case '|' :: xs => {invertChars(xs)}
-            case x :: xs => {
-              chars = chars diff(Set(x))
-              invertChars(xs)
-            }
-        }
-        invertChars(t)
-        chars.toList
-      }
-      s match {
-      case Nil => Nil
-      //get next brace group
-      case '[':: xs =>
-          val t = xs.takeWhile(c => c != ']').toList
-          val rest = braceExpand(xs.dropWhile(c => c != ']').tail)
-          inverse = t.head == '^'
-          if(inverse) {
-            logger.trace("inverting character union")
-            '[' :: invertUnion(createUnions(t.tail)) ++ (']':: rest)
-          }
-          else {  logger.trace("expanding brace expression \"" + t + '"')
-          '[':: createUnions(t) ++ (']' :: rest)  
-        }
-      //iterate through string
-      case x :: xs =>
-         x :: braceExpand(xs)
-      }
-    }*/
 
+    /** edits the input string to add concatenation operators ('u\0008', or backpace character)*/
     def concatExpand(s: List[RegexToken]):List[RegexToken]= {
       val o:List[Char] = List('*','+',')')
       @tailrec
@@ -287,47 +223,7 @@ object regexParser extends LazyLogging {
       checkchars(s,Nil)
     }
 
-    /*/** edits the input string to add concatenation operators ('u\0008', or backpace character)*/
-    def concatExpand(s: List[Char]): List[Char] = {
-      val o:List[Char] = List('*','+',')')
-      var escaped:Boolean = false
-      var inBrace:Boolean = s.head == '['
-      /** checks for brackets or other operators and adds concatenations */
-      @tailrec
-      def checkchars(s: List[Char],a: List[Char]):List[Char] = {
-        def checkfirst(c: Char):Boolean = c match{
-          case x if inBrace => false
-          case ']' if !escaped =>
-            inBrace = false
-            true
-          case x if (isInput(c)||escaped||o.contains(c)) => true
-          case x => false
-        }
-        def checknext(c: Char):Boolean = c match {
-          case x if inBrace => false
-          case '(' => true
-          case '[' => 
-            inBrace = true
-            true
-          case '\\' => true
-          case x if(isInput(x)) => true
-          case x => false
-        }
-        s match {
-          case Nil => a.reverse
-          case x::Nil => checkchars(Nil,x::a)
-          case c1 :: c2 :: xs if(checkfirst(c1)&&checknext(c2)) =>
-            escaped = c1 == '\\'
-            logger.trace("adding concatenation between '" + c1 + "' and '" + c2 + '\'');
-            checkchars(c2::xs, backspace :: c1 :: a)
-          case x :: xs => 
-            escaped = x == '\\'
-            checkchars(xs,x::a)
-        }
-      }
-      checkchars(s.toList,Nil)
-    }
-    */
+
     //###### Thompson construction algorithm ######
     /**
       * Translates the input string into a NFA
@@ -335,120 +231,11 @@ object regexParser extends LazyLogging {
       * @param s input string
       * @return (NFA of s or null,success value)
       */
-    //@tailrec
-    //def translateToNFA(s: List[Char]): (NFA, Boolean) = {
-            /**translates a single character into a NFA using the shunting yard algorithm and adds it to the stack.*/
-      /*def translateSymbol(c: Char): Boolean = {
-        logger.debug("translating '" + input(c) + '\'')
-        //TODO: fix bracketing
-        /** handles parentheses translation */
-        def parenth: Boolean = {
-          logger.trace("parenth")
-          if(opStack.isEmpty) throw new RegexError("mismatched brackets",r)
-          else{
-            //consume operators until bracket found
-            while(opStack.head != '('){
-              if(!eval) false
-            }
-            //remove bracket from stack
-            opStack = opStack.tail
-            true
-          }
-        }
-        //modified shunting yard algorithm
-        if (isInput(c)) {
-          push(c); pushprev(c); true
-        } else if(escaped){
-          logger.trace("escaped operator '" + input(c) + '\'')
-          escaped = false; push(c); pushprev(c); true
-        } else if(c == '\\' && !escaped) {
-          logger.trace("escaping next operator")
-          escaped = true
-          pushprev(c)
-        } else if (c == '(') {
-          logger.trace("adding ( to stack")
-          opStack = c :: opStack; pushprev(c); true
-        } else if (c == ')') parenth
-        else if (opStack.isEmpty) {
-          logger.trace("insert operator '"+input(c)+'\'')
-          opStack = c :: opStack; pushprev(c); true
-        }
-        else {
-          //eval operators until precedence condition or bottom of stack hit
-          if (!isOperator(c)) false
-          while (!opStack.isEmpty && precedence(c, opStack.head)) {
-            if (!eval) false
-          }
-          opStack = c :: opStack
-          if (stack isEmpty) false
-        }
-        pushprev(c)
-        true
-      }
-      //input string consumed
-      /*if (s.isEmpty) {
-        //eval remaining operators
-        if ((for (op <- opStack) yield eval).exists(x => x == false)) (null,false)
-        if(stack.isEmpty) throw new RegexError("Translation ended with empty stack",r)
-        val fsa = stack.head
-        //add the final state as an accepting state
-        logger.debug("accepting NFA state: " + fsa.finalState)
-        fsa.finalState.accepting = true
-        fsa.addAccepting(fsa.finalState)
-        (fsa, true)
-      } else {
-        if(s.head == '['){
-          val l = s.takeWhile(x => x != ']')
-          pushAll(l.tail)
-          translateToNFA(s.dropWhile(x => x != ']').tail)
-        }
-        else{
-        val t = translateSymbol(s.head)
-        if (!t) (null, false)
-        else translateToNFA(s.tail)
-        }
-      }*/
-      s match {
-        case Nil => 
-          if ((for (op <- opStack) yield eval).exists(x => x == false)) (null,false)
-          if(stack.isEmpty) throw new RegexError("Translation ended with empty stack",r)
-          val fsa = stack.head
-          //add the final state as an accepting state
-          logger.debug("accepting NFA state: " + fsa.finalState)
-          fsa.finalState.accepting = true
-          fsa.addAccepting(fsa.finalState)
-          (fsa, true)
-        case '[' :: xs if(!inBrace) => 
-          inBrace = true
-          translateToNFA(xs)
-        case '\\' :: xs if (inBrace && !escaped) => 
-          escaped = true
-          translateToNFA(xs)
-        case '\\' :: xs if (inBrace && escaped) =>
-          escaped = false
-          braceset = braceset.union(Set('\\'))
-          translateToNFA(xs)
-        case ']' :: xs if(escaped && inBrace) => 
-          escaped = false
-          braceset = braceset.union(Set(']'))
-          translateToNFA(xs)
-        case ']' :: xs if(!escaped && inBrace) =>
-          inBrace = false
-          pushAll(braceset.toList)
-          translateToNFA(xs)
-        case x :: xs if inBrace =>
-          braceset = braceset.union(Set(x))
-          translateToNFA(xs)
-        case x :: xs =>
-          val t = translateSymbol(x)
-          if (!t) (null,false)
-          else translateToNFA(xs)
-      }
-    }*/
     def translateToNFA(s: List[RegexToken]): (NFA,Boolean) = {
       var braceSymbols:Set[RegexToken] = Set.empty
       @tailrec
       def translateSymbols(s: List[RegexToken]): (NFA,Boolean) = {
+        /**translates a single character into a NFA using the shunting yard algorithm and adds it to the stack.*/
         def translateSymbol(c: RegexToken): Boolean = {
           def parenth: Boolean = {
           logger.trace("parenth")
