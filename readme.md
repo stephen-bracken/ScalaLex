@@ -11,6 +11,10 @@ This tool is designed to implement a subset of the [LEX](http://dinosaur.compile
 - ``[]`` creates a set of union operations between characters. Includes support for character ranges, e.g.
             
     - ``[0-9]`` is equivalent to (0|1|2|3|4|5|6|7|8|9)
+
+    
+    - ``^`` inverts the character set, matching any character **except** the characters in the set, e.g.
+    - ``[^0-9]`` matches any character except ``[0-9]``
         
 - ``()`` standard bracketing
         
@@ -21,6 +25,13 @@ This tool is designed to implement a subset of the [LEX](http://dinosaur.compile
 - ``+``  like kleene star, but with 1 or more, e.g. a+ is equivalent to aa*
         
 - ``|``  union/or operation, i.e. previous symbol or next symbol
+
+**Special operators**
+the following operators are used during the processing of an input string, and must be escaped using a \ character in order to be used
+
+- "\u0000" is an empty unicode character used to represent a transition on no input
+
+- "\u0008" is a backspace character that is used to represent concatenations
 
 **Planned operators**
 - ``{}`` used for definitions or specifying a specific number of symbols, e.g. 

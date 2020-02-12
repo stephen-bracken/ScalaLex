@@ -89,7 +89,9 @@ abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
 
 class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
   override type S = NFAState
+  /** a list of epsilon transitions from this state */
   var epsilons:Set[NFAState] = Set(this)
+  /** adds an epsilon transition from this state to s */
   def epsilons_(s: NFAState) = epsilons = epsilons.union(Set(s))
 }
 
@@ -98,7 +100,7 @@ class DFAState(n: Set[NFAState] = Set(), id: Int) extends State(id){
   val nfaStates = n
   override type S = DFAState
   override var accepting = (nfaStates exists(p => p.accepting))
-  //override var transitions: Set[Transition[DFAState]] = Set()//.withDefaultValue(Set())
+  /** indicates whether the nfaState is included in the epsilon closure of this DFAState */
   def included(s:NFAState) = nfaStates contains s
   /** gets the next DFAState using this transition symbol */
   def nextState(c: Char): DFAState = transition(c).head
@@ -115,6 +117,7 @@ class DFAState(n: Set[NFAState] = Set(), id: Int) extends State(id){
     }
     move(nfaStates.toList,Set())
   }
+  /** special case NFA traversal with inverted empty character sets i.e. [^] */
   def emptyNFAMove:Set[NFAState] = {
     @tailrec
     def move(s: List[NFAState],a: Set[NFAState]):Set[NFAState] = {
@@ -140,7 +143,7 @@ abstract class State(val id:Int) extends LazyLogging{
   type S <: State
   /** indicates whether or not this state is an accepting state in the FSA */
   var accepting: Boolean
-  /** a map of state transitions using valid symbols */
+  /** a set of possible Transition encodings from this state */
   var transitions: Set[Transition[S]] = Set()
 
   /** yields the possible state transitions from a given character */
@@ -150,6 +153,7 @@ abstract class State(val id:Int) extends LazyLogging{
       t.result
     case None => Set()
   }
+  /** adds a transition or an inverse transition from this state to s via the chars in c */
   def addTransition(i:Boolean, s:S,c: Char*) = {
     val chars = c.toSet
     logger.trace("adding transition from "+this+" to "+s+" via '" + (i match {
@@ -169,6 +173,7 @@ abstract class State(val id:Int) extends LazyLogging{
         }
     }
   }
+  /** creates a special case transition representing [^] */
   def addEmptyTransition(s: S) = {
     transitions.find(p => p.chars.isEmpty && p.inverted) match {
       case Some(v) => v.addState(s)
@@ -183,6 +188,7 @@ abstract class State(val id:Int) extends LazyLogging{
   override def equals(x: Any): Boolean = id == x.asInstanceOf[S].id
 }
 
+/** represents a transition from this state. Contains associated characters, whether the transition is inverted (^), and the set of possible destinations */
 case class Transition[S<:State](var chars: Set[Char],val inverted: Boolean = false,var result: Set[S]) extends LazyLogging{
   def makeTransition(c: Char):Boolean = chars.contains(c) ^ inverted
   def addState(s:S) = {result = result.union(Set(s))}

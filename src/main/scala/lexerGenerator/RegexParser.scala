@@ -155,11 +155,6 @@ object regexParser extends LazyLogging {
               createRange(xs,x::a)
           }
         }
-        /*def invertChars(s:List[RegexToken]): List[RegexToken] = {
-          var charSet:Set[RegexToken] = allChars
-          for(c <- s) yield(charSet = charSet.diff(Set(c)))
-          charSet.toList
-        }*/
         s match {
           //return symbols
           case Nil => a.reverse
@@ -191,10 +186,6 @@ object regexParser extends LazyLogging {
             logger.trace("processing range expression " + braceSymbols.reverse)
             val c = createRange(braceSymbols,Nil)
             logger.trace("adding sequence " + c)
-            /*if(invertedBrace) {
-              logger.trace("inverting range")
-              findBraces(x.tail,invertChars(c.tail)++a)
-            }*/
             findBraces(x.tail,c ++ a)
           //add symbol to char set
           case x :: xs if x.inRange =>
@@ -336,17 +327,21 @@ object regexParser extends LazyLogging {
             fsa.addAccepting(fsa.finalState)
             (fsa, true)
           //char set
+          //empty inverse set
           case x@ Operator('[',false,false)::Operator('^',false,true)::Operator(']',false,false)::xs =>
             logger.trace("processing inverse range")
             pushAll(List(),true)
             translateSymbols(xs)
+          //inverse set
           case x@ Operator('[',false,false)::Operator('^',false,true)::xs =>
             logger.trace("processing inverse range")
             inverted = true
             translateSymbols(xs)
+          //beginning
           case x@ Operator('[',false,false)::x1::xs if x1.inRange =>
             braceSymbols = Set(x1)
             translateSymbols(x.tail)
+          //end
           case x0::Operator(']',false,false)::xs if x0.inRange =>
             logger.trace("range ended")
             braceSymbols = braceSymbols.union(Set(x0))
@@ -450,8 +445,6 @@ object regexParser extends LazyLogging {
       if (!t1 || !t2) throw new RegexError("failed to process concatenation",r)
       else{
         //add epsilon transition from the final state of A to the initial state of B
-        //println("FSA A: initial state: " + a.initialState + ", final state: " + a.finalState)
-        //println("FSA B: initial state: " + b.initialState + ", final state: " + b.finalState)
         a.finalState.epsilons_(b.initialState)
         val f = new NFA(a.getStates)
         f.addStates(b.getStates)
@@ -580,6 +573,7 @@ object regexParser extends LazyLogging {
         for{(s,i) <- inputSet
             //if processing.transitions.contains(c)
             } yield {
+              //special case for [^] or []
               if(s.isEmpty){
                 val move = processing.emptyNFAMove
                 if(!move.isEmpty){
@@ -603,8 +597,9 @@ object regexParser extends LazyLogging {
               }
             }
             else{logger.trace("Transition not found")}
-            }
-              else{
+          }
+          else{
+              //iterate through characters
               for (c <- s) yield {
               logger.trace("processing epsilon closure of "+processing+" on '"+c + '\'')
               val move = processing nfaMove(c,i)
@@ -691,6 +686,7 @@ object regexParser extends LazyLogging {
   }
 }
 
+/** A tokenised component of the Regex input */
 private abstract class RegexToken(val symbol: Char, val inRange: Boolean) {
   override def equals(x: Any): Boolean = {
     if (!x.isInstanceOf[RegexToken]) false
@@ -702,6 +698,7 @@ private abstract class RegexToken(val symbol: Char, val inRange: Boolean) {
   override def toString(): String = symbol.toString + ":" + inRange
 }
 
+/** A Regex operator */
 private case class Operator(s: Char,escaped: Boolean,r: Boolean) extends RegexToken(s,r) {
   override def equals(x: Any): Boolean = {if (!x.isInstanceOf[Operator]) false
     else {
@@ -712,6 +709,7 @@ private case class Operator(s: Char,escaped: Boolean,r: Boolean) extends RegexTo
   override def toString(): String = if(escaped) "\\"+symbol + ":" + inRange else symbol.toString + ":" + inRange
 }
 
+/** A regex input symbol */
 private case class Input(s: Char, r: Boolean) extends RegexToken(s,r)
 
 /**
