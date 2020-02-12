@@ -302,7 +302,7 @@ class DFARangeSuite extends UnitSpec {
         assert(!dfa.eval(seq3),"Seq3")
     }
 
-    ignore should "Produce an equivalent DFA to [^]" in {
+    it should "Produce an equivalent DFA to [^]" in {
         println("#########DFAInverseRange#########")
         val seq1 = "a"
         val seq2 = "b"

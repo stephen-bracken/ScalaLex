@@ -68,8 +68,7 @@ object regexParser extends LazyLogging {
     /** the id of the next state to be created */
     var nextId: Int = 0
     /** the set of chars with transitions available - used with subset construction */
-    var inputSet:Set[Char] = Set.empty
-
+    var inputSet:List[(Set[Char],Boolean)] = Nil
     /** indicates whether the current character was escaped */
     var escaped:Boolean = false
     /** the previous symbol including operators - used with backslash (\) */
@@ -156,11 +155,11 @@ object regexParser extends LazyLogging {
               createRange(xs,x::a)
           }
         }
-        def invertChars(s:List[RegexToken]): List[RegexToken] = {
+        /*def invertChars(s:List[RegexToken]): List[RegexToken] = {
           var charSet:Set[RegexToken] = allChars
           for(c <- s) yield(charSet = charSet.diff(Set(c)))
           charSet.toList
-        }
+        }*/
         s match {
           //return symbols
           case Nil => a.reverse
@@ -171,15 +170,15 @@ object regexParser extends LazyLogging {
               logger.trace("processing range expression " + braceSymbols.reverse)
               val c = createRange(braceSymbols,Nil)
               logger.trace("adding sequence " + c)
-              if(invertedBrace) findBraces(Nil,invertChars(c) ++ a)
-              else findBraces(Nil,c++a)
+              //if(invertedBrace) findBraces(Nil,invertChars(c) ++ a)
+              findBraces(Nil,c++a)
             }
             else findBraces(Nil,x::a)
           //finds start of inverted char set
           case x@Operator('[',false,false)::Operator('^',false,true)::xs =>
             invertedBrace = true
             inBrace = true
-            findBraces(xs,x.head::a)
+            findBraces(x.tail,x.head::a)
           //finds start of normal char set
           case x@Operator('[',false,false)::x1::xs if x1.inRange =>
             inBrace = true
@@ -192,11 +191,11 @@ object regexParser extends LazyLogging {
             logger.trace("processing range expression " + braceSymbols.reverse)
             val c = createRange(braceSymbols,Nil)
             logger.trace("adding sequence " + c)
-            if(invertedBrace) {
+            /*if(invertedBrace) {
               logger.trace("inverting range")
-              findBraces(x.tail,invertChars(c)++a)
-            }
-            else findBraces(x.tail,c ++ a)
+              findBraces(x.tail,invertChars(c.tail)++a)
+            }*/
+            findBraces(x.tail,c ++ a)
           //add symbol to char set
           case x :: xs if x.inRange =>
             logger.trace("adding " + input(x.symbol) + " to range set")
@@ -271,6 +270,7 @@ object regexParser extends LazyLogging {
       */
     def translateToNFA(s: List[RegexToken]): (NFA,Boolean) = {
       var braceSymbols:Set[RegexToken] = Set.empty
+      var inverted:Boolean = false
       @tailrec
       def translateSymbols(s: List[RegexToken]): (NFA,Boolean) = {
         /**translates a single character into a NFA using the shunting yard algorithm and adds it to the stack.*/
@@ -281,7 +281,7 @@ object regexParser extends LazyLogging {
           else{
             //consume operators until bracket found
             while(opStack.head != '('){
-              if(!eval) false
+              if(!eval) throw new RegexError("Failed to process operator",r)
             }
             //remove bracket from stack
             opStack = opStack.tail
@@ -314,10 +314,10 @@ object regexParser extends LazyLogging {
             //otherwise
             case Operator(x,false,false) => 
               while (!opStack.isEmpty && precedence(x, opStack.head)) {
-                if (!eval) false
+                if (!eval) throw new RegexError("Failed to evaluate operator",r)
               }
               opStack = x :: opStack
-              if (stack isEmpty) false
+              if (stack isEmpty) throw new RegexError("Empty stack after operator processing",r)
               else {
                 pushprev(x)
                 true
@@ -327,7 +327,7 @@ object regexParser extends LazyLogging {
         s match {
           //empty input
           case Nil => 
-            if ((for (op <- opStack) yield eval).exists(x => x == false)) (null,false)
+            if ((for (op <- opStack) yield eval).exists(x => x == false)) throw new RegexError("Symbol was processed incorrectly",r)
             if(stack.isEmpty) throw new RegexError("Translation ended with empty stack",r)
             val fsa = stack.head
             //add the final state as an accepting state
@@ -336,13 +336,23 @@ object regexParser extends LazyLogging {
             fsa.addAccepting(fsa.finalState)
             (fsa, true)
           //char set
+          case x@ Operator('[',false,false)::Operator('^',false,true)::Operator(']',false,false)::xs =>
+            logger.trace("processing inverse range")
+            pushAll(List(),true)
+            translateSymbols(xs)
+          case x@ Operator('[',false,false)::Operator('^',false,true)::xs =>
+            logger.trace("processing inverse range")
+            inverted = true
+            translateSymbols(xs)
           case x@ Operator('[',false,false)::x1::xs if x1.inRange =>
             braceSymbols = Set(x1)
             translateSymbols(x.tail)
           case x0::Operator(']',false,false)::xs if x0.inRange =>
+            logger.trace("range ended")
             braceSymbols = braceSymbols.union(Set(x0))
             val b = for(c <- braceSymbols) yield (c.symbol)
-            pushAll(b.toList)
+            pushAll(b.toList,inverted)
+            inverted = false
             translateSymbols(xs)
           case x::xs if x.inRange =>
             braceSymbols = braceSymbols.union(Set(x))
@@ -350,7 +360,7 @@ object regexParser extends LazyLogging {
           //non char set
           case x::xs if !x.inRange =>
             val t = translateSymbol(x)
-            if(!t) (null,false)
+            if(!t) throw new RegexError("Processing of symbol failed",r)
             else translateSymbols(xs)
         }
       }
@@ -367,24 +377,24 @@ object regexParser extends LazyLogging {
     def push(c: Char): Unit = {
       logger.trace("Push '"+input(c)+'\'')
       //add c to inputSet
-      inputSet = inputSet.union(Set(c))
+      inputSet = (Set(c),false)::inputSet
       //create new NFA(s0(c) -> s1)
       val s0 = new NFAState(nextId)
       val s1 = new NFAState(nextId + 1)
       nextId = nextId + 2
-      s0.addTransition(c, s1)
+      s0.addTransition(false, s1,c)
       stack = (new NFA(List(s1, s0))) :: stack
     }
 
-    def pushAll(l: List[Char]):Unit = {
-      logger.trace("PushAll{")
-      inputSet = inputSet.union(l.toSet)
+    def pushAll(l: List[Char],i: Boolean):Unit = {
+      logger.trace("PushAll")
+      inputSet = (l.toSet,i)::inputSet
       val s0 = new NFAState(nextId)
       val s1 = new NFAState(nextId + 1)
       nextId = nextId + 2
-      for(c <- l) yield (s0.addTransition(c,s1))
+      s0.addTransition(i,s1,l:_*)
       stack = (new NFA(List(s1,s0))) :: stack
-      logger.trace("}\\PushAll")
+      //logger.trace("}\\PushAll")
     }
 
     /**
@@ -394,7 +404,7 @@ object regexParser extends LazyLogging {
       */
     def pop: (NFA, Boolean) = {
       logger.trace("Pop")
-      if (stack isEmpty) (null, false)
+      if (stack isEmpty) throw new RegexError("popped from empty stack",r)
       else {
         val p = stack.head
         stack = stack.tail
@@ -410,7 +420,7 @@ object regexParser extends LazyLogging {
      */
     def eval: Boolean = {
       //evaluating operators and executing the correct action
-      if (opStack isEmpty) false
+      if (opStack isEmpty) throw new RegexError("Tried to evaluate empty operator stack",r)
       else {
         val o = opStack.head
         logger.trace("eval '"+input(o)+'\'')
@@ -437,12 +447,12 @@ object regexParser extends LazyLogging {
       logger.trace("concat")
       val (b, t1) = pop
       val (a, t2) = pop
-      if (!t1 || !t2) false
+      if (!t1 || !t2) throw new RegexError("failed to process concatenation",r)
       else{
         //add epsilon transition from the final state of A to the initial state of B
         //println("FSA A: initial state: " + a.initialState + ", final state: " + a.finalState)
         //println("FSA B: initial state: " + b.initialState + ", final state: " + b.finalState)
-        a.finalState.addTransition(epsilon, b.initialState)
+        a.finalState.epsilons_(b.initialState)
         val f = new NFA(a.getStates)
         f.addStates(b.getStates)
       stack = f :: stack
@@ -462,7 +472,7 @@ object regexParser extends LazyLogging {
       logger.trace("star")
       //pop one result off the stack
       val (a, t) = pop
-      if (!t) false
+      if (!t) throw new RegexError("Failed to process * operator",r)
       else {
         val s0 = new NFAState(nextId)
         val s1 = new NFAState(nextId + 1)
@@ -471,11 +481,11 @@ object regexParser extends LazyLogging {
         nextId = nextId + 2
 
         //create transition from s0 to s1
-        s0 addTransition (epsilon, s1)
+        s0 epsilons_(s1)
         //create transition from s0 to the initial state of A
-        s0 addTransition (epsilon, fst)
-        lst addTransition (epsilon, s1)
-        lst addTransition (epsilon, fst)
+        s0 epsilons_(fst)
+        lst epsilons_(s1)
+        lst epsilons_(fst)
         val s = new NFA(List(s0))
         s.addStates(a.getStates)
         s.addState(s1)
@@ -485,7 +495,7 @@ object regexParser extends LazyLogging {
     }
 
     def plus: Boolean = {
-      if(previous == backspace) false
+      if(previous == backspace) throw new RegexError("Failed to process + operator",r)
       else
       //push extra input symbol
       push(previousInput)
@@ -517,11 +527,11 @@ object regexParser extends LazyLogging {
         nextId = nextId + 2
 
         //create epsilon transition from s0 to the initial states of A and B
-        s0 addTransition (epsilon, fstA)
-        s0 addTransition (epsilon, fstB)
+        s0 epsilons_(fstA)
+        s0 epsilons_(fstB)
         //create epsilon transition from the final states of A and B to s1
-        lstA addTransition (epsilon, s1)
-        lstB addTransition (epsilon, s1)
+        lstA epsilons_(s1)
+        lstB epsilons_(s1)
 
         //create new FSAs with s1 and s0
         val newB = new NFA(b.getStates)
@@ -545,7 +555,7 @@ object regexParser extends LazyLogging {
       while(!(unprocessed isEmpty)){
         val fst = unprocessed.head
         unprocessed = unprocessed tail
-        val epsilons = fst transition(epsilon)
+        val epsilons = fst.epsilons
         for {u <- epsilons if !result.contains(u)} yield {result = u::result; unprocessed = u::unprocessed}
       }
       logger.trace(result.toString)
@@ -557,6 +567,7 @@ object regexParser extends LazyLogging {
       var dfaStates: List[DFAState] = List()
       nextId = 0
       logger.debug("Translating NFA to DFA")
+      logger.trace("input set: " + inputSet)
       //starting state of DFA is epsilon closure of first state of NFA
       val dfaStartState = new DFAState(epsilonClosure(Set(s)),nextId)
       var unmarked = List(dfaStartState)
@@ -566,19 +577,19 @@ object regexParser extends LazyLogging {
         processing = unmarked.head
         logger.trace("processing "+processing)
         unmarked = unmarked.tail
-        for{c <- inputSet
+        for{(s,i) <- inputSet
             //if processing.transitions.contains(c)
             } yield {
-              logger.trace("processing epsilon closure of "+processing+" on '"+c + '\'')
-              val move = processing nfaMove c
-              if(!move.isEmpty){
-              val closure = epsilonClosure(move)
-              if(!(result exists(x => x.nfaStates == closure)))
+              if(s.isEmpty){
+                val move = processing.emptyNFAMove
+                if(!move.isEmpty){
+                  val closure = epsilonClosure(move)
+                  if(!(result exists(x => x.nfaStates == closure)))
               {
                 nextId += 1
                 val state = new DFAState(closure,nextId)
                 logger.trace("adding " + state + " to result")
-                processing.addTransition(c,state)
+                processing.addTransition(i,state)
                 result = state :: result
                 unmarked = state :: unmarked
               }
@@ -588,11 +599,39 @@ object regexParser extends LazyLogging {
                   case None => throw new RegexError("could not find matched DFAState for epsilon closure",r)
                   case Some(value) => value
                 }
-                processing.addTransition(c,res)
+                processing.addTransition(i,res)
               }
             }
             else{logger.trace("Transition not found")}
+            }
+              else{
+              for (c <- s) yield {
+              logger.trace("processing epsilon closure of "+processing+" on '"+c + '\'')
+              val move = processing nfaMove(c,i)
+              if(!move.isEmpty){
+              val closure = epsilonClosure(move)
+              if(!(result exists(x => x.nfaStates == closure)))
+              {
+                nextId += 1
+                val state = new DFAState(closure,nextId)
+                logger.trace("adding " + state + " to result")
+                processing.addTransition(i,state,c)
+                result = state :: result
+                unmarked = state :: unmarked
+              }
+              else{
+                logger.trace("Subset already exists")
+                val res = result.find(x => x.nfaStates == closure) match {
+                  case None => throw new RegexError("could not find matched DFAState for epsilon closure",r)
+                  case Some(value) => value
+                }
+                processing.addTransition(i,res,c)
+              }
+            }
+            else{logger.trace("Transition not found")}
+            }
           }
+        }
       }
       new DFA(result,r)
     }
@@ -660,7 +699,7 @@ private abstract class RegexToken(val symbol: Char, val inRange: Boolean) {
       this.symbol == s.symbol && this.inRange == s.inRange
     }
   }
-  override def toString(): String = symbol.toString // + ":" + inRange
+  override def toString(): String = symbol.toString + ":" + inRange
 }
 
 private case class Operator(s: Char,escaped: Boolean,r: Boolean) extends RegexToken(s,r) {
@@ -670,7 +709,7 @@ private case class Operator(s: Char,escaped: Boolean,r: Boolean) extends RegexTo
       this.symbol == s.symbol && this.escaped == s.escaped && this.inRange == s.inRange
     }
   }
-  override def toString(): String = if(escaped) "\\"+symbol /* + ":" + inRange */ else symbol.toString // + ":" + inRange
+  override def toString(): String = if(escaped) "\\"+symbol + ":" + inRange else symbol.toString + ":" + inRange
 }
 
 private case class Input(s: Char, r: Boolean) extends RegexToken(s,r)

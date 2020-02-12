@@ -1,6 +1,8 @@
 package lexerGenerator
 import scala.language.postfixOps
 import com.typesafe.scalalogging.LazyLogging
+import scala.annotation.tailrec
+import scala.collection.immutable.Nil
 
 /** Represents a Non-deterministic Finite State Automata */
 class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
@@ -18,7 +20,7 @@ class DFA(s: List[DFAState],val regex:String)
         if (s isEmpty) st.accepting
         else {
           logger.trace("evaluating symbol "+s.head+" in "+st)
-          if (!(st.transitions.exists(x => x._1 == s.head))) false
+          if (!(st.transitions.exists(x => x.makeTransition(s.head)))) false
           else {
             val next = st.nextState(s.head)
             logger.trace("transition to "+next)
@@ -87,52 +89,50 @@ abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
 
 class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
   override type S = NFAState
-  override var transitions: Map[Char, Set[NFAState]] = Map('\u0000' -> Set(this))//.withDefaultValue(Set())
-  //override def getTransitions(c: Char): Map[Char,Set[NFAState]] = transitions filter(t => t._1 == c)
-  /*def removeEpsilon = {
-    transitions = transitions filter (t => t._1 != '\u0000')
-  }*/
-  override def transition(c: Char): Set[NFAState] = if (transitions contains(c)) transitions(c) else Set()
-
+  var epsilons:Set[NFAState] = Set(this)
+  def epsilons_(s: NFAState) = epsilons = epsilons.union(Set(s))
 }
 
-class DFAState(n:Set[NFAState] = Set(), id: Int) extends State(id){
+class DFAState(n: Set[NFAState] = Set(), id: Int) extends State(id){
   /** the set of NFAStates that this DFAState was constructed from */
   val nfaStates = n
   override type S = DFAState
   override var accepting = (nfaStates exists(p => p.accepting))
-  override var transitions: Map[Char,Set[S]] = Map()//.withDefaultValue(Set())
+  //override var transitions: Set[Transition[DFAState]] = Set()//.withDefaultValue(Set())
   def included(s:NFAState) = nfaStates contains s
   /** gets the next DFAState using this transition symbol */
   def nextState(c: Char): DFAState = transition(c).head
-  /** sets the transition from this state via c to s */
-  override def addTransition(c: Char, s:DFAState) = {
-    logger.trace(
-      "adding DFA transition (" +
-        (c match {
-          case '\u0000' => "epsilon"
-          case '\u0008' => "backspace"
-          case x        => x
-        })
-        + ") from state " + id + " to state " + s.id
-    )
-    transitions = transitions.updated(c,Set(s))
-  }
   /** gets all of the visible NFAStates using a single transition on a character input*/
-  def nfaMove(c:Char):Set[NFAState] = {
-    def move(s: List[NFAState]):Set[NFAState] = {
-      if(s isEmpty) Set()
+  def nfaMove(c:Char,i:Boolean):Set[NFAState] = {
+    @tailrec
+    def move(s: List[NFAState],a: Set[NFAState]):Set[NFAState] = {
+      if(s isEmpty) a
       else
-      s.head transition(c) union(move(s tail))
+      s.head.transitions.find(p => p.chars.contains(c)&&p.inverted==i) match {
+        case Some(v) => move(s.tail,v.result.union(a))
+        case None => move(s.tail,a)
+      }
     }
-    move(nfaStates.toList)
+    move(nfaStates.toList,Set())
+  }
+  def emptyNFAMove:Set[NFAState] = {
+    @tailrec
+    def move(s: List[NFAState],a: Set[NFAState]):Set[NFAState] = {
+      if(s isEmpty) a
+      else
+      s.head.transitions.find(p => p.chars.isEmpty&&p.inverted) match {
+        case Some(v) => move(s.tail,v.result.union(a))
+        case None => move(s.tail,a)
+      }
+    }
+    move(nfaStates.toList,Set())
   }
   /** checks if the State is a dead end */
   def deadEnd:Boolean = {
        if(accepting) false
        else
-       if(transitions.keySet.isEmpty) true
-       else !(transitions.exists(p => !(p._2.diff(Set(this)).isEmpty)))
+       if(transitions.isEmpty) true
+       else !(transitions.exists(p => !(p.result.diff(Set(this)).isEmpty)))
   }
 }
 
@@ -141,27 +141,55 @@ abstract class State(val id:Int) extends LazyLogging{
   /** indicates whether or not this state is an accepting state in the FSA */
   var accepting: Boolean
   /** a map of state transitions using valid symbols */
-  var transitions: Map[Char,Set[S]]
+  var transitions: Set[Transition[S]] = Set()
 
   /** yields the possible state transitions from a given character */
-  def transition(c: Char):Set[S] = transitions(c)
-  def addTransition(c: Char, s:S) = {
-    logger.trace("adding transition from "+this+" to "+s+" via '"+(c match {
-          case '\u0000' => "epsilon"
-          case '\u0008' => "backspace"
-          case x        => x
-        })+'\'')
-    if(transitions exists(x => x._1 == c)){
-      transitions = transitions.updated(c, transitions(c).union(Set(s)))
+  def transition(c: Char):Set[S] = transitions.find(x => x.makeTransition(c)) match {
+    case Some(t) => 
+      //logger.trace("found transition " + t._2)
+      t.result
+    case None => Set()
+  }
+  def addTransition(i:Boolean, s:S,c: Char*) = {
+    val chars = c.toSet
+    logger.trace("adding transition from "+this+" to "+s+" via '" + (i match {
+      case false => chars
+      case true => "not " + chars
+    }))
+    transitions.find(p => (p.chars == chars) && (p.inverted == i)) match {
+      case Some(v) => v.addState(s)
+      case None => 
+        transitions.find(p => p.inverted == i && p.result.contains(s)) match {
+          case Some(v) => 
+            v.addCharacters(c.toList:_*)
+          case None =>         
+            val t = new Transition[S](chars,i,Set(s))
+            logger.trace("creating new state transition: " + t)
+            transitions = transitions.union(Set(t))
+        }
     }
-    else transitions = transitions.updated(c,Set(s))
+  }
+  def addEmptyTransition(s: S) = {
+    transitions.find(p => p.chars.isEmpty && p.inverted) match {
+      case Some(v) => v.addState(s)
+      case None => transitions = transitions.union(Set(new Transition[S](Set(),false,Set(s))))
+    }
   }
   /** removes all of the transitions from this state to s*/
-  def removeTransitions(s: S) = {for ((k,v) <- transitions) yield {transitions = transitions.updated(k,v.diff(Set(s)))}}
+  def removeTransitions(s: S) = {for (t <- transitions) yield {t.result = t.result.diff(Set(s))}}
   override def toString(): String = {
     "state " + id
   }
   override def equals(x: Any): Boolean = id == x.asInstanceOf[S].id
+}
+
+case class Transition[S<:State](var chars: Set[Char],val inverted: Boolean = false,var result: Set[S]) extends LazyLogging{
+  def makeTransition(c: Char):Boolean = chars.contains(c) ^ inverted
+  def addState(s:S) = {result = result.union(Set(s))}
+  def addCharacters(c:Char*) = {chars = chars.union(c.toSet)}
+  override def toString():String = {
+    chars.toString + ", inverted:" + inverted
+  }
 }
 
 class FSAError(msg: String) extends Error(msg) with LazyLogging{

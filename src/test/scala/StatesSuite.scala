@@ -4,6 +4,7 @@ package lexerGenerator
 //import org.junit.Assert.assertEquals
 
 class StatesSuite extends UnitSpec {
+    val epsilon = '\u0000'
     //###### State tests ######
     "A State" should "Be comparable by id" in  {
         println("#########StateEquality#########")
@@ -25,15 +26,38 @@ class StatesSuite extends UnitSpec {
         assert((nfaSet.contains(s3)),"s3")
     }
 
+    it should "have transitions to another state" in {
+        println("#########StateTransition#########")
+        val s0 = new NFAState(0)
+        val s1 = new NFAState(1)
+        s0.addTransition(false,s1,'a')
+        assert(s0.transition('a').head == s1)
+    }
+
+    "An NFA State" should "have a reference within any DFAState that contain it" in {
+        println("#########DFAState included#########")
+        val s0 = new NFAState(0)
+        val s1 = new DFAState(Set(s0),0)
+        assert(s1.included(s0))
+    }
+
+    it should "know what states are accessible using no input symbol" in {
+        println("#########NFAState epsilon#########")
+        val s0 = new NFAState(0)
+        val s1 = new NFAState(1)
+        s0.addTransition(false,s1,epsilon)
+        assert(s0.transition(epsilon).contains(s1))
+    }
+
     "A dead end state" should "have no state transitions that do not result in itself" in {
         println("#########StateDeadEnd#########")
         val s0 = new DFAState(Set(),0)
         val s1 = new DFAState(Set(),1)
         val s2 = new DFAState(Set(),2)
         val s3 = new DFAState(Set(),3)
-        s0.addTransition('a',s1)
+        s0.addTransition(false,s1,'a')
         s1.accepting = true
-        s2.addTransition('a',s2)
+        s2.addTransition(false,s2,'a')
         assert(!s0.deadEnd,"S0")
         assert(!s1.deadEnd,"S1")
         assert(s2.deadEnd,"S2")
