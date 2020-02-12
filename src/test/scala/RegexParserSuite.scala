@@ -53,17 +53,9 @@ class DFASuite extends UnitSpec {
     it should "not produce a DFA for a*|*" in {
         var b = false
         println("#########DFABadUnion#########")
-        try{
+        assertThrows[RegexError]{
             regexParser.translateRegex("a*|*")
         }
-        catch{
-            case e: Throwable => {
-                val ex = new RegexError("a","b")
-                assert(e.getClass==ex.getClass(),"getClass")
-                b = true
-            }
-        }
-        assert(b,"Catch")
     }
 }
 
