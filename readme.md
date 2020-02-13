@@ -6,7 +6,7 @@ This tool is designed to implement a subset of the [LEX](http://dinosaur.compile
 
    Currently, supported regular expression operators are:
         
-        [ ] ( ) \ * + |
+        [ ] ( ) \ * + | "
         
 - ``[]`` creates a set of union operations between characters. Includes support for character ranges, e.g.
             
@@ -25,6 +25,8 @@ This tool is designed to implement a subset of the [LEX](http://dinosaur.compile
 - ``+``  like kleene star, but with 1 or more, e.g. a+ is equivalent to aa*
         
 - ``|``  union/or operation, i.e. previous symbol or next symbol
+
+- ``"``  quote sequences are used to escape all operators in a sequence, e.g. "xyz++" is equivalent to the input sequence xyz++
 
 **Special operators**
 the following operators are used during the processing of an input string, and must be escaped using a \ character in order to be used

@@ -27,7 +27,7 @@ object regexParser extends LazyLogging {
   /** the characters that are not allowed in the input string*/
   private val illegal: Set[Char] = Set(epsilon, backspace)
   /** chars that represent regex operators */
-  private val operators: Set[Char] = Set('-','^','|', '*', '+', epsilon, backspace,'(',')','\\','[',']')
+  private val operators: Set[Char] = Set('"','-','^','|', '*', '+', epsilon, backspace,'(',')','\\','[',']')
 
   /** a set of all possible characters */
   private val allChars:Set[RegexToken] = {
@@ -122,6 +122,38 @@ object regexParser extends LazyLogging {
       makeSymbol(s,Nil)
     }
 
+    /** escapes operators in quotation sequences */
+    def quoteEval(s: List[RegexToken]):List[RegexToken] = {
+      var inQuote:Boolean = false
+      var quoteSymbols:List[RegexToken] = List.empty[RegexToken]
+      @tailrec
+      def findQuotes(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = {
+        @tailrec
+        def escapeOps(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = s match {
+          case Nil => a.reverse
+          case Operator(x,false,false)::xs =>
+            escapeOps(xs,new Operator(x,true,false)::a)
+          case x::xs =>
+            escapeOps(xs,x::a)
+        }
+        s match {
+          case Nil => a.reverse
+          case Operator('"',false,false)::xs if !inQuote =>
+            inQuote = true
+            findQuotes(xs,a)
+          case Operator('"',false,false)::xs if inQuote =>
+            inQuote = false
+            val e = escapeOps(quoteSymbols,List())
+            findQuotes(xs,e ++ a)
+          case x::xs if inQuote =>
+            quoteSymbols = x::quoteSymbols
+            findQuotes(xs,a)
+          case x::xs if !inQuote =>
+           findQuotes(xs,x::a)
+        }
+      }
+      findQuotes(s,List())
+    }
 
     /** Expands brace expressions into full character sets */
     def braceExpand(s: List[RegexToken]):List[RegexToken]= {
@@ -659,7 +691,9 @@ object regexParser extends LazyLogging {
       logger.debug("preprocessing symbols")
       val s = makeSymbols(r.toList)
       logger.debug("symbol list: " + s)
-      val b = braceExpand(s)
+      val q = quoteEval(s)
+      logger.debug("Processed quotes: " + q)
+      val b = braceExpand(q)
       logger.debug("converted braces: "+b)
       val c = concatExpand(b)
       logger.debug("converted concatenations: "+c)
