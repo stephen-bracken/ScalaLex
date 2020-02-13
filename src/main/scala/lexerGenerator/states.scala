@@ -32,13 +32,18 @@ class DFA(s: List[DFAState],val regex:String)
       logger.debug("DFA evaluating string " + s)
       e(s,initialState)
     }
+    /** evaluates an input string and all of its substrings */
     def getMatches(in:String) = {
       (for {
         s <- 0 to in.length
         e <- s to in.length 
       } yield {
         val str = in.substring(s,e)
-      (s,e,str,eval(str))}).toList.filter(p => p._4).map(f => (f._1,f._2,f._3))
+      (s,e,str,eval(str))}).filter(p => p._4).map(f => (f._1,f._2,f._3)).toList
+    }
+    /** returns whether the input or any substring matches against this automata */
+    def anyMatches(in:String) = {
+      !getMatches(in).isEmpty
     }
 }
 

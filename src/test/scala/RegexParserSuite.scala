@@ -14,14 +14,14 @@ class DFASuite extends UnitSpec {
 
     //###### DFA Construction ######
     "The Regex Parser" should "produce an equivalent DFA to an empty regex" in {
-        println("#########DFAEmpty#########")
+        logger.info("#########DFAEmpty#########")
         val dfa = regexParser.translateRegex("")
         assert(dfa.eval(""),"Empty")
         assert(!dfa.eval("a"),"Not Empty")
     }
 
     it should "produce an equivalent DFA to abb" in {
-        println("#########DFAConcat#########")
+        logger.info("#########DFAConcat#########")
         val seq1 = "a"
         val seq2 = "ba"
         val seq3 = "abb"
@@ -32,14 +32,14 @@ class DFASuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to hello" in {
-        println("#########DFAConcat2#########")
+        logger.info("#########DFAConcat2#########")
         val seq = "hello"
         val dfa = regexParser.translateRegex("hello")
         assert(dfa.eval(seq),"Seq hello")
     }
 
     it should "produce an equivalent DFA to a|b" in {
-        println("#########DFAUnion#########")
+        logger.info("#########DFAUnion#########")
         val seq1 = "a"
         val seq2 = "b"
         val seq3 = "c"
@@ -49,17 +49,28 @@ class DFASuite extends UnitSpec {
         assert(!dfa.eval(seq3),"Seq3")
     }
 
-    it should "produce a list of matches on an input string" in {
-        println("#########DFAgetMatches#########")
+    it should "produce a list of matches on an input string and its substrings" in {
+        logger.info("#########DFAgetMatches#########")
         val in = "hellohellohellohellohellohellohellohellohello"
         val dfa = regexParser.translateRegex("hello")
         val r = dfa.getMatches(in)
-        println(r)
+        logger.info(r.toString)
+    }
+
+    it should "be able to tell whether there are any matches for an input string" in {
+        logger.info("#########DFAanyMatches#########")
+        val seq1 = "babaabaaaaaa befuogsebogbabababfiego"
+        val seq2 = "gggggggggggggggggggggggg"
+        val dfa = regexParser.translateRegex("a+")
+        val r1 = dfa.getMatches(seq1)
+        val r2 = dfa.getMatches(seq2)
+        assert(!r1.isEmpty && dfa.anyMatches(seq1))
+        assert(r2.isEmpty && !dfa.anyMatches(seq2))
     }
 
     //###### Quote tests ######
     it should "produce an equivalent dfa to \"f*|\"" in {
-        println("#########DFAQuotes#########")
+        logger.info("#########DFAQuotes#########")
         val seq1 = "f*|"
         val dfa = regexParser.translateRegex("\"f*|\"")
         assert(dfa.eval(seq1))
@@ -73,7 +84,7 @@ class DFASuite extends UnitSpec {
 
     //###### Error tests ######
     it should "not produce a DFA for a*|*" in {
-        println("#########DFABadUnion#########")
+        logger.info("#########DFABadUnion#########")
         assertThrows[RegexError]{
             regexParser.translateRegex("a*|*")
         }
@@ -83,7 +94,7 @@ class DFASuite extends UnitSpec {
 class DFAStarSuite extends UnitSpec {
     //###### DFA Star tests ######
     "The Regex Parser" should "produce an equivalent DFA to a*" in {
-        println("#########DFAStar#########")
+        logger.info("#########DFAStar#########")
         val seq1 = "a"
         val seq2 = "aa"
         val seq3 = "aaa"
@@ -99,7 +110,7 @@ class DFAStarSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to a+" in {
-        println("#########DFAPlus#########")
+        logger.info("#########DFAPlus#########")
         val seq1 = "a"
         val seq2 = "aa"
         val seq3 = "aaa"
@@ -115,7 +126,7 @@ class DFAStarSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to ab*" in {
-        println("#########DFAConcatStar#########")
+        logger.info("#########DFAConcatStar#########")
         val seq1 = "a"
         val seq2 = "ab"
         val seq3 = "abb"
@@ -128,7 +139,7 @@ class DFAStarSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to b|a*" in {
-        println("#########DFAStarUnion#########")
+        logger.info("#########DFAStarUnion#########")
         val seq1 = "aaa"
         val seq2 = "aa"
         val seq3 = "b"
@@ -141,7 +152,7 @@ class DFAStarSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to a*b*" in {
-        println("#########DFADoubleStar#########")
+        logger.info("#########DFADoubleStar#########")
         val seq1 = "aaabbb"
         val seq2 = "aabb"
         val seq3 = "abc"
@@ -170,7 +181,7 @@ class DFAUnionSuite extends UnitSpec {
 class DFABracketSuite extends UnitSpec {
     //###### DFA Bracketing tests ######
     "The Regex Parser" should "produce an equivalent DFA to (ab)(cd)" in {
-        println("#########DFABracket#########")
+        logger.info("#########DFABracket#########")
         val seq1 = "abcd"
         val seq2 = "(ab)(cd)"
         val dfa = regexParser.translateRegex("(ab)(cd)")
@@ -179,7 +190,7 @@ class DFABracketSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to (abcd)*" in {
-        println("#########DFAStarBracket#########")
+        logger.info("#########DFAStarBracket#########")
         val seq1 = "abcd"
         val seq2 = "abcdabcd"
         val seq3 = "abcdefgh"
@@ -191,7 +202,7 @@ class DFABracketSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to (abcd)|(efgh)" in {
-        println("#########DFAUnionBracket#########")
+        logger.info("#########DFAUnionBracket#########")
         val seq1 = "abcd"
         val seq2 = "efgh"
         val seq3 = "abcdefgh"
@@ -202,7 +213,7 @@ class DFABracketSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to (abcd)|(efgh)*" in {
-        println("#########DFAUnionBracket#########")
+        logger.info("#########DFAUnionBracket#########")
         val seq1 = "abcd"
         val seq2 = "efgh"
         val seq3 = "abcdefgh"
@@ -219,7 +230,7 @@ class DFARangeSuite extends UnitSpec {
     override def timeLimit: Span = Span(6000000,Millis)
     //###### Char range tests ######
     "The Regex Parser" should "produce an equivalent DFA to [abc]" in {
-        println("#########DFACharSet#########")
+        logger.info("#########DFACharSet#########")
         val seq1 = "a"
         val seq2 = "b"
         val seq3 = "c"
@@ -232,14 +243,14 @@ class DFARangeSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to [0-9]" in {
-        println("#########DFARange#########")
+        logger.info("#########DFARange#########")
         val r = 0 to 9
         val dfa = regexParser.translateRegex("[0-9]")
         for(i <- r) yield {assert(dfa.eval(i.toString),i.toString)}
     }
 
     it should "produce an equivalent DFA to [0\\-9]" in {
-        println("#########DFARangeBackslash#########")
+        logger.info("#########DFARangeBackslash#########")
         val seq1 = "-"
         val seq2 = "9"
         val seq3 = "5"
@@ -250,7 +261,7 @@ class DFARangeSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to [0-9]*" in {
-        println("#########DFARangeStar#########")
+        logger.info("#########DFARangeStar#########")
         val seq1 = "123"
         val seq2 = "456"
         val seq3 = "789"
@@ -262,7 +273,7 @@ class DFARangeSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to [0-9][a-z]" in {
-        println("#########DFADoubleRange#########")
+        logger.info("#########DFADoubleRange#########")
         val seq1 = "1a"
         val seq2 = "2b"
         val seq3 = "3c"
@@ -274,7 +285,7 @@ class DFARangeSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to [0-9a-z]" in {
-        println("#########DFAMultiRange#########")
+        logger.info("#########DFAMultiRange#########")
         val seq1 = "a"
         val seq2 = "1"
         val seq3 = "1a"
@@ -286,7 +297,7 @@ class DFARangeSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to [+|*]" in {
-        println("#########DFARangeOperators#########")
+        logger.info("#########DFARangeOperators#########")
         val seq1 = "+"
         val seq2 = "|"
         val seq3 = "*"
@@ -298,14 +309,14 @@ class DFARangeSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to [\\\\]" in {
-        println("#########DFARangeDoubleBackslash#########")
+        logger.info("#########DFARangeDoubleBackslash#########")
         val seq1 = "\\"
         val dfa = regexParser.translateRegex("[\\\\]")
         assert(dfa.eval(seq1),"Seq1")
     }
 
     it should "produce an equivalent DFA to [^a-z]" in {
-        println("#########DFAInverseRange#########")
+        logger.info("#########DFAInverseRange#########")
         val seq1 = "0"
         val seq2 = "a"
         val seq3 = "z"
@@ -316,7 +327,7 @@ class DFARangeSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to [^]" in {
-        println("#########DFAInverseRange#########")
+        logger.info("#########DFAInverseRange#########")
         val seq1 = "a"
         val seq2 = "b"
         val seq3 = "c"
@@ -332,7 +343,7 @@ class DFARangeSuite extends UnitSpec {
 class DFABackslashSuite extends UnitSpec {
         //###### Backslash tests ######
     "Regex a\\*" should "produce an equivalent DFA" in {
-        println("#########DFABackslashStar#########")
+        logger.info("#########DFABackslashStar#########")
         val seq1 = "a*"
         val seq2 = "a"
         val seq3 = "aa"
@@ -343,14 +354,14 @@ class DFABackslashSuite extends UnitSpec {
     }
 
     "Regex a\\+\\*\\|" should "produce an equivalent DFA" in {
-        println("#########DFABackslashOperators#########")
+        logger.info("#########DFABackslashOperators#########")
         val seq1 = "a+*|"
         val dfa = regexParser.translateRegex("a\\+\\*\\|")
         assert(dfa.eval(seq1),"Seq1")
     }
 
     "Regex a\\(b\\)c" should "produce an equivalent DFA" in {
-        println("#########DFABackslashBrackets#########")
+        logger.info("#########DFABackslashBrackets#########")
         val seq1 = "abc"
         val seq2 = "a(b)c"
         val dfa = regexParser.translateRegex("a\\(b\\)c")
@@ -359,7 +370,7 @@ class DFABackslashSuite extends UnitSpec {
     }
 
     "Regex \\\\" should "produce an equivalent DFA" in {
-        println("#########DFADoubleBackslash#########")
+        logger.info("#########DFADoubleBackslash#########")
         val seq1 = "\\"
         val seq2 = "\\\\"
         val dfa = regexParser.translateRegex("\\\\")
@@ -368,7 +379,7 @@ class DFABackslashSuite extends UnitSpec {
     }
 
     "Regex \\\\*" should "produce an equivalent DFA" in {
-        println("#########DFABackslashBrackets#########")
+        logger.info("#########DFABackslashBrackets#########")
         val seq1 = "\\"
         val seq2 = "\\\\"
         val seq3 = "\\*"
