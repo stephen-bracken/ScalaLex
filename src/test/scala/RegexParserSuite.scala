@@ -105,7 +105,7 @@ class DFASuite extends UnitSpec {
     }
 }
 
-class DFAStarSuite extends UnitSpec {
+class DFAQuantifierSuite extends UnitSpec {
     //###### DFA Star tests ######
     "The Regex Parser" should "produce an equivalent DFA to a*" in {
         logger.info("#########DFAStar#########")
@@ -121,6 +121,31 @@ class DFAStarSuite extends UnitSpec {
         assert(dfa.eval(seq3),"Seq3")
         assert(dfa.eval(seq4),"Seq4")
         assert(!dfa.eval(seq5),"Seq5")
+    }
+
+    it should "produce an equivalent DFA to ba?" in {
+        logger.info("#########DFAQuestionMark#########")
+        val seq1 = "b"
+        val seq2 = "ba"
+        val seq3 = "baa"
+        val dfa = regexParser.translateRegex("ba?")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(!dfa.eval(seq3),"Seq3")
+    }
+
+    it should "produce an equivalent DFA to ab?c*" in {
+        val seq1 = "a"
+        val seq2 = "ab"
+        val seq3 = "abb"
+        val seq4 = "abc"
+        val seq5 = "abcccc"
+        val dfa = regexParser.translateRegex("ab?c*")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(!dfa.eval(seq3),"Seq3")
+        assert(dfa.eval(seq4),"Seq4")
+        assert(dfa.eval(seq5),"Seq5")
     }
 
     it should "produce an equivalent DFA to a+" in {

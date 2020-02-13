@@ -25,7 +25,7 @@ object regexParser extends LazyLogging {
   /** the characters that must be escaped in the input string*/
   private val illegal: Set[Char] = Set(backspace)
   /** chars that represent regex operators */
-  private val operators: Set[Char] = Set('"','-','^','|', '*', '+', backspace,'(',')','\\','[',']')
+  private val operators: Set[Char] = Set('?','"','-','^','|', '*', '+', backspace,'(',')','\\','[',']')
 
   /** a set of all possible characters */
   private val allChars:Set[RegexToken] = {
@@ -36,18 +36,6 @@ object regexParser extends LazyLogging {
   private def isInput(c: Char) = !isOperator(c)
   /** checks if a character is in the set of operators or not */
   private def isOperator(c: Char) = operators.contains(c)
-  /** enforces operator precedence on the stack */
-  private def precedence(l: Char, r: Char) = {
-    val o = List('|','*','+')
-    logger.trace("precedence '" + l + "' '" + r + '\'')
-    if (l == r) true
-    else if (o.contains(l)) false
-    else if (r == '*'|| r == '|') true
-    else if (l == '\\') false
-    else if (l == backspace) false
-    else if (r == backspace) true
-    else true
-  }
   
   //def program: Parser[Any] = definitions ~ "%%" ~ rules ~ "%%" ~ routines
   /**
@@ -235,7 +223,7 @@ object regexParser extends LazyLogging {
 
     /** edits the input string to add concatenation operators ('u\0008', or backpace character)*/
     def concatExpand(s: List[RegexToken]):List[RegexToken]= {
-      val o:List[Char] = List('*','+',')')
+      val o:List[Char] = List('*','+',')','?')
       @tailrec
       def checkchars(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = {
         /** checks the first symbol to add a concatenation */
@@ -294,6 +282,18 @@ object regexParser extends LazyLogging {
     def translateToNFA(s: List[RegexToken]): (NFA,Boolean) = {
       var braceSymbols:Set[RegexToken] = Set.empty
       var inverted:Boolean = false
+      /** enforces operator precedence on the stack */
+      def precedence(l: Char, r: Char) = {
+        val o = List('|','*','+','?')
+        logger.trace("precedence '" + l + "' '" + r + '\'')
+        if (l == r) true
+        else if (o.contains(l)) false
+        else if (o.contains(r)) true
+        else if (l == '\\') false
+        else if (l == backspace) false
+        else if (r == backspace) true
+        else true
+      }
       @tailrec
       def translateSymbols(s: List[RegexToken]): (NFA,Boolean) = {
         /**translates a single character into a NFA using the shunting yard algorithm and adds it to the stack.*/
@@ -456,6 +456,7 @@ object regexParser extends LazyLogging {
           case '*'      => star
           case '|'      => union
           case '+'      => plus
+          case '?'      => lazyOp
           case '\u0008' => concat
           case '\\'     => true
           case _        => false
@@ -516,6 +517,23 @@ object regexParser extends LazyLogging {
         s.addState(s1)
         stack = s :: stack
         true
+      }
+    }
+
+    def lazyOp: Boolean = {
+      val (b,t1) = pop
+      val (a,t2) = pop
+      if(!t1|| !t2) throw new RegexError("Incorrect use of ?",r)
+      else{
+      val s0 = new NFAState(nextId)
+      nextId = nextId + 1
+      a.finalState.epsilons_(s0)
+      val c = new NFA(b.getStates)
+      c.finalState.epsilons_(s0)
+      c.addState(s0)
+      stack = a :: stack
+      stack = c :: stack
+      true
       }
     }
 
