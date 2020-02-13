@@ -4,7 +4,6 @@ package lexerGenerator
 //import org.junit.Assert.assertEquals
 
 class StatesSuite extends UnitSpec {
-    val epsilon = '\u0000'
     //###### State tests ######
     "A State" should "Be comparable by id" in  {
         println("#########StateEquality#########")
@@ -45,8 +44,8 @@ class StatesSuite extends UnitSpec {
         println("#########NFAState epsilon#########")
         val s0 = new NFAState(0)
         val s1 = new NFAState(1)
-        s0.addTransition(false,s1,epsilon)
-        assert(s0.transition(epsilon).contains(s1))
+        s0.epsilons_(s1)
+        assert(s0.epsilons.contains(s1))
     }
 
     "A dead end state" should "have no state transitions that do not result in itself" in {
