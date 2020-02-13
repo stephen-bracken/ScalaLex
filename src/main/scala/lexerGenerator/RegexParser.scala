@@ -328,8 +328,7 @@ object regexParser extends LazyLogging {
               opStack = '(' :: opStack; pushprev('('); true
             case Operator(')', false, false) => parenth
             //char sets
-            case Operator('[',false,false) => pushprev('[');true
-            case Operator(']',false,false) => pushprev(']');true
+            case Operator(x,false,false) if badChars.contains(x) => throw new RegexError("Failed to process symbol: " + x,r)
             //empty operator stack
             case Operator(x, false, false) if opStack isEmpty => 
               logger.trace("insert operator '"+input(x)+'\'')
