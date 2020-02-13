@@ -64,8 +64,22 @@ class DFASuite extends UnitSpec {
         val dfa = regexParser.translateRegex("a+")
         val r1 = dfa.getMatches(seq1)
         val r2 = dfa.getMatches(seq2)
-        assert(!r1.isEmpty && dfa.anyMatches(seq1))
-        assert(r2.isEmpty && !dfa.anyMatches(seq2))
+        assert(!r1.isEmpty && dfa.anyMatches(seq1),"Seq1")
+        assert(r2.isEmpty && !dfa.anyMatches(seq2),"Seq2")
+    }
+
+    it should "be able to get the longest match" in {
+        logger.info("#########DFALongestMatch#########")
+        val m1 = "baaaaaaa"
+        val m2 = "caaaaaaa"
+        assert(m1.length == m2.length)
+        val seq1 = "baaaa " + m1 + " baa " + m2
+        val seq2 = "ba ba baa"
+        val dfa = regexParser.translateRegex("c|ba+")
+        val r1 = dfa.longestMatch(seq1)
+        val r2 = dfa.longestMatch(seq2)
+        assert(r1._1 == m1.length && r1._2 == m1)
+        assert(r2._1 == 3)
     }
 
     //###### Quote tests ######

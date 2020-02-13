@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable.Nil
 
 /** Represents a Non-deterministic Finite State Automata */
-class NFA(s:List[NFAState]) extends FSA[NFAState](s) {
+class NFA(s: List[NFAState]) extends FSA[NFAState](s) {
   //NFA Evaluation is not implemented but NFA and NFAStates are used in construction of 
   @deprecated("evaluation of NFAs is not implemented","")
   override def eval(s: String): Boolean =  {logger.error("attempted evaluation on NFA");false}
@@ -17,7 +17,7 @@ class DFA(s: List[DFAState],val regex:String)
     /** evaluates an input string against this DFA. Returns true if input string results in an accepting state */
     override def eval(s: String): Boolean = {
       @tailrec
-      def e(s:String,st:DFAState):Boolean = {
+      def e(s: String,st: DFAState):Boolean = {
         if (s isEmpty) st.accepting
         else {
           logger.trace("evaluating symbol "+s.head+" in "+st)
@@ -32,8 +32,13 @@ class DFA(s: List[DFAState],val regex:String)
       logger.debug("DFA evaluating string " + s)
       e(s,initialState)
     }
-    /** evaluates an input string and all of its substrings */
-    def getMatches(in:String) = {
+    /**
+      * matches this dfa against an input string and all substrings
+      *
+      * @param in input string
+      * @return (Start pos, End pos, matched text)
+      */
+    def getMatches(in: String):List[(Int,Int,String)] = {
       (for {
         s <- 0 to in.length
         e <- s to in.length 
@@ -42,8 +47,23 @@ class DFA(s: List[DFAState],val regex:String)
       (s,e,str,eval(str))}).filter(p => p._4).map(f => (f._1,f._2,f._3)).toList
     }
     /** returns whether the input or any substring matches against this automata */
-    def anyMatches(in:String) = {
+    def anyMatches(in: String):Boolean = {
       !getMatches(in).isEmpty
+    }
+    /**
+      * Gets the longest match in the list from getMatches
+      *
+      * @param in input string
+      * @return (match length, matched text)
+      */
+    def longestMatch(in: String):(Int,String) = {
+      getMatches(in) match {
+        case Nil =>
+          throw new FSAError("no matches found")
+        case x =>
+         val r = x.reduceLeft((x,y) => if((x._2-x._1)>=(y._2-y._1))x else y)
+         (r._2-r._1,r._3)
+      }
     }
 }
 
