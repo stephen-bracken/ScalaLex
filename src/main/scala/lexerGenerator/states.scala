@@ -16,6 +16,7 @@ class DFA(s: List[DFAState],val regex:String)
     extends FSA[DFAState](s) {
     /** evaluates an input string against this DFA. Returns true if input string results in an accepting state */
     override def eval(s: String): Boolean = {
+      @tailrec
       def e(s:String,st:DFAState):Boolean = {
         if (s isEmpty) st.accepting
         else {
@@ -30,6 +31,14 @@ class DFA(s: List[DFAState],val regex:String)
       }
       logger.debug("DFA evaluating string " + s)
       e(s,initialState)
+    }
+    def getMatches(in:String) = {
+      (for {
+        s <- 0 to in.length
+        e <- s to in.length 
+      } yield {
+        val str = in.substring(s,e)
+      (s,e,str,eval(str))}).toList.filter(p => p._4).map(f => (f._1,f._2,f._3))
     }
 }
 
@@ -64,6 +73,7 @@ abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
 
   /** adds a series of states to this FSA */
   def addStates(s:List[A]):Unit = {
+    @tailrec
     def add(s:List[A]):Unit = {
     if(!s.isEmpty){
     addState(s.last)

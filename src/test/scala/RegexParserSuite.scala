@@ -49,6 +49,14 @@ class DFASuite extends UnitSpec {
         assert(!dfa.eval(seq3),"Seq3")
     }
 
+    it should "produce a list of matches on an input string" in {
+        println("#########DFAgetMatches#########")
+        val in = "hellohellohellohellohellohellohellohellohello"
+        val dfa = regexParser.translateRegex("hello")
+        val r = dfa.getMatches(in)
+        println(r)
+    }
+
     //###### Quote tests ######
     it should "produce an equivalent dfa to \"f*|\"" in {
         println("#########DFAQuotes#########")
