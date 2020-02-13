@@ -20,14 +20,12 @@ object regexParser extends LazyLogging {
   // print logback's internal status
   // StatusPrinter.print(lc)
   //###### Character evaluation ######
-  /** unicode for an empty character - used to represent an epsilon transition*/
-  private val epsilon: Char = '\u0000'
   /** unicode for a backspace character - used to represent concatenation*/
   private val backspace: Char = '\u0008'
-  /** the characters that are not allowed in the input string*/
-  private val illegal: Set[Char] = Set(epsilon, backspace)
+  /** the characters that must be escaped in the input string*/
+  private val illegal: Set[Char] = Set(backspace)
   /** chars that represent regex operators */
-  private val operators: Set[Char] = Set('"','-','^','|', '*', '+', epsilon, backspace,'(',')','\\','[',']')
+  private val operators: Set[Char] = Set('"','-','^','|', '*', '+', backspace,'(',')','\\','[',']')
 
   /** a set of all possible characters */
   private val allChars:Set[RegexToken] = {
@@ -100,6 +98,8 @@ object regexParser extends LazyLogging {
         case '\\'::xs if !escaped =>
           escaped = true
           makeSymbol(xs,a)
+        case x::xs if illegal.contains(x) =>
+          makeSymbol(xs,new Operator(x,true,inBrace)::a)
         //start char set
         case '['::xs if !escaped && !inBrace => 
           inBrace = true

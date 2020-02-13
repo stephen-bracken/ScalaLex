@@ -29,9 +29,7 @@ This tool is designed to implement a subset of the [LEX](http://dinosaur.compile
 - ``"``  quote sequences are used to escape all operators in a sequence, e.g. "xyz++" is equivalent to the input sequence xyz++
 
 **Special operators**
-the following operators are used during the processing of an input string, and must be escaped using a \ character in order to be used
-
-- "\u0000" is an empty unicode character used to represent a transition on no input
+the following operators are used during the processing of an input string, and will be escaped.
 
 - "\u0008" is a backspace character that is used to represent concatenations
 

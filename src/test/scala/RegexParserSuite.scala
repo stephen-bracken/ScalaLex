@@ -57,6 +57,12 @@ class DFASuite extends UnitSpec {
         assert(dfa.eval(seq1))
     }
 
+    it should "be able to process backspace characters" in {
+        val seq1:String = "" + backspace + backspace
+        val dfa = regexParser.translateRegex(seq1)
+        assert(dfa.eval(seq1))
+    }
+
     //###### Error tests ######
     it should "not produce a DFA for a*|*" in {
         println("#########DFABadUnion#########")
