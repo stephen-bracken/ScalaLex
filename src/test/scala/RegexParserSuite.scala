@@ -263,6 +263,26 @@ class DFABracketSuite extends UnitSpec {
         assert(!dfa.eval(seq3),"Seq3")
         assert(dfa.eval(seq4),"Seq4")
     }
+
+    it should "produce an equivalent DFA to (ab)?" in {
+        logger.info("#########DFALazy2#########")
+        val seq1 = "ab"
+        val dfa = regexParser.translateRegex("(ab)?")
+        assert(dfa.eval(""),"Empty")
+        assert(dfa.eval(seq1),"Seq1")
+    }
+
+    it should "produce an equivalent DFA to (ab)+" in {
+        logger.info("#########DFAPlus#########")
+        val seq1 = "ab"
+        val seq2 = "abab"
+        val seq3 = "ababab"
+        val dfa = regexParser.translateRegex("(ab)+")
+        assert(!dfa.eval(""),"Empty")
+        assert(dfa.eval(seq1),"Seq1")
+        assert(dfa.eval(seq2),"Seq2")
+        assert(dfa.eval(seq3),"Seq3")
+    }
 }
 
 class DFARangeSuite extends UnitSpec {

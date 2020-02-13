@@ -67,6 +67,12 @@ object regexParser extends LazyLogging {
       previous = c
     }
 
+    def getId:Int = {
+      val i = nextId
+      nextId = nextId + 1
+      i
+    }
+
     /** converts an input char into a readable/printable format */
     def input(c:Char) = c match {
           case '\u0000' => "epsilon"
@@ -520,30 +526,27 @@ object regexParser extends LazyLogging {
     }
 
     def lazyOp: Boolean = {
-      val (b,t1) = pop
-      val (a,t2) = pop
-      if(!t1|| !t2) throw new RegexError("Incorrect use of ?",r)
+      val (a,t1) = pop
+      if(!t1) throw new RegexError("Incorrect use of ?",r)
       else{
-      val s0 = new NFAState(nextId)
-      nextId = nextId + 1
+      val s0 = new NFAState(getId)
       a.finalState.epsilons_(s0)
-      val c = new NFA(b.getStates)
-      c.finalState.epsilons_(s0)
-      c.addState(s0)
+      a.initialState.epsilons_(s0)
+      a.addState(s0)
       stack = a :: stack
-      stack = c :: stack
       true
       }
     }
 
     def plus: Boolean = {
-      if(previous == backspace) throw new RegexError("Failed to process + operator",r)
-      else
       //push extra input symbol
-      push(previousInput)
-      //concat with star operator
-      star
-      concat
+      val (n,b) = pop
+      if (!b) throw new RegexError("Failed to process + quantifier",r)
+      val s0 = new NFAState(getId)
+      s0.epsilons_(n.initialState)
+      n.finalState.epsilons_(s0)
+      n.addState(s0)
+      stack = n :: stack
       true
     }
     /**
