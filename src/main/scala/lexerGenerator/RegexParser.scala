@@ -411,9 +411,8 @@ object regexParser extends LazyLogging {
       //add c to inputSet
       inputSet = (Set(c),false)::inputSet
       //create new NFA(s0(c) -> s1)
-      val s0 = new NFAState(nextId)
-      val s1 = new NFAState(nextId + 1)
-      nextId = nextId + 2
+      val s0 = new NFAState(getId)
+      val s1 = new NFAState(getId)
       s0.addTransition(false, s1,c)
       stack = (new NFA(List(s1, s0))) :: stack
     }
@@ -421,9 +420,8 @@ object regexParser extends LazyLogging {
     def pushAll(l: List[Char],i: Boolean):Unit = {
       logger.trace("PushAll")
       inputSet = (l.toSet,i)::inputSet
-      val s0 = new NFAState(nextId)
-      val s1 = new NFAState(nextId + 1)
-      nextId = nextId + 2
+      val s0 = new NFAState(getId)
+      val s1 = new NFAState(getId)
       s0.addTransition(i,s1,l:_*)
       stack = (new NFA(List(s1,s0))) :: stack
       //logger.trace("}\\PushAll")
@@ -505,11 +503,10 @@ object regexParser extends LazyLogging {
       val (a, t) = pop
       if (!t) throw new RegexError("Failed to process * operator",r)
       else {
-        val s0 = new NFAState(nextId)
-        val s1 = new NFAState(nextId + 1)
+        val s0 = new NFAState(getId)
+        val s1 = new NFAState(getId)
         val fst = a.initialState
         val lst = a.finalState
-        nextId = nextId + 2
 
         //create transition from s0 to s1
         s0 epsilons_(s1)
@@ -563,13 +560,12 @@ object regexParser extends LazyLogging {
       val (a, t2) = pop
       if (!t1 || !t2) false
       else {
-        val s0 = new NFAState(nextId)
-        val s1 = new NFAState(nextId + 1)
+        val s0 = new NFAState(getId)
+        val s1 = new NFAState(getId)
         val fstA = a.initialState
         val fstB = b.initialState
         val lstA = a.finalState
         val lstB = b.finalState
-        nextId = nextId + 2
 
         //create epsilon transition from s0 to the initial states of A and B
         s0 epsilons_(fstA)
@@ -614,7 +610,7 @@ object regexParser extends LazyLogging {
       logger.debug("Translating NFA to DFA")
       logger.trace("input set: " + inputSet)
       //starting state of DFA is epsilon closure of first state of NFA
-      val dfaStartState = new DFAState(epsilonClosure(Set(s)),nextId)
+      val dfaStartState = new DFAState(epsilonClosure(Set(s)),getId)
       var unmarked = List(dfaStartState)
       var processing:DFAState = dfaStartState
       var result:List[DFAState] = List(dfaStartState)
@@ -632,8 +628,7 @@ object regexParser extends LazyLogging {
                   val closure = epsilonClosure(move)
                   if(!(result exists(x => x.nfaStates == closure)))
               {
-                nextId += 1
-                val state = new DFAState(closure,nextId)
+                val state = new DFAState(closure,getId)
                 logger.trace("adding " + state + " to result")
                 processing.addTransition(i,state)
                 result = state :: result
@@ -659,8 +654,7 @@ object regexParser extends LazyLogging {
               val closure = epsilonClosure(move)
               if(!(result exists(x => x.nfaStates == closure)))
               {
-                nextId += 1
-                val state = new DFAState(closure,nextId)
+                val state = new DFAState(closure,getId)
                 logger.trace("adding " + state + " to result")
                 processing.addTransition(i,state,c)
                 result = state :: result
