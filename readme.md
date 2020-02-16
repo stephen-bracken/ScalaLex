@@ -1,12 +1,28 @@
 # Lexical analyzer generator
 This tool is designed to implement a subset of the [LEX](http://dinosaur.compilertools.net/lex/) specification.
 
-# Regular Expressions
-**Supported operators**
+ScalaLex uses a Regex Compiler that produces DFA equivalents of each of the regex rules in the output program. Each Regex is matched using longest prefix match, and in the case of two or more matches of the same length, the first matched rule is used.
 
-   Currently, supported regular expression operators are:
+# Input Language
+**operators**
+
+   Currently, supported operators are:
         
-        [ ] ( ) \ * + | "
+        [ ] ( ) \ * + | " %
+
+- ``%%`` is used to delimit sections. The top level syntax for an input file is
+    ```
+    {defs}
+    %%
+    {rules}
+    %%
+    {user subroutines}
+    ```
+    subroutines can be ommitted, therefore the minimum input specification is
+        ``%%``
+    which will produce a program that will simply output any input given.
+
+**Regex Operators**
         
 - ``[]`` creates a set of union operations between characters. Includes support for character ranges, e.g.
             

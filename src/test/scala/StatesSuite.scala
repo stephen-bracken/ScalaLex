@@ -5,27 +5,8 @@ package lexerGenerator
 
 class StatesSuite extends UnitSpec {
     //###### State tests ######
-    "A State" should "Be comparable by id" in  {
-        println("#########StateEquality#########")
-        val s1 = new NFAState(0)
-        val s2 = new NFAState(1)
-        val s3 = new NFAState(0)
-        assert(s1 == s3,"s1 == s3")
-        assert(s1 != s2,"s1 != s2")
-    }
 
-    it should "be comparable in a set" in {
-        println("#########StateSet#########")
-        val s1 = new NFAState(0)
-        val s2 = new NFAState(1)
-        //s3 should be equivalent in the set to s1
-        val s3 = new NFAState(0)
-        val nfaSet = Set(s1,s2)
-        assert(nfaSet.contains(s1) && nfaSet.contains(s2),"s1s2")
-        assert((nfaSet.contains(s3)),"s3")
-    }
-
-    it should "have transitions to another state" in {
+    "A State" should "have transitions to another state" in {
         println("#########StateTransition#########")
         val s0 = new NFAState(0)
         val s1 = new NFAState(1)

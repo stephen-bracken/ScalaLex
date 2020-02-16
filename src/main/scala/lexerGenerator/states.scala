@@ -209,10 +209,10 @@ abstract class State(val id:Int) extends LazyLogging{
     }
   }
   /** creates a special case transition representing [^] */
-  def addEmptyTransition(s: S) = {
-    transitions.find(p => p.chars.isEmpty && p.inverted) match {
+  def addEmptyTransition(i:Boolean,s: S) = {
+    transitions.find(p => p.chars.isEmpty && p.inverted == i) match {
       case Some(v) => v.addState(s)
-      case None => transitions = transitions.union(Set(new Transition[S](Set(),false,Set(s))))
+      case None => transitions = transitions.union(Set(new Transition[S](Set(),i,Set(s))))
     }
   }
   /** removes all of the transitions from this state to s*/
@@ -220,7 +220,7 @@ abstract class State(val id:Int) extends LazyLogging{
   override def toString(): String = {
     "state " + id
   }
-  override def equals(x: Any): Boolean = id == x.asInstanceOf[S].id
+  //override def equals(x: Any): Boolean = id == x.asInstanceOf[S].id
 }
 
 /** represents a transition from this state. Contains associated characters, whether the transition is inverted (^), and the set of possible destinations */

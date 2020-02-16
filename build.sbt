@@ -1,6 +1,6 @@
 name := "Year3Project"
 
-version := "2.0"
+version := "0.3"
 
 scalaVersion := "2.12.10"
 
