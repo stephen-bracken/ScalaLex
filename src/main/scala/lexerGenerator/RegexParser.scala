@@ -14,11 +14,11 @@ object regexParser extends LazyLogging {
 
   //###### Logging ######
   //val logger = Logger(LoggerFactory.getLogger(expressions.getClass()))
-
   // assume SLF4J is bound to logback in the current environment
   // private val lc:LoggerContext = LoggerFactory.getILoggerFactory().asInstanceOf[LoggerContext]
   // print logback's internal status
   // StatusPrinter.print(lc)
+
   //###### Character evaluation ######
   /** unicode for a backspace character - used to represent concatenation*/
   private val backspace: Char = '\u0008'
@@ -27,12 +27,6 @@ object regexParser extends LazyLogging {
   private val illegal: Set[Char] = Set(backspace)
   /** chars that represent regex operators */
   private val operators: Set[Char] = Set('?','"','-','^','|', '*', '+', backspace,'(',')','\\','[',']','{','}')
-
-  /** a set of all possible characters */
-  private val allChars:Set[RegexToken] = {
-    val chars = Char.MinValue to Char.MaxValue
-    (for(c <- chars) yield (new Input(c))).toSet
-  }
   /** checks if a character is an input or not */
   private def isInput(c: Char) = !isOperator(c)
   /** checks if a character is in the set of operators or not */
@@ -51,24 +45,14 @@ object regexParser extends LazyLogging {
     var nextId: Int = 0
     /** the set of chars with transitions available - used with subset construction */
     var inputSet:List[(Set[Char],Boolean)] = Nil
-    /** indicates whether the current character was escaped */
-    var escaped:Boolean = false
-
-    var prev:RegexToken = null
-
-    def getId:Int = {
-      val i = nextId
-      nextId = nextId + 1
-      i
-    }
-
+    /** gets the next state id to be used, ensures that all created states have a unique id. */
+    def getId:Int = {val i = nextId; nextId += 1; i}
     /** converts an input char into a readable/printable format */
     def input(c:Char) = c match {
           case '\u0000' => "epsilon"
           case '\u0008' => "backspace"
           case x        => x
         }
-
     //###### Preprocessing ######
     /** converts the input string into RegexToken representations */
     def makeSymbols(s:List[Char]): List[RegexToken] = {
@@ -85,7 +69,7 @@ object regexParser extends LazyLogging {
       var quantOp:String = ""
       var fst = 0
       var snd = 0
-      prev = null
+      var prev:RegexToken = null
       @tailrec
       def makeSymbol(s: List[Char],a: List[RegexToken]): List[RegexToken] = s match {
         //return symbols
@@ -185,37 +169,38 @@ object regexParser extends LazyLogging {
 
     /** Creates BracketExpresssions within the input string */
     def makeExpression(s: List[RegexToken]):List[RegexToken] ={
-      var innerexpression:List[RegexToken] = Nil
-      var lastExpression:RegexToken = BracketExpression(List())
+      /** the expression within brackets */
+      var inner:List[RegexToken] = Nil
+      /** the number of unclosed bracket pairs */
       var bracketdepth = 0
+      /** creates a new BracketExpression from the inner expression up to the next parentheses */
       def addExpression = {
         //pulls a bracketed expression off the input stack - similar to shunting yard algorithm
         @tailrec
-        def getInnerExpression(l: List[RegexToken],a: List[RegexToken]):List[RegexToken] = l match {
+        def getInner(l: List[RegexToken],a: List[RegexToken]):List[RegexToken] = l match {
           case Nil => throw new RegexError("mismatched brackets found",r)
           case Operator(s,'(',false) :: xs => 
-          innerexpression = innerexpression.tail
+          inner = inner.tail
           a
           case x::xs => 
-          innerexpression = innerexpression.tail
-          getInnerExpression(xs,x::a)
+          inner = inner.tail
+          getInner(xs,x::a)
         }
-          val i = getInnerExpression(innerexpression,Nil)
+          val i = getInner(inner,Nil)
           val o = BracketExpression(i)
           bracketdepth -=1
-          innerexpression = o :: innerexpression
-          lastExpression = o
+          inner = o :: inner
       }
       @tailrec
       def findBrackets(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = s match {
         case Nil => a.reverse
         case x@Operator(s,'(',false)::xs =>
           bracketdepth += 1
-          innerexpression = x.head :: innerexpression
+          inner = x.head :: inner
           findBrackets(xs,a)
         case Operator(s,')',false)::Quantifier(sym,fst,snd)::xs =>
           addExpression
-          val i = innerexpression.head
+          val i = inner.head
           val n = new Quantifier(i,fst,snd)
           if(bracketdepth == 0)
           findBrackets(n::xs,i::a)
@@ -223,7 +208,7 @@ object regexParser extends LazyLogging {
           findBrackets(n::xs,a)
         case Operator(s,')',false)::Operator(sym,op,e)::xs =>
           addExpression
-          val i = innerexpression.head
+          val i = inner.head
           val n = new Operator(i,op,e)
           if(bracketdepth == 0)
           findBrackets(n::xs,i::a)
@@ -231,13 +216,13 @@ object regexParser extends LazyLogging {
           findBrackets(n::xs,a)
         case x@Operator(s,')',false)::xs =>
           addExpression
-          val i = innerexpression.head
+          val i = inner.head
           if(bracketdepth == 0)
           findBrackets(xs,i::a)
           else
           findBrackets(xs,a)
         case x::xs if bracketdepth > 0 =>
-          innerexpression = x::innerexpression
+          inner = x::inner
           findBrackets(xs,a)
         case x::xs if bracketdepth <= 0 =>
           findBrackets(xs,x::a)
@@ -282,7 +267,6 @@ object regexParser extends LazyLogging {
       var invertedBrace = false
       var braceSymbols:List[RegexToken] = Nil
       var escaped = false
-      var prevChar: Char = backspace
       @tailrec
       def findBraces(s: List[RegexToken],a: List[RegexToken]): List[RegexToken] = {
         @tailrec
@@ -336,7 +320,6 @@ object regexParser extends LazyLogging {
     /** edits the input string to add concatenation operators ('u\0008', or backpace character)*/
     def concatExpand(s: List[RegexToken]):List[RegexToken]= {
       val o:List[Char] = List('*','+',')','?')
-      prev = null
       @tailrec
       def checkchars(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = {
         /** checks the first symbol to add a concatenation */
@@ -367,11 +350,13 @@ object regexParser extends LazyLogging {
         s match {
           //return symbols
           case Nil => a.reverse
+          //eval last expression
           case BracketExpression(s)::Nil =>
             val o = new BracketExpression(concatExpand(s))
             checkchars(Nil,o::a)
           //ignore single symbol
           case x :: Nil => checkchars(Nil,x::a)
+          //eval inner expression
           case BracketExpression(s)::c2::xs =>
             logger.trace("processing bracketed expression " + s)
             val o = new BracketExpression(concatExpand(s))
@@ -384,7 +369,6 @@ object regexParser extends LazyLogging {
             checkchars(c2::xs,new Operator(c1,backspace,false)::c1::a)
           //do not add concatenation
           case c1 :: c2 :: xs if !(checkfirst(c1)&&checknext(c2)) =>
-            prev = c1
             checkchars(c2::xs,c1::a)
         }
       }
@@ -394,7 +378,7 @@ object regexParser extends LazyLogging {
 
     //###### Thompson construction algorithm ######
     /**
-      * Translates the input string into a NFA
+      * Translates the input string into a NFA using Thompson Construction
       *
       * @param s input string
       * @return (NFA of s or null,success value)
@@ -405,8 +389,6 @@ object regexParser extends LazyLogging {
       var stack: List[NFA] = Nil
       /** stores unprocessed operators */
       var opStack: List[Char] = Nil
-      var quantifierStack:List[(Int,Int)] = Nil
-      prev = null
       val badChars = Set('[',']','{','}')
       /** enforces operator precedence on the stack */
       def precedence(l: Char, r: Char) = {
@@ -541,7 +523,6 @@ object regexParser extends LazyLogging {
             case '+'      => plus
             case '?'      => lazyOp
             case '\u0008' => concat
-            case '\\'     => true
             case _        => false
           }
         }
@@ -562,8 +543,8 @@ object regexParser extends LazyLogging {
         else{
           //add epsilon transition from the final state of A to the initial state of B
           a.finalState.epsilons_(b.initialState)
-          val f = new NFA(a.getStates)
-          f.addStates(b.getStates)
+          val f = new NFA(a.states)
+          f.addStates(b.states)
         stack = f :: stack
         true
         }
@@ -587,16 +568,16 @@ object regexParser extends LazyLogging {
           val s1 = new NFAState(getId)
           val fst = a.initialState
           val lst = a.finalState
-
-          //create transition from s0 to s1
+          //create transitions s0 -> s1, s0 -> fst, lst - s1, lst -> fst
           s0 epsilons_(s1)
-          //create transition from s0 to the initial state of A
           s0 epsilons_(fst)
           lst epsilons_(s1)
           lst epsilons_(fst)
+          //populate NFA
           val s = new NFA(List(s0))
-          s.addStates(a.getStates)
+          s.addStates(a.states)
           s.addState(s1)
+          //add to stack
           stack = s :: stack
           true
         }
@@ -607,14 +588,18 @@ object regexParser extends LazyLogging {
         val (a,t1) = pop
         if(!t1) throw new RegexError("Incorrect use of ?",r)
         else{
+        //create new initial and final state
         val s0 = new NFAState(getId)
         val s1 = new NFAState(getId)
         val n = new NFA(List(s0))
+        //add transitions s0 -> initial, s0 -> s1, final -> s1
         a.finalState.epsilons_(s1)
         s0.epsilons_(a.initialState)
         s0.epsilons_(s1)
-        n.addStates(a.getStates)
+        //populate NFA
+        n.addStates(a.states)
         n.addState(s1)
+        //add to stack
         stack = n :: stack
         true
         }
@@ -624,14 +609,18 @@ object regexParser extends LazyLogging {
         //push extra input symbol
         val (a,b) = pop
         if (!b) throw new RegexError("Failed to process + quantifier",r)
+        //create new initial and final states s0 and s1
         val s0 = new NFAState(getId)
         val s1 = new NFAState(getId)
         val n = new NFA(List(s0))
+        //add transitions s0 -> initial, final -> s1, s1 -> s0
         s0.epsilons_(a.initialState)
         a.finalState.epsilons_(s1)
         s1.epsilons_(s0)
-        n.addStates(a.getStates)
+        //populate NFA
+        n.addStates(a.states)
         n.addState(s1)
+        //add to stack
         stack = n :: stack
         true
       }
@@ -665,13 +654,13 @@ object regexParser extends LazyLogging {
           lstB epsilons_(s1)
 
           //create new FSAs with s1 and s0
-          val newB = new NFA(b.getStates)
+          val newB = new NFA(b.states)
           newB.addState(s1)
           val newA = new NFA(List(s0))
-          newA.addStates(a.getStates)
+          newA.addStates(a.states)
           //add to the result set
-          val s = new NFA (newA.getStates)
-          s.addStates(newB.getStates)
+          val s = new NFA (newA.states)
+          s.addStates(newB.states)
           stack = s :: stack
           true
         }
@@ -684,8 +673,8 @@ object regexParser extends LazyLogging {
     if (!stack.isEmpty) throw new RegexError(
         "unresolved states: " +
           (for {
-            f <- stack.tail
-            s <- f.getStates
+            f <- stack
+            s <- f.states
           } yield s.id)
           ,r)
       (nfa,true)
@@ -694,13 +683,16 @@ object regexParser extends LazyLogging {
     //###### Subset construction algorithm ######
     /** takes the epsilon closure of a set of NFAStates */
     def epsilonClosure(t: Set[NFAState]): Set[NFAState] = {
+      //initialise with input set
       logger.trace("epsilon closure of "+t)
       var result = t.toList
       var unprocessed = t.toList
+      //get epsilon transitions of states
       while(!(unprocessed isEmpty)){
         val fst = unprocessed.head
         unprocessed = unprocessed tail
         val epsilons = fst.epsilons
+        //add results to queue to be processed
         for {u <- epsilons if !result.contains(u)} yield {result = u::result; unprocessed = u::unprocessed}
       }
       logger.trace(result.toString)
@@ -719,19 +711,22 @@ object regexParser extends LazyLogging {
       var processing:DFAState = dfaStartState
       var result:List[DFAState] = List(dfaStartState)
       while (!(unmarked isEmpty)){
+        //pop a state from the stack
         processing = unmarked.head
         logger.trace("processing "+processing)
         unmarked = unmarked.tail
+        //for all transition symbols in input set
         for{(s,i) <- inputSet
-            //if processing.transitions.contains(c)
             } yield {
               //special case for [^] or []
               if(s.isEmpty){
                 val move = processing.emptyNFAMove
                 if(!move.isEmpty){
                   val closure = epsilonClosure(move)
-                  if(!(result exists(x => x.nfaStates == closure)))
+              //check if this DFAState has already been processed
+              if(!(result exists(x => x.nfaStates == closure)))
               {
+                //create new DFAState and add it to result set
                 val state = new DFAState(closure,getId)
                 logger.trace("adding " + state + " to result")
                 processing.addTransition(i,state)
@@ -739,6 +734,7 @@ object regexParser extends LazyLogging {
                 unmarked = state :: unmarked
               }
               else{
+                //add transition to existing DFAState
                 logger.trace("Subset already exists")
                 val res = result.find(x => x.nfaStates == closure) match {
                   case None => throw new RegexError("could not find matched DFAState for epsilon closure",r)
@@ -756,8 +752,10 @@ object regexParser extends LazyLogging {
               val move = processing nfaMove(c,i)
               if(!move.isEmpty){
               val closure = epsilonClosure(move)
+              //check if this DFAState has already been processed
               if(!(result exists(x => x.nfaStates == closure)))
               {
+                //create new DFAState and add it to result set
                 val state = new DFAState(closure,getId)
                 logger.trace("adding " + state + " to result")
                 processing.addTransition(i,state,c)
@@ -765,6 +763,7 @@ object regexParser extends LazyLogging {
                 unmarked = state :: unmarked
               }
               else{
+                //add transition to existing DFAState
                 logger.trace("Subset already exists")
                 val res = result.find(x => x.nfaStates == closure) match {
                   case None => throw new RegexError("could not find matched DFAState for epsilon closure",r)
@@ -789,10 +788,10 @@ object regexParser extends LazyLogging {
       * @return optimised DFA
       */
     def dfaReduce(d:DFA):DFA = {
-      for (state <- d.getStates if(state.deadEnd)) yield {
+      for (state <- d.states if(state.deadEnd)) yield {
         logger.trace("Removing " + state);
         d.removeState(state)
-        for (s <- d.getStates) yield {s.removeTransitions(state)}}
+        for (s <- d.states) yield {s.removeTransitions(state)}}
       d
     }
     //###### Execution ######
@@ -822,15 +821,14 @@ object regexParser extends LazyLogging {
       logger.debug("adding concatenations")
       val c = concatExpand(quant)
       logger.debug("converted concatenations: "+c)
-      escaped = false
-    //Thompson construction
-    val (nfa,t) = translateToNFA(c)
-    if(!t) {throw new RegexError("failed to parse regex",r)}
-    //subset construction
-    val d = dTranslate(nfa initialState)
-    logger.debug("included states: "+d.getStates)
-    logger.whenTraceEnabled{for(s <- d.getStates) yield {logger.trace(s"State: " + s + ", accepting: " + s.accepting)}}
-    dfaReduce(d)
+      //Thompson construction
+      val (nfa,t) = translateToNFA(c)
+      if(!t) {throw new RegexError("failed to parse regex",r)}
+      //subset construction
+      val d = dTranslate(nfa initialState)
+      logger.debug("included states: "+d.states)
+      logger.whenTraceEnabled{for(s <- d.states) yield {logger.trace(s"State: " + s + ", accepting: " + s.accepting)}}
+      dfaReduce(d)
     }
   }
 }
@@ -847,14 +845,24 @@ private abstract class RegexToken(val symbol: Char) {
   override def toString(): String = symbol.toString
 }
 
-private case class Quantifier(sym: RegexToken,fst: Int,snd: Int) extends RegexToken('{'){
-  override def toString(): String = "{" + fst + ',' + snd + '}'
+/** encodes a quantifier {}
+ * @param sym the operand for this quantifier
+ * @param min the minimum number of matches
+ * @param max the maximum number of matches 
+ */
+private case class Quantifier(sym: RegexToken,min: Int,max: Int) extends RegexToken('{'){
+  override def toString(): String = "{" + min + ',' + max + '}'
 }
 
+/** encodes an escaped sequence of input symbols "" */
 private case class QuoteSeq(s: List[Char]) extends RegexToken('"'){
   override def toString(): String = "\"" + s + '"'
 }
 
+/** encodes a character set [] 
+ * @param s the characters to encode for
+ * @param inverted indicates whether this char set was inverted using a ^ operator at the start
+*/
 private case class CharSet(s: List[Char],inverted: Boolean) extends RegexToken('[') {
   override def toString(): String = {
     val i = inverted match {
@@ -867,11 +875,17 @@ private case class CharSet(s: List[Char],inverted: Boolean) extends RegexToken('
   }
 }
 
+/** encodes a bracketed expression to be processed internally () */
 private case class BracketExpression(s: List[RegexToken]) extends RegexToken('(') {
   override def toString(): String = "(" + s.map(s => s.toString) + ')'
 }
 
-/** A Regex operator */
+/** encodes an operator 
+ * 
+ * @param symbol the operand for this operator
+ * @param op the symbol encoding this operator
+ * @param escaped indicates if this operator was escaped using a \
+*/
 private case class Operator(sym: RegexToken,op: Char,escaped: Boolean) extends RegexToken(op) {
   override def equals(x: Any): Boolean = {
     if (!x.isInstanceOf[Operator]) false

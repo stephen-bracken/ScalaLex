@@ -23,7 +23,11 @@ ScalaLex uses a Regex Compiler that produces DFA equivalents of each of the rege
     which will produce a program that will simply output any input given.
 
 **Regex Operators**
-        
+
+- ``{x,y}`` matches the previous symbol a minimum of x times and a maximum of y times. y is optional
+
+    - ``a{1,3}`` matches 1 to 3 instances of a
+
 - ``[]`` creates a set of union operations between characters. Includes support for character ranges, e.g.
             
     - ``[0-9]`` is equivalent to (0|1|2|3|4|5|6|7|8|9)
@@ -49,10 +53,9 @@ the following operators are used during the processing of an input string, and w
 
 - "\u0008" is a backspace character that is used to represent concatenations
 
-**Planned operators**
-- ``{}`` used for definitions or specifying a specific number of symbols, e.g. 
-    - ``a{1,3}`` matches 1 or 3 instances of a
-    - ``{digit}`` looks for a rule with the name digit
+**Planned operators** 
+- ``{digit}`` looks for a definition with the name digit
 - ``/`` requires matching of following symbols, e.g.
     - ab/cd matches ab only if followed by cd
+- ``$`` special case of /
 - ``<def>`` indicates start conditions

@@ -6,7 +6,7 @@ import scala.collection.immutable.Nil
 
 /** Represents a Non-deterministic Finite State Automata */
 class NFA(s: List[NFAState]) extends FSA[NFAState](s) {
-  //NFA Evaluation is not implemented but NFA and NFAStates are used in construction of 
+  //NFA Evaluation is not implemented but NFA and NFAStates are used in construction of DFAs
   @deprecated("evaluation of NFAs is not implemented","")
   override def eval(s: String): Boolean =  {logger.error("attempted evaluation on NFA");false}
 }
@@ -72,17 +72,13 @@ class DFA(s: List[DFAState],val regex:String)
   *
   * @param s List of states in order
   */
-abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
-  /** the set of states in this FSA */
-  private var states:List[A] = s
-  /** the set of accepting states in this FSA */
-  var accepting:Set[A] = (for {s <- states if s.accepting} yield s).toSet
+abstract class FSA[A<:State](private var _s:List[A]) extends LazyLogging {
+  /** gets the set of states in this FSA */
+  def states = _s
   /** the starting state for this FSA */
-  val initialState: A = states.last
+  val initialState: A = _s.last
   /** the last state in this FSA */
   var finalState:A = states.head
-
-  def getStates = states
 
   /** gets a state from this FSA by id */
   def getState(i: Int):A = states.find(a => a.id == i) match {
@@ -92,7 +88,7 @@ abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
 
   /** adds a state to this FSA */
   def addState(s: A) = {
-    states = s :: states
+    _s = s :: _s
     finalState = s
   }
 
@@ -100,10 +96,10 @@ abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
   def addStates(s:List[A]):Unit = {
     @tailrec
     def add(s:List[A]):Unit = {
-    if(!s.isEmpty){
-    addState(s.last)
-    add(s.tail)
-    }
+      if(!s.isEmpty){
+        addState(s.last)
+        add(s.tail)
+      }
     }
     add(s.reverse)
   }
@@ -111,32 +107,34 @@ abstract class FSA[A<:State](s:List[A]) extends LazyLogging {
   /** adds a given state to the set of accepting states for this FSA */
   def addAccepting(s: A) = {
     s accepting = true
-    accepting = accepting.union(Set(s))
   }
 
   /** checks an input string against this FSA */
   def eval(s:String):Boolean
   /** removes a state from this FSA */
   def removeState(s: A) = {
-    states = states.filter(x => x != s)
+    _s = _s.filter(x => x != s)
   }
 }
 
-class NFAState(id: Int, var accepting: Boolean = false) extends State (id){
+class NFAState(id: Int, a: Boolean = false) extends State (id){
+  override var accepting: Boolean = a
   override type S = NFAState
+  private var _epsilons = Set(this)
   /** a list of epsilon transitions from this state */
-  var epsilons:Set[NFAState] = Set(this)
+  def epsilons = _epsilons
   /** adds an epsilon transition from this state to s */
-  def epsilons_(s: NFAState) = epsilons = epsilons.union(Set(s))
+  def epsilons_(s: NFAState) = _epsilons = _epsilons.union(Set(s))
 }
 
-class DFAState(n: Set[NFAState] = Set(), id: Int) extends State(id){
-  /** the set of NFAStates that this DFAState was constructed from */
-  val nfaStates = n
+class DFAState(private val _n: Set[NFAState] = Set(), id: Int) extends State(id){
+  /** gets the set of NFAStates that this DFAState was constructed from */
+  def nfaStates = _n
   override type S = DFAState
-  override var accepting = (nfaStates exists(p => p.accepting))
+  //if any state in _n is accepting, this state is an accepting state
+  override var accepting = (_n exists(p => p.accepting))
   /** indicates whether the nfaState is included in the epsilon closure of this DFAState */
-  def included(s:NFAState) = nfaStates contains s
+  def included(s:NFAState) = _n contains s
   /** gets the next DFAState using this transition symbol */
   def nextState(c: Char): DFAState = transition(c).head
   /** gets all of the visible NFAStates using a single transition on a character input*/
@@ -150,7 +148,7 @@ class DFAState(n: Set[NFAState] = Set(), id: Int) extends State(id){
         case None => move(s.tail,a)
       }
     }
-    move(nfaStates.toList,Set())
+    move(_n.toList,Set())
   }
   /** special case NFA traversal with inverted empty character sets i.e. [^] */
   def emptyNFAMove:Set[NFAState] = {
@@ -174,8 +172,10 @@ class DFAState(n: Set[NFAState] = Set(), id: Int) extends State(id){
   }
 }
 
-abstract class State(val id:Int) extends LazyLogging{
+abstract class State(private val _id:Int) extends LazyLogging{
   type S <: State
+  /** gets the id of this state */
+  def id = _id
   /** indicates whether or not this state is an accepting state in the FSA */
   var accepting: Boolean
   /** a set of possible Transition encodings from this state */
@@ -195,13 +195,16 @@ abstract class State(val id:Int) extends LazyLogging{
       case false => chars
       case true => "not " + chars
     }))
+    // search for transitions with the same inputs
     transitions.find(p => (p.chars == chars) && (p.inverted == i)) match {
       case Some(v) => v.addState(s)
       case None => 
+        //search for transitions with the same outputs
         transitions.find(p => p.inverted == i && p.result.contains(s)) match {
           case Some(v) => 
             v.addCharacters(c.toList:_*)
-          case None =>         
+          case None => 
+            //no transitions found
             val t = new Transition[S](chars,i,Set(s))
             logger.trace("creating new state transition: " + t)
             transitions = transitions.union(Set(t))
@@ -220,13 +223,15 @@ abstract class State(val id:Int) extends LazyLogging{
   override def toString(): String = {
     "state " + id
   }
-  //override def equals(x: Any): Boolean = id == x.asInstanceOf[S].id
 }
 
 /** represents a transition from this state. Contains associated characters, whether the transition is inverted (^), and the set of possible destinations */
 case class Transition[S<:State](var chars: Set[Char],val inverted: Boolean = false,var result: Set[S]) extends LazyLogging{
+  /** indicates whether an input character represents an acceptible transition symbol */
   def makeTransition(c: Char):Boolean = chars.contains(c) ^ inverted
+  /** adds a state to the result set */
   def addState(s:S) = {result = result.union(Set(s))}
+  /** adds the character(s) to the input set */
   def addCharacters(c:Char*) = {chars = chars.union(c.toSet)}
   override def toString():String = {
     chars.toString + ", inverted:" + inverted
