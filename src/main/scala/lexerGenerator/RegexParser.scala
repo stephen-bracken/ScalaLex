@@ -848,7 +848,13 @@ private case class Quantifier(sym: RegexToken,min: Int,max: Int) extends RegexTo
 
 /** encodes an escaped sequence of input symbols "" */
 private case class QuoteSeq(s: List[Char]) extends RegexToken('"'){
-  override def toString(): String = "\"" + s + '"'
+  override def toString(): String = {
+    val sb = StringBuilder.newBuilder
+    sb.append('"')
+    s.map(s => sb.append(s))
+    sb.append('"')
+    sb.mkString
+  }
 }
 
 /** encodes a character set [] 
@@ -863,13 +869,24 @@ private case class CharSet(s: List[Char],inverted: Boolean) extends RegexToken('
       case false =>
         ""
     }
-    "[" + i + s + ']'
+    val sb = StringBuilder.newBuilder
+    sb.append('[')
+    sb.append(i)
+    s.map(s => sb.append(s))
+    sb.append(']')
+    sb.mkString
   }
 }
 
 /** encodes a bracketed expression to be processed internally () */
 private case class BracketExpression(s: List[RegexToken]) extends RegexToken('(') {
-  override def toString(): String = "(" + s.map(s => s.toString) + ')'
+  override def toString(): String = {
+    val sb = StringBuilder.newBuilder
+    sb.append('(')
+    s.map(s => sb.append(s))
+    sb.append(')')
+    sb.mkString
+  }
 }
 
 /** encodes an operator 
