@@ -18,7 +18,15 @@ class DFA(s: List[DFAState],val regex:String)
     override def eval(s: String): Boolean = {
       @tailrec
       def e(s: String,st: DFAState):Boolean = {
-        if (s isEmpty) st.accepting
+        if (s isEmpty) {val a = st.accepting
+          a match {
+            case true =>
+              logger.trace("DFA success:" + s)
+            case false =>
+              logger.trace("DFA failure:" + s)
+          }
+          a
+        }
         else {
           logger.trace("evaluating symbol "+s.head+" in "+st)
           if (!(st.transitions.exists(x => x.makeTransition(s.head)))) false
