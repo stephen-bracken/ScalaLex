@@ -333,6 +333,7 @@ class DFABracketSuite extends UnitSpec {
     }
 
     it should "produce an equivalent DFA to ((ab*)+)?" in {
+        logger.info("#########DFABracketCombo#########")
         val seq1 = "a"
         val seq2 = "ab"
         val seq3 = "aab"
