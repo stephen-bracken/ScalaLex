@@ -82,7 +82,7 @@ object regexParser extends LazyLogging {
         //escaped operator
         case x::xs if escaped && op == 0 =>
           escaped = false
-          val o = new Operator(prev,x,true)
+          val o = new Operator(x,true)
           prev = o
           makeSymbol(xs,o::a)
         case x::xs if escaped && op == 1 =>
@@ -94,7 +94,7 @@ object regexParser extends LazyLogging {
           charset = x::charset
           makeSymbol(xs,a)
         case x::xs if illegal.contains(x) && op == 0 =>
-          val o = new Operator(prev,x,true)
+          val o = new Operator(x,true)
           prev = o
           makeSymbol(xs,o::a)
         //quotations
@@ -155,7 +155,7 @@ object regexParser extends LazyLogging {
           makeSymbol(xs,a)
         //normal operator
         case x::xs if !escaped && op == 0 && isOperator(x) => 
-          val o = new Operator(prev,x,false)
+          val o = new Operator(x,false)
           prev = o
           makeSymbol(xs, o::a)
         //normal input symbol
@@ -179,7 +179,7 @@ object regexParser extends LazyLogging {
         @tailrec
         def getInner(l: List[RegexToken],a: List[RegexToken]):List[RegexToken] = l match {
           case Nil => throw new RegexError("mismatched brackets found",r)
-          case Operator(s,'(',false) :: xs => 
+          case Operator('(',false) :: xs => 
           inner = inner.tail
           a
           case x::xs => 
@@ -194,11 +194,11 @@ object regexParser extends LazyLogging {
       @tailrec
       def findBrackets(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = s match {
         case Nil => a.reverse
-        case x@Operator(s,'(',false)::xs =>
+        case x@Operator('(',false)::xs =>
           bracketdepth += 1
           inner = x.head :: inner
           findBrackets(xs,a)
-        case Operator(s,')',false)::Quantifier(sym,fst,snd)::xs =>
+        case Operator(')',false)::Quantifier(sym,fst,snd)::xs =>
           addExpression
           val i = inner.head
           val n = new Quantifier(i,fst,snd)
@@ -206,15 +206,7 @@ object regexParser extends LazyLogging {
           findBrackets(n::xs,i::a)
           else
           findBrackets(n::xs,a)
-        case Operator(s,')',false)::Operator(sym,op,e)::xs =>
-          addExpression
-          val i = inner.head
-          val n = new Operator(i,op,e)
-          if(bracketdepth == 0)
-          findBrackets(n::xs,i::a)
-          else
-          findBrackets(n::xs,a)
-        case x@Operator(s,')',false)::xs =>
+        case x@Operator(')',false)::xs =>
           addExpression
           val i = inner.head
           if(bracketdepth == 0)
@@ -236,7 +228,7 @@ object regexParser extends LazyLogging {
       def findQuant(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = {
         def makeQuant(s: RegexToken, f: Int, l: Int):List[RegexToken] = {
           var r:List[RegexToken] = Nil
-          val q = new Operator(s,'?',false)
+          val q = new Operator('?',false)
           for(i <- 1 until f) yield {
             r = s::r
           }
@@ -330,7 +322,7 @@ object regexParser extends LazyLogging {
           case Quantifier(sym,fst,snd) => true
           case BracketExpression(x) => true
           //one of o operators
-          case Operator(s,x,e) if o.contains(x)||e => true
+          case Operator(x,e) if o.contains(x)||e => true
           //else false
           case x => false
         }
@@ -341,7 +333,7 @@ object regexParser extends LazyLogging {
           case CharSet(s,i) => true
           case Quantifier(sym,fst,snd) => true
           //escaped operator
-          case Operator(s,x, true) => true
+          case Operator(x, true) => true
           //input
           case Input(x) => true
           //otherwise false
@@ -361,12 +353,12 @@ object regexParser extends LazyLogging {
             logger.trace("processing bracketed expression " + s)
             val o = new BracketExpression(concatExpand(s))
             var ls = o::a
-            if(checknext(c2)) {ls = new Operator(o,backspace,false)::ls}
+            if(checknext(c2)) {ls = new Operator(backspace,false)::ls}
             checkchars(c2::xs,ls)
           //add concatenation
           case c1 :: c2 :: xs if(checkfirst(c1)&&checknext(c2)) => 
             logger.trace("adding concatenation between '" + c1.symbol + "' and '" + c2.symbol + '\'');
-            checkchars(c2::xs,new Operator(c1,backspace,false)::c1::a)
+            checkchars(c2::xs,new Operator(backspace,false)::c1::a)
           //do not add concatenation
           case c1 :: c2 :: xs if !(checkfirst(c1)&&checknext(c2)) =>
             checkchars(c2::xs,c1::a)
@@ -411,7 +403,7 @@ object regexParser extends LazyLogging {
             case Input(x) => 
               push(x); true
             //escaped operator
-            case Operator(s,x,true) =>
+            case Operator(x,true) =>
               logger.trace("escaped operator '" + input(x) + '\'')
               push(x); true
             case QuoteSeq(s) => 
@@ -426,13 +418,13 @@ object regexParser extends LazyLogging {
              val n = translateToNFA(s)
              stack = n._1 ::stack;true
             //char sets
-            case Operator(s,x,false) if badChars.contains(x) => throw new RegexError("Failed to process symbol: " + x,r)
+            case Operator(x,false) if badChars.contains(x) => throw new RegexError("Failed to process symbol: " + x,r)
             //empty operator stack
-            case Operator(s,x, false) if opStack isEmpty => 
+            case Operator(x, false) if opStack isEmpty => 
               logger.trace("insert operator '"+input(x)+'\'')
               opStack = x :: opStack; true
             //otherwise
-            case Operator(s,x,false) => 
+            case Operator(x,false) => 
               while (!opStack.isEmpty && precedence(x, opStack.head)) {
                 if (!eval) throw new RegexError("Failed to evaluate operator",r)
               }
@@ -886,12 +878,12 @@ private case class BracketExpression(s: List[RegexToken]) extends RegexToken('('
  * @param op the symbol encoding this operator
  * @param escaped indicates if this operator was escaped using a \
 */
-private case class Operator(sym: RegexToken,op: Char,escaped: Boolean) extends RegexToken(op) {
+private case class Operator(op: Char,escaped: Boolean) extends RegexToken(op) {
   override def equals(x: Any): Boolean = {
     if (!x.isInstanceOf[Operator]) false
     else {
       val s = x.asInstanceOf[Operator]
-      this.sym == s.sym && this.op == s.op && this.escaped == s.escaped
+      this.op == s.op && this.escaped == s.escaped
     }
   }
   override def toString(): String = if(escaped) "\\"+symbol else symbol.toString
