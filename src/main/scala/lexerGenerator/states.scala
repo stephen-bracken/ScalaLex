@@ -51,19 +51,18 @@ class DFA(s: List[DFAState],val regex:String)
       !getMatches(in).isEmpty
     }
     /**
-      * Gets the longest match in the list from getMatches
+      * Gets the longest prefix match in the list from getMatches
       *
       * @param in input string
       * @return (match length, matched text)
       */
-    def longestMatch(in: String):(Int,String) = {
-      getMatches(in) match {
-        case Nil =>
-          throw new FSAError("no matches found")
-        case x =>
-         val r = x.reduceLeft((x,y) => if((x._2-x._1)>=(y._2-y._1))x else y)
-         (r._2-r._1,r._3)
-      }
+    def longestPrefixMatch(in: String):(Int,String) = {
+      (for {
+        i <- 0 to in.length
+      } yield {
+        val str = in.substring(0,i)
+        (i,str,eval(str))
+      }).filter(x => x._3).map(x => (x._1,x._2)).last
     }
 }
 
