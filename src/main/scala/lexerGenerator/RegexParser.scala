@@ -26,7 +26,7 @@ object regexParser extends LazyLogging {
   /** the characters that must be escaped in the input string*/
   private val illegal: Set[Char] = Set(backspace)
   /** chars that represent regex operators */
-  private val operators: Set[Char] = Set('?','"','-','^','|', '*', '+', backspace,'(',')','\\','[',']','{','}')
+  private val operators: Set[Char] = Set('?','"','-','^','|', '*', '+', backspace,'(',')','\\','[',']','{','}','/','$')
   /** checks if a character is an input or not */
   private def isInput(c: Char) = !isOperator(c)
   /** checks if a character is in the set of operators or not */
@@ -375,13 +375,15 @@ object regexParser extends LazyLogging {
       * @param s input string
       * @return (NFA of s or null,success value)
       */
-    def translateToNFA(s: List[RegexToken]): (NFA,Boolean) = {
+    def translateToNFA(sym: List[RegexToken]): (NFA,Boolean) = {
       //###### Setup ######
       /** stores working list of NFAs - used with shunting yard algorithm */
       var stack: List[NFA] = Nil
       /** stores unprocessed operators */
       var opStack: List[Char] = Nil
       val badChars = Set('[',']','{','}')
+      var startMatching = false
+      var endMatching = false
       /** enforces operator precedence on the stack */
       def precedence(l: Char, r: Char) = {
         val o = List('|','*','+','?')
@@ -515,6 +517,9 @@ object regexParser extends LazyLogging {
             case '+'      => plus
             case '?'      => lazyOp
             case '\u0008' => concat
+            case '/'      => concat
+            case '^'      => startMatch
+            case '$'      => endMatch
             case _        => false
           }
         }
@@ -657,9 +662,22 @@ object regexParser extends LazyLogging {
           true
         }
       }
+      //TODO: Implement evaluation using start matching and end matching
+      def startMatch:Boolean = {
+        logger.debug("Start matching")
+        startMatching = true
+        true
+      }
+      def endMatch:Boolean = {
+        logger.debug("End matching")
+        endMatching = true
+        true
+      }
     //add the final state as an accepting state
-    val nfa = translateSymbols(s)
+    val nfa = translateSymbols(sym)
     logger.debug("accepting NFA state: " + nfa.finalState)
+    nfa.startMatch = startMatching
+    nfa.endMatch = endMatching
     nfa.finalState.accepting = true
     nfa.addAccepting(nfa.finalState)
     if (!stack.isEmpty) throw new RegexError(
@@ -903,7 +921,7 @@ private case class Operator(op: Char,escaped: Boolean) extends RegexToken(op) {
       this.op == s.op && this.escaped == s.escaped
     }
   }
-  override def toString(): String = if(escaped) "\\"+symbol else symbol.toString
+  override def toString(): String = if(escaped) "\\"+op else op.toString
 }
 
 /** A regex input symbol */

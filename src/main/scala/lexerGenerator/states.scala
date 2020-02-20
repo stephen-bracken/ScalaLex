@@ -14,6 +14,8 @@ class NFA(s: List[NFAState]) extends FSA[NFAState](s) {
 /** Represents a Deterministic Finite State Automata */
 class DFA(s: List[DFAState],val regex:String)
     extends FSA[DFAState](s) {
+    
+    def apply(s: String):Boolean = eval(s)
     /** evaluates an input string against this DFA. Returns true if input string results in an accepting state */
     override def eval(s: String): Boolean = {
       @tailrec
@@ -87,6 +89,8 @@ abstract class FSA[A<:State](private var _s:List[A]) extends LazyLogging {
   /** the last state in this FSA */
   var finalState:A = states.head
 
+  var startMatch:Boolean = false
+  var endMatch:Boolean = false
   /** gets a state from this FSA by id */
   def getState(i: Int):A = states.find(a => a.id == i) match {
     case None => throw new FSAError("State not found: " + i)

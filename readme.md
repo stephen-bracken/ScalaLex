@@ -3,24 +3,36 @@ This tool is designed to implement a subset of the [LEX](http://dinosaur.compile
 
 ScalaLex uses a Regex Compiler that produces DFA equivalents of each of the regex rules in the output program. Each Regex is matched using longest prefix match, and in the case of two or more matches of the same length, the first matched rule is used.
 
+
+# Rules
+rules are split into a regular expression, with an optional start condition, followed by a code action, written in scala, to execute. Code is indicated using indentation.
+
+e.g.
+    ```<start> regex    %{ code }%``` 
+
 # Input Language
 **operators**
 
    Currently, supported operators are:
         
-        [ ] ( ) \ * + | " %
+        [ ] ( ) \ * + | " % /
 
-- ``%%`` is used to delimit sections. The top level syntax for an input file is
-    ```
-    {defs}
-    %%
-    {rules}
-    %%
-    {user subroutines}
-    ```
-    subroutines can be ommitted, therefore the minimum input specification is
-        ``%%``
-    which will produce a program that will simply output any input given.
+
+- ``%`` is used for delimiting between rules in the input language
+
+    - ``%{code}%`` explicitly declares a code section of a rule
+
+    - ``%%`` is used to delimit sections. The top level syntax for an input file is
+        ```
+        {defs}
+        %%
+        {rules}
+        %%
+        {user subroutines}
+        ```
+        subroutines can be ommitted, therefore the minimum input specification is
+            ``%%``
+        which will produce a program that will simply output any input given.
 
 **Regex Operators**
 
@@ -48,6 +60,10 @@ ScalaLex uses a Regex Compiler that produces DFA equivalents of each of the rege
 
 - ``"``  quote sequences are used to escape all operators in a sequence, e.g. "xyz++" is equivalent to the input sequence xyz++
 
+- ``/`` lookahead operator - when translated this becomes a concatenation, because the automata always matches all of the input sequence*
+
+*note that it is possible to get partial matches from the getMatches and longestPrefixMatch functions, but the lookahead functionality remains the same.*
+
 **Special operators**
 the following operators are used during the processing of an input string, and will be escaped.
 
@@ -55,7 +71,8 @@ the following operators are used during the processing of an input string, and w
 
 **Planned operators** 
 - ``{digit}`` looks for a definition with the name digit
-- ``/`` requires matching of following symbols, e.g.
-    - ab/cd matches ab only if followed by cd
-- ``$`` special case of /
 - ``<def>`` indicates start conditions
+
+- ``$`` special case lookahead - checks that the entire input has been consumed
+
+- ``^`` lookbehind - checks that the beginning of the string was matched
