@@ -14,6 +14,7 @@ class LexerSuite extends UnitSpec {
     }
 
     it should "execute fully" in {
+        logger.info("#########Generator main method#########")
         val args = List("-i","input.txt","-o","output")
         Generator.main(args.toArray)
         succeed
@@ -28,7 +29,7 @@ class LexerSuite extends UnitSpec {
     it should "Be able to process an empty program" in {
         logger.info("#########LexEmptyDefs#########")
         val in = "%%"
-        assert(Generator.lex(in) == List(Delimiter(),CodeBlock(Nil)))
+        assert(Generator.lex(List(in)) == List(Delimiter()))
     }
 
     it should "Be able to process each Lexical token" in {

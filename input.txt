@@ -1,3 +1,9 @@
+/* I am a comment */
+number [0-9]+
+%option case-insensitive
 %%
+/* I am in the rules section */
 hello   println("hello");
 world   println("world");
+%%
+println("I am in the code section");

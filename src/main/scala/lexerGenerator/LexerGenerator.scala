@@ -48,7 +48,8 @@ object Generator extends LazyLogging{
             val rest2 = rest.span(x => !(x.startsWith("%%")))
             val rules = rest2._1
             val routines = rest2._2*/
-            val compiledRules =  lex(lines.reduceLeft((x,y) => x ++ y))
+            val compiledRules =  lex(lines)
+            logger.info("Processed input: " + compiledRules)
             logger.trace("final text: " + lines)
             logger.info("writing output to " + outputFile)
         }
@@ -58,18 +59,25 @@ object Generator extends LazyLogging{
         }
     }
 
-    def trimWhitespace(s: List[Char],a: List[Char]):List[Char] = s match {
-        case Nil => a
-        case ' '::Nil => a
-        case ' '::' '::xs =>
-            trimWhitespace(' ' +: xs,a)
-        case x::xs =>
-            trimWhitespace(xs,a :+ x)
+    def trimWhitespace(s: List[Char]):List[Char] = {
+        logger.trace("formatting whitespace: " + s)
+        def trim(s: List[Char],a: List[Char]):List[Char] = {
+            s match {
+                case Nil => a
+                case ' '::Nil => a
+                case ' '::' '::xs =>
+                    trim(xs,a :+ ' ')
+                case x::xs =>
+                    trim(xs,a :+ x)
+            }
+        }
+        trim(s,Nil)
     }
 
-    def lex(s: String) = {
+    def lex(s: List[String]) = {
         /** used with seq, code, states etc. to specify composite tokens */
         var mode = 1
+        //keeps track of modes during comments
         var prevMode = 0
         var section:List[Char] = Nil
         var defs:List[GeneratorToken] = Nil
@@ -86,6 +94,7 @@ object Generator extends LazyLogging{
         val inclusive = "%s".toList
         /* start of exclusive lexing state declaration */
         val exclusive = "%x".toList
+        val delimiter = "%%".toList
         var lexingstate = false
         var states:List[String] = Nil
         /*
@@ -95,70 +104,96 @@ object Generator extends LazyLogging{
             2 - option
             3 - state transform
             4 - free code block
+            5 - comment
         */
         @tailrec
-        def lexDefs(d: List[Char],a: List[GeneratorToken]):List[GeneratorToken] = d match {
-            case Nil => mode = 2; a
-            //identifier
-            case '_'::xs if mode == 0 =>
-                ident = Identifier(seq)
-                val s = xs.span(c => c != '\n')
-                var n = trimWhitespace(s._1,Nil).toString.stripLeading.toList ++ s._2
-                seq = Nil
-                mode = 1
-                lexDefs(n,a)
-            case '%'::'{'::xs if mode == 0 =>
-                mode = 4
-                seq = Nil
-                lexDefs(xs,a)
-            case '}'::'%'::xs if mode == 4 =>
-                mode = 0
-                val c = CodeBlock(seq)
-                seq = Nil
-                lexDefs(xs,a:+c)
-            case '\n'::xs if mode == 1 =>
-                val r = LexRegex(seq)
-                val d = Definition(ident,r)
-                seq = Nil
-                mode = 0
-                lexDefs(xs,a :+ d)
-            //%option
-            case ','::xs if mode == 3 =>
-                val o = Declaration(seq)
-                seq = Nil
-                lexDefs(xs,a :+ o)
-            case x if seq == option && mode == 0 =>
-                mode = 3
-                seq = Nil
-                lexDefs(x,a)
-            //lexing states
-            case '\n'::xs if mode == 4 =>
-                {
-                states = states :+ seq.toString
-                val s = LexingState(states,lexingstate)
-                seq = Nil
-                mode = 0
-                lexDefs(xs,a :+ s)
-                }
-            //separator
-            case ' '::xs if mode == 4 =>
-                states = states :+ seq.toString
-                seq = Nil
-                lexDefs(xs,a)
-            //%s and %x
-            case x if (seq == inclusive || seq == exclusive) && mode == 0 =>
-                {
-                val s = x.span(c => c != '\n')
-                val n = trimWhitespace(s._1,Nil) ++ s._2
-                mode = 4
-                lexingstate = seq == inclusive
-                seq = Nil
-                lexDefs(n,a)
-                }
-            //normal character
-            case x::xs =>
-                seq = seq :+ x
-                lexDefs(xs,a)
+        def lexDefs(d: List[Char],a: List[GeneratorToken]):List[GeneratorToken] = {
+            mode = 0
+            seq = Nil
+            states = Nil
+            d match {
+                case Nil if mode == 0 => a
+                case '/'::'*'::xs if mode == 0 =>
+                    logger.trace("processing comment")
+                    prevMode = mode
+                    mode = 5
+                    lexDefs(xs,a)
+                case '*'::'/'::xs if mode == 5 =>
+                    logger.trace("returning to mode " + prevMode)
+                    mode = prevMode
+                    val c = Comment(seq)
+                    logger.trace("processed comment: " + c)
+                    seq = Nil
+                    lexDefs(xs,a:+c)
+                case '%'::'{'::xs if mode == 0 =>
+                    logger.trace("processing code block")
+                    mode = 4
+                    seq = Nil
+                    lexDefs(xs,a)
+                case '}'::'%'::xs if mode == 4 =>
+                    mode = 0
+                    val c = CodeBlock(seq)
+                    logger.trace("added code block: " + c)
+                    seq = Nil
+                    lexDefs(xs,a:+c)
+                //identifier
+                case '_'::xs if mode == 0 =>
+                    ident = Identifier(seq)
+                    logger.trace("processed identifier: " + ident)
+                    val s = xs.span(c => c != '\n')
+                    var n = trimWhitespace(s._1).toString.stripLeading.toList ++ s._2
+                    seq = Nil
+                    mode = 1
+                    lexDefs(n,a)
+                case '\n'::xs if mode == 1 =>
+                    val r = LexRegex(seq)
+                    val d = Definition(ident,r)
+                    logger.trace("processed regex definition: " + d)
+                    seq = Nil
+                    mode = 0
+                    lexDefs(xs,a :+ d)
+                //%option
+                case ','::xs if mode == 3 =>
+                    val o = Declaration(seq)
+                    logger.trace("processed option declaration: " + o)
+                    seq = Nil
+                    lexDefs(xs,a :+ o)
+                case x if seq == option && mode == 0 =>
+                    mode = 3
+                    logger.trace("processsing option declaration")
+                    seq = Nil
+                    lexDefs(x,a)
+                //lexing states
+                case '\n'::xs if mode == 4 =>
+                    {
+                    states = states :+ seq.toString
+                    val s = LexingState(states,lexingstate)
+                    logger.trace("processed lexing states: " + s)
+                    seq = Nil
+                    states = Nil
+                    mode = 0
+                    lexDefs(xs,a :+ s)
+                    }
+                //separator
+                case ' '::xs if mode == 4 =>
+                    states = states :+ seq.toString
+                    logger.trace("adding state " + seq)
+                    seq = Nil
+                    lexDefs(xs,a)
+                //%s and %x
+                case x if (seq == inclusive || seq == exclusive) && mode == 0 =>
+                    val s = x.span(c => c != '\n')
+                    val n = trimWhitespace(s._1) ++ s._2
+                    logger.trace("processing lexing states")
+                    mode = 4
+                    lexingstate = seq == inclusive
+                    seq = Nil
+                    lexDefs(n,a)
+                //normal character
+                case x::xs =>
+                    seq = seq :+ x
+                    lexDefs(xs,a)
+            }
         }
         /*
         modes:
@@ -169,47 +204,61 @@ object Generator extends LazyLogging{
         4 - comment
         */
         @tailrec
-        def lexRules(r: List[Char],a: List[GeneratorToken]):List[GeneratorToken] = r match {
-            case Nil => mode = 3; a
-            case '/'::'*'::xs if mode == 0 || mode == 2 =>
-                prevMode = mode
-                mode = 4
-                lexRules(xs,a)
-            case '*'::'/'::xs if mode == 4 =>
-                mode = prevMode
-                val c = Comment(seq)
-                lexRules(xs,a:+c)
-            case '<'::xs if mode == 0 =>
-                mode = 1
-                lexRules(xs,a)
-            case '>'::xs if mode == 1 =>
-                mode = 2
-                val s = StartCondition(seq)
-                seq = Nil
-                lexRules(xs,a :+ s)
-            case '\t'::xs if mode == 2 =>
-                val r = LexRegex(seq)
-                seq = Nil
-                mode = 0
-                lexRules(xs,a :+ r)
-            case '%'::'{'::xs if mode == 0 =>
-                mode = 3
-                seq = Nil
-                lexRules(xs,a)
-            case '}'::'%'::xs if mode == 3 =>
-                mode = 0
-                val c = CodeBlock(seq)
-                seq = Nil
-                lexRules(xs,a :+ c)
-            case '\n'::xs if mode == 3 =>
-                mode = 0
-                val c = CodeBlock(seq)
-                seq = Nil
-                lexRules(xs,a)
-            case x::xs =>
-                seq = seq :+ x
-                lexRules(xs,a)
+        def lexRules(r: List[Char],a: List[GeneratorToken]):List[GeneratorToken] ={ 
+            mode = 0
+            seq = Nil
+            r match {
+                case Nil if mode == 0 => a
+                case '/'::'*'::xs if mode == 0 || mode == 2 =>
+                    logger.trace("processing comment")
+                    prevMode = mode
+                    mode = 4
+                    lexRules(xs,a)
+                case '*'::'/'::xs if mode == 4 =>
+                    mode = prevMode
+                    val c = Comment(seq)
+                    logger.trace("processed comment: " + c)
+                    seq = Nil
+                    lexRules(xs,a:+c)
+                case '<'::xs if mode == 0 =>
+                    logger.trace("processing start condition")
+                    mode = 1
+                    lexRules(xs,a)
+                case '>'::xs if mode == 1 =>
+                    mode = 2
+                    val s = StartCondition(seq)
+                    logger.trace("processed start condition: " + s)
+                    seq = Nil
+                    lexRules(xs,a :+ s)
+                case '\t'::xs if mode == 2 =>
+                    val r = LexRegex(seq)
+                    logger.trace("processed regex: " + r)
+                    seq = Nil
+                    mode = 0
+                    lexRules(xs,a :+ r)
+                case '%'::'{'::xs if mode == 0 =>
+                    logger.trace("processing code section")
+                    mode = 3
+                    seq = Nil
+                    lexRules(xs,a)
+                case '}'::'%'::xs if mode == 3 =>
+                    mode = 0
+                    val c = CodeBlock(seq)
+                    logger.trace("processed code section: " + c)
+                    seq = Nil
+                    lexRules(xs,a :+ c)
+                case '\n'::xs if mode == 3 =>
+                    mode = 0
+                    val c = CodeBlock(seq)
+                    logger.trace("processed code section: " + c)
+                    seq = Nil
+                    lexRules(xs,a)
+                case x::xs =>
+                    seq = seq :+ x
+                    lexRules(xs,a)
+            }
         }
+        /*
         /*
         modes:
             0 - no section
@@ -227,6 +276,7 @@ object Generator extends LazyLogging{
                 seq = Nil
                 mode = 0
                 routines = List(CodeBlock(r))
+                logger.debug("lexed routines: " + routines)
                 //combine sections into result
                 defs ++ rules ++ routines
             case '%'::'%'::xs =>
@@ -236,11 +286,17 @@ object Generator extends LazyLogging{
                         seq = Nil
                         mode = 0
                         defs = lexDefs(d,Nil) :+ Delimiter()
+                        logger.debug("lexed definitions: " + defs)
+                        mode = 2
+                        seq = Nil
                     case 2 =>
                         val r = seq
                         seq = Nil
                         mode = 0
                         rules = lexRules(r,Nil) :+ Delimiter()
+                        logger.debug("lexed rules: " + rules)
+                        mode = 3
+                        seq = Nil
                     case 0 =>
                         throw new GeneratorError("unexpected %% section")
                 }
@@ -249,8 +305,13 @@ object Generator extends LazyLogging{
                 seq = seq :+ x
                 findSections(xs)
             }
-        }
-        findSections(s.toList)
+        }*/
+        val span = s.span(st => st != "%%")
+        defs = span._1.flatMap(st => lexDefs(st.toList,Nil)):+ Delimiter()
+        val span2 = span._2.tail.span(st => st != "%%")
+        rules = span2._1.flatMap(st => lexRules(st.toList,Nil))
+        if (!span2._2.isEmpty) routines = List(Delimiter(),CodeBlock(span2._2.tail.flatten.toList))
+        defs ++ rules ++ routines
     }
 
     /*def readRules(rules: List[GeneratorToken]):List[LexRule] = {
