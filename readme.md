@@ -69,6 +69,8 @@ the following operators are used during the processing of an input string, and w
 
 - "\u0008" is a backspace character that is used to represent concatenations
 
+- whitespace is used for parsing rules and definitions, so to use whitespace in your regex, it is highly reccomended to parenthesise it using ``[ ]``
+
 **Planned operators** 
 - ``{digit}`` looks for a definition with the name digit
 - ``<def>`` indicates start conditions

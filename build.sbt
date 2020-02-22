@@ -1,6 +1,6 @@
 name := "Year3Project"
 
-version := "0.3"
+version := "0.4"
 
 scalaVersion := "2.12.10"
 
@@ -16,6 +16,7 @@ libraryDependencies ++= Seq(
     "org.scalactic" %% "scalactic" % "3.1.0",
     "org.scalatest" %% "scalatest" % "3.1.0" % "test",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
+    //"com.lihaoyi" %% "fastparse" % "2.2.2",
     "org.scala-lang" % "scala-compiler" % "2.12.10",
     //"com.novocode" % "junit-interface" % "0.11" % Test
 )
@@ -31,6 +32,7 @@ scalacOptions ++= Seq(
     "-language:implicitConversions",
     "-language:postfixOps",
     "-feature"
+    //"-Ypatmat-exhaust-depth 40"
 )
 
 
