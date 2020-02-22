@@ -9,7 +9,7 @@ class LexRule(val startCondition: String = "", val regex: String = "",val action
         this(s(0),s(1),s(2))
     }
     private val dfa:DFA = regexParser.translateRegex(regex)
-    def parse(s: String) = dfa(s)
+    def parse(s: String) = dfa.longestPrefixMatch(s)
     def execute = {
         logger.trace("Executing code action: \n" + action)
         val tb = currentMirror.mkToolBox()
