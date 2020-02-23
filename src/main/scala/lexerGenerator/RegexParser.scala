@@ -73,7 +73,7 @@ object regexParser extends LazyLogging {
       @tailrec
       def makeSymbol(s: List[Char],a: List[RegexToken]): List[RegexToken] = s match {
         //return symbols
-        case Nil => a.reverse
+        case Nil => a
         //escape next character
         case '\\'::xs if !escaped && op < 3 =>
           logger.trace("escaping next operator")
@@ -82,9 +82,9 @@ object regexParser extends LazyLogging {
         //escaped operator
         case x::xs if escaped && op == 0 =>
           escaped = false
-          val o = new Operator(x,true)
+          val o = Operator(x,true)
           prev = o
-          makeSymbol(xs,o::a)
+          makeSymbol(xs,a:+o)
         case x::xs if escaped && op == 1 =>
           escaped = false
           charset = x::'\\':: charset
@@ -94,9 +94,9 @@ object regexParser extends LazyLogging {
           charset = x::charset
           makeSymbol(xs,a)
         case x::xs if illegal.contains(x) && op == 0 =>
-          val o = new Operator(x,true)
+          val o = Operator(x,true)
           prev = o
-          makeSymbol(xs,o::a)
+          makeSymbol(xs,a:+o)
         //quotations
         case '"'::xs if !escaped && op == 0 =>
           charset = Nil
@@ -106,10 +106,10 @@ object regexParser extends LazyLogging {
             op = 0
             val c = charset.reverse
             logger.trace("adding escaped quote sequence " + c)
-            val o = new QuoteSeq(c)
+            val o = QuoteSeq(c)
             prev = o
             charset = Nil
-            makeSymbol(xs,o::a)
+            makeSymbol(xs,a:+o)
         //char set
         case '['::'^'::xs if !escaped && op != 1 => 
           op = 1
@@ -122,11 +122,11 @@ object regexParser extends LazyLogging {
           val c = charset.reverse
           logger.trace("Created Character set " + c)
           op = 0
-          val o = new CharSet(c,inverted)
+          val o = CharSet(c,inverted)
           prev = o
           inverted = false
           charset = Nil
-          makeSymbol(xs,o::a)
+          makeSymbol(xs,a:+o)
         case x::xs if op == 1 || op == 2 =>
           charset = x ::charset
           makeSymbol(xs,a)
@@ -139,13 +139,13 @@ object regexParser extends LazyLogging {
           makeSymbol(xs,a)
         case '}'::xs if !escaped && op == 3 =>
           if(!quantOp.isEmpty) {snd = Integer.parseInt(quantOp)}
-          val c = new Quantifier(prev,fst,snd)
+          val c = Quantifier(prev,fst,snd)
           prev = c
           quantOp = ""
           fst = 0
           snd = 0
           op = 0
-          makeSymbol(xs,c::a)
+          makeSymbol(xs,a:+c)
         case ','::xs if !escaped && op == 3 =>
           if(!quantOp.isEmpty) {fst = Integer.parseInt(quantOp)}
           quantOp = ""
@@ -155,14 +155,14 @@ object regexParser extends LazyLogging {
           makeSymbol(xs,a)
         //normal operator
         case x::xs if !escaped && op == 0 && isOperator(x) => 
-          val o = new Operator(x,false)
+          val o = Operator(x,false)
           prev = o
-          makeSymbol(xs, o::a)
+          makeSymbol(xs, a:+o)
         //normal input symbol
         case x:: xs if isInput(x) => 
-          val o = new Input(x)
+          val o = Input(x)
           prev = o
-          makeSymbol(xs,o::a)
+          makeSymbol(xs,a:+o)
       }
       makeSymbol(s,Nil)
     }
@@ -193,7 +193,7 @@ object regexParser extends LazyLogging {
       }
       @tailrec
       def findBrackets(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = s match {
-        case Nil => a.reverse
+        case Nil => a
         case x@Operator('(',false)::xs =>
           bracketdepth += 1
           inner = x.head :: inner
@@ -201,23 +201,23 @@ object regexParser extends LazyLogging {
         case Operator(')',false)::Quantifier(sym,fst,snd)::xs =>
           addExpression
           val i = inner.head
-          val n = new Quantifier(i,fst,snd)
+          val n = Quantifier(i,fst,snd)
           if(bracketdepth == 0)
-          findBrackets(n::xs,i::a)
+          findBrackets(n::xs,a:+i)
           else
           findBrackets(n::xs,a)
         case x@Operator(')',false)::xs =>
           addExpression
           val i = inner.head
           if(bracketdepth == 0)
-          findBrackets(xs,i::a)
+          findBrackets(xs,a:+i)
           else
           findBrackets(xs,a)
         case x::xs if bracketdepth > 0 =>
           inner = x::inner
           findBrackets(xs,a)
         case x::xs if bracketdepth <= 0 =>
-          findBrackets(xs,x::a)
+          findBrackets(xs,a:+x)
       }
       findBrackets(s,Nil)
     }
@@ -228,7 +228,7 @@ object regexParser extends LazyLogging {
       def findQuant(s: List[RegexToken],a: List[RegexToken]):List[RegexToken] = {
         def makeQuant(s: RegexToken, f: Int, l: Int):List[RegexToken] = {
           var r:List[RegexToken] = Nil
-          val q = new Operator('?',false)
+          val q = Operator('?',false)
           for(i <- 1 until f) yield {
             r = s::r
           }
@@ -238,26 +238,23 @@ object regexParser extends LazyLogging {
           r
         }
         s match {
-          case Nil => a.reverse
+          case Nil => a
           case Quantifier(s,f,l)::xs =>
             val r = makeQuant(s,f,l)
-            findQuant(xs,r ++ a)
+            findQuant(xs,a ++ r)
           case BracketExpression(s)::xs =>
             logger.trace("processing bracketed expression " + s)
             val o = BracketExpression(quantExpand(s))
-            findQuant(xs,o::a)
+            findQuant(xs,a:+o)
           case x::xs =>
-            findQuant(xs,x::a)
+            findQuant(xs,a:+x)
         }
       }
-      findQuant(s,List())
+      findQuant(s,Nil)
     }
 
     /** Expands brace expressions into full character sets */
     def braceExpand(s: List[RegexToken]):List[RegexToken]= {
-      var inBrace = false
-      var invertedBrace = false
-      var braceSymbols:List[RegexToken] = Nil
       var escaped = false
       @tailrec
       def findBraces(s: List[RegexToken],a: List[RegexToken]): List[RegexToken] = {
@@ -266,13 +263,13 @@ object regexParser extends LazyLogging {
         {
           s match{
             //return symbols
-            case Nil => a.reverse
+            case Nil => a
             case '\\'::xs if !escaped =>
               escaped = true
               createRange(xs,a)
             case x::xs if escaped =>
               escaped = false
-              createRange(xs,x::a)
+              createRange(xs,a:+x)
             //convert character range e.g. [a-z]
             case x0::'-'::x1::xs if !escaped =>
               logger.trace("creating character range from " + x0 + " to " + x1)
@@ -280,30 +277,29 @@ object regexParser extends LazyLogging {
               val e = Math.max(x0,x1).toChar
               val range = b to e
               //logger.trace("a0: " + a0)
-              createRange(x1::xs,range.toList ++ a)
+              createRange(x1::xs,a ++ range.toList)
             //continue
             case x::xs =>
-              createRange(xs,x::a)
+              createRange(xs,a:+x)
           }
         }
         s match {
           //return symbols
-          case Nil => a.reverse
+          case Nil => a
           //finds char set
           case CharSet(s,i) :: xs =>
-            inBrace = false
-            logger.trace("processing character set " + braceSymbols.reverse)
-            val c = new CharSet(createRange(s,Nil),i)
+            logger.trace("processing character set " + s)
+            val c = CharSet(createRange(s,Nil),i)
             logger.trace("adding sequence " + c)
-            findBraces(xs,c :: a)
+            findBraces(xs,a:+c)
           case BracketExpression(s)::xs =>
             logger.trace("processing bracketed expression (" + s + ')')
-            val o = new BracketExpression(braceExpand(s))
-            findBraces(xs,o::a)
+            val o = BracketExpression(braceExpand(s))
+            findBraces(xs,a:+o)
           //continue
           case x :: xs =>
             //logger.trace("skipping character " + input(x.symbol))
-            findBraces(xs,x::a)
+            findBraces(xs,a:+x)
         }
       }
       findBraces(s,Nil)
@@ -341,27 +337,27 @@ object regexParser extends LazyLogging {
         }
         s match {
           //return symbols
-          case Nil => a.reverse
+          case Nil => a
           //eval last expression
           case BracketExpression(s)::Nil =>
-            val o = new BracketExpression(concatExpand(s))
-            checkchars(Nil,o::a)
+            val o = BracketExpression(concatExpand(s))
+            checkchars(Nil,a:+o)
           //ignore single symbol
-          case x :: Nil => checkchars(Nil,x::a)
+          case x :: Nil => checkchars(Nil,a:+x)
           //eval inner expression
           case BracketExpression(s)::c2::xs =>
             logger.trace("processing bracketed expression " + s)
-            val o = new BracketExpression(concatExpand(s))
-            var ls = o::a
-            if(checknext(c2)) {ls = new Operator(backspace,false)::ls}
+            val o = BracketExpression(concatExpand(s))
+            var ls = a:+o
+            if(checknext(c2)) {ls = ls :+ Operator(backspace,false)}
             checkchars(c2::xs,ls)
           //add concatenation
           case c1 :: c2 :: xs if(checkfirst(c1)&&checknext(c2)) => 
             logger.trace("adding concatenation between '" + c1.symbol + "' and '" + c2.symbol + '\'');
-            checkchars(c2::xs,new Operator(backspace,false)::c1::a)
+            checkchars(c2::xs,a:+c1:+Operator(backspace,false))
           //do not add concatenation
           case c1 :: c2 :: xs if !(checkfirst(c1)&&checknext(c2)) =>
-            checkchars(c2::xs,c1::a)
+            checkchars(c2::xs,a:+c1)
         }
       }
       checkchars(s,Nil)
