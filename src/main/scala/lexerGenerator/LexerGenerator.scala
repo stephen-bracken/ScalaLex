@@ -124,12 +124,14 @@ object Generator extends LazyLogging{
                         val d = Definition(ident,r)
                         logger.trace("processed regex definition: " + d)
                         seq = Nil
+                        mode = 0
                         a :+ d
                     case Nil if mode == 2 => throw new GeneratorError("Unclosed option: " + a.last + seq)
                     case Nil if mode == 3 => 
                         states = states :+ seq
                         seq = Nil
                         val s = new LexingState(states,lexingstate)
+                        mode = 0
                         logger.trace("processed Lexing state: " + s)
                         a :+ s
                     case Nil if mode == 4 => throw new GeneratorError("Unclosed code block in defs: " + seq)
@@ -260,6 +262,7 @@ object Generator extends LazyLogging{
                     logger.trace("processed code block: " + c)
                     seq = Nil
                     val r = LexingRule(start,regex,c)
+                    mode = 0
                     logger.trace("processed rule: " + r)
                     a :+ r
                 //comment
@@ -321,6 +324,7 @@ object Generator extends LazyLogging{
                             case 4 => throw new GeneratorError("Invalid comment in rules section: " + seq)
                         }
                         if(mode != 0) {seq = Nil}
+                        mode = 0
                         makeRule(xs,r)
                 case x::xs =>
                     seq = seq :+ x
