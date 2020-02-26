@@ -13,7 +13,7 @@ class LexRule(val startCondition: String = "", val regex: String = "",val action
         this(s.toString,r.toString,c.toString)
     }
     def this(s: StartCondition, r: LexRegex, c: CodeBlock){
-        this(s.s,r.r,c.c)
+        this(s(),r(),c())
     }
     def this(l: LexingRule){
         this(l.s,l.r,l.c)
