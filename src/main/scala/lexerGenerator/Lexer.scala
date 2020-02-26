@@ -73,7 +73,7 @@ class Lexer(input: List[GeneratorToken],private var _in:String) extends LazyLogg
                 if(r._1 > length) {rule = x; length = r._1; matched = r._2}
                 findMatches(l.tail)
         }
-        findMatches(rules)
+        findMatches(rules.filter(r => r.startCondition == state))
     }
     def stateMatch(s: String) = s match {
         case "" if state == "INITIAL" =>
