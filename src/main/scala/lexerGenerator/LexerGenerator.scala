@@ -169,7 +169,7 @@ object Generator extends LazyLogging{
                         seq = Nil
                         makeDef(xs,a:+c)
                     //identifier
-                    case '_'::xs if mode == 0 =>
+                    case ' '::xs if mode == 0 =>
                         ident = Identifier(seq)
                         logger.trace("processed identifier: " + ident)
                         val s = xs.span(c => c != '\n')
@@ -206,6 +206,7 @@ object Generator extends LazyLogging{
                             case 5 => throw new GeneratorError("Invalid comment in definitions section: " + seq)
                         }
                         if(mode != 0) {seq = Nil}
+                        mode = 0
                         makeDef(xs,r)
                     //separator
                     case ' '::xs if mode == 4 =>
@@ -400,57 +401,6 @@ object Generator extends LazyLogging{
         findSections(s)
     }
 
-    /*def readRules(rules: List[GeneratorToken]):List[LexRule] = {
-        /*var inCode = false
-        @tailrec
-        def getCode(s: List[Char],a: List[Char]):List[Char] = {
-            s match {
-                case Nil => a.reverse
-                case '}'::'%'::xs if inCode =>
-                    a.reverse
-                case '%'::'{'::xs if !inCode =>
-                    inCode = true
-                    getCode(xs,a)
-                case x::xs if !inCode =>
-                    getCode(xs,a)
-            }
-        }
-        rules match {
-        case Nil => 
-            Nil
-        case x :: xs =>
-            var p = x
-            var args:List[String] = Nil
-            if(x.takeWhile(c => c != '\t').contains(List('<','>'))){
-                val span = x.span(c => c != '>')
-                val startCond = span._1.tail
-                args = args :+ startCond
-                p = span._2.tail
-            }
-            else {args = args :+ "_"}
-            val r = p.span(c => c != '\t')
-            args = args :+ r._1.stripTrailing :+ getCode(r._2.toList,Nil).toString
-            val rule = new LexRule(args) 
-        }*/
-        def makeRule(r: List[GeneratorToken],a: List[LexRule]):List[LexRule] = {
-            r match {
-                case Nil => a
-                case StartCondition(s)::LexRegex(r)::CodeBlock(c)::xs =>
-                    makeRule(xs,a :+ new LexRule(s,r,c))
-                case LexRegex(r)::CodeBlock(c)::xs =>
-                    makeRule(xs,a :+ new LexRule(Nil,r,c))
-                case LexRegex(r)::xs =>
-                    makeRule(xs, a :+ new LexRule(Nil,r,Nil))
-                case CodeBlock(c)::xs => 
-                    throw new GeneratorError("Unbound codeblock in rules: " + c)
-                case StartCondition(s)::xs =>
-                    throw new GeneratorError("Unbound start condition in rules: " + s)
-                case x::xs =>
-                    throw new GeneratorError("Unknown input: " + x)
-            }
-        }
-        makeRule(rules,Nil)
-    }*/
     //def parser[_: P] = P( "hello" )
     /*def parseRules[_:P] = P(parseRule ~ parseNextRule)
     def parseNextRule[_:P]:P[Unit] = P(parseRule ~ parseNextRule | End)
