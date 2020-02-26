@@ -29,11 +29,15 @@ class LexerSuite extends UnitSpec {
     it should "Be able to process an empty program" in {
         logger.info("#########LexEmptyDefs#########")
         val in = "%%"
-        assert(Generator.lex(List(in)) == List(Delimiter()))
+        assert(Generator.lex(in.toList) == List(Delimiter()))
     }
 
     it should "Be able to process each Lexical token" in {
-        logger.info("#########LexEmptyDefs#########")
+        logger.info("#########LexTokens#########")
+        val in = "/* I am a comment */\nnumber [0-9]+\n%option case-insensitive,\n%x INSTRING INCOMMENT\n%%\n/* I am in the rules section */\nhello\tprintln(\"hello\");\nworld\tprintln(\"world\");\n%%\nprintln(\"I am in the code section\");\n"
+        logger.info(in)
+        val r = Generator.lex(in.toList)
+        logger.info(r.toString)
     }
     /*
     /*"The Rule parser"*/ ignore should "Be able to parse the string ab+\t" in {
