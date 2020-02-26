@@ -5,6 +5,9 @@ import java.io.FileNotFoundException
 import scala.io.Source
 //import fastparse._,NoWhitespace._
 import scala.annotation.tailrec
+import java.io.File
+import java.io.BufferedWriter
+import java.io.FileWriter
 
 
 object Generator extends LazyLogging{
@@ -32,13 +35,13 @@ object Generator extends LazyLogging{
             val currentDirectory = new java.io.File(".").getCanonicalPath
             val inputFile = options('input).asInstanceOf[String]
             logger.info("reading definitions from " + currentDirectory + '/' + inputFile)
-            val outputFile = options('output).asInstanceOf[String]
+            val outputFile = options('output).asInstanceOf[String] + ".scala"
             //read input file
             val bufferedSource = Source.fromFile(inputFile)
             var lines:List[String] = List()
             for (line <- bufferedSource.getLines) {
-                lines = line :: lines
-                logger.trace(line)
+                lines = line + '\n' :: lines
+                //logger.trace(line)
             }
             bufferedSource.close
             lines = lines.reverse
@@ -48,10 +51,15 @@ object Generator extends LazyLogging{
             val rest2 = rest.span(x => !(x.startsWith("%%")))
             val rules = rest2._1
             val routines = rest2._2*/
-            val compiledRules =  lex(lines)
+            val compiledRules =  lex(lines.flatten)
             logger.info("Processed input: " + compiledRules)
-            logger.trace("final text: " + lines)
-            logger.info("writing output to " + outputFile)
+            //logger.debug("final tokens: " + lines)
+            //logger.info("writing output to " + outputFile)
+            val text = makeFile(compiledRules)
+            val file = new File(outputFile)
+            val bw = new BufferedWriter(new FileWriter(file))
+            bw.write(text)
+            bw.close()
         }
         catch {
             case e:ArrayIndexOutOfBoundsException => usage
@@ -386,6 +394,10 @@ object Generator extends LazyLogging{
     }
     //def ws[_:P]:P[Unit] = P((" " | "\n").rep)
     */
+    
+    private def makeFile(l: List[GeneratorToken]) = {
+        l.flatMap(t => t.toString()).foldLeft("")((s,c) => s + c)
+    }
     def usage = {
         logger.error("Usage: LexerGenerator -i [Definitions file] -o [Output filename]")
     }

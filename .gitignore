@@ -22,3 +22,4 @@ project/.bloop/*
 .scalafmt.conf
 null/*
 project/metals.sbt
+output.scala
