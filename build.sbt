@@ -4,6 +4,8 @@ version := "0.4.1"
 
 scalaVersion := "2.12.10"
 
+unmanagedSources / excludeFilter := HiddenFileFilter || "*output*"
+
 resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases"
 
 addSbtPlugin("com.artima.supersafe" % "sbtplugin" % "1.1.3")
