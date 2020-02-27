@@ -319,6 +319,7 @@ object Generator extends LazyLogging{
                     val r = LexingRule(start,regex,c)
                     logger.trace("compiled rule: " + r)
                     seq = Nil
+                    start = null
                     makeRule(xs,a :+ r)
                     case '\n'::xs if !inBlock =>
                         val r = mode match {
@@ -331,6 +332,7 @@ object Generator extends LazyLogging{
                                 val r = LexingRule(start,regex,c)
                                 logger.trace("compiled rule: " + r)
                                 seq = Nil
+                                start = null
                                 a :+ r
                             case 4 => throw new GeneratorError("Invalid comment in rules section: " + seq)
                         }
