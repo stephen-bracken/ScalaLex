@@ -107,7 +107,7 @@ object Generator extends LazyLogging{
             mode = 0
             seq = Nil
             inBlock = false
-            var states:List[List[Char]] = Nil
+            var states:List[String] = Nil
             @tailrec
             def makeDef(d: List[Char],a: List[GeneratorToken]):List[GeneratorToken] = {
                 d match {
@@ -121,7 +121,7 @@ object Generator extends LazyLogging{
                         a :+ d
                     case Nil if mode == 2 => throw new GeneratorError("Unclosed option: " + a.last + seq)
                     case Nil if mode == 3 => 
-                        states = states :+ seq
+                        states = states :+ seq.foldLeft("")((s,c) => s + c)
                         seq = Nil
                         val s = new LexingState(states,lexingstate)
                         mode = 0
@@ -165,6 +165,7 @@ object Generator extends LazyLogging{
                         makeDef(xs,a:+c)
                     //declaration end
                     case ','::xs if mode == 2 =>
+                        seq = seq.foldLeft("")((s,c) => s + c).stripLeading.toList
                         val o = Declaration(seq)
                         logger.trace("processed option declaration: " + o)
                         mode = 0
@@ -181,7 +182,7 @@ object Generator extends LazyLogging{
                                 a :+ d
                             case 2 => throw new GeneratorError("Unclosed option declaration: " + seq)
                             case 3 =>
-                                states = states :+ seq
+                                states = states :+ seq.foldLeft("")((s,c) => s + c)
                                 val l = LexingState(states,lexingstate)
                                 logger.trace("processed lexing states: " + l)
                                 a :+ l
@@ -194,12 +195,6 @@ object Generator extends LazyLogging{
                         if(mode != 0) {seq = Nil}
                         mode = 0
                         makeDef(xs,r)
-                    //separator
-                    case ' '::xs if mode == 3 && !seq.filter(c => c != ' ').isEmpty =>
-                        states = states :+ seq
-                        logger.trace("adding state " + seq)
-                        seq = Nil
-                        makeDef(xs,a)
                     //%option - declaration start
                     case x if seq == option && mode == 0 =>
                         mode = 2
@@ -208,12 +203,19 @@ object Generator extends LazyLogging{
                         makeDef(x,a)
                     //%s|%x - state definition
                     case x if (seq == inclusive || seq == exclusive) && mode == 0 =>
-                        val n = trimWhitespace(x)
+                        val s = x.span(c => c != '\n')
+                        var n = trimWhitespace(s._1).foldLeft("")((s,c) => s + c).stripLeading.toList ++ s._2
                         logger.trace("processing lexing states")
                         mode = 3
                         lexingstate = seq == inclusive
                         seq = Nil
                         makeDef(n,a)
+                    //separator
+                    case ' '::xs if mode == 3 && !seq.filter(c => c != ' ').isEmpty =>
+                        states = states :+ seq.foldLeft("")((s,c) => s + c)
+                        logger.trace("adding state " + seq)
+                        seq = Nil
+                        makeDef(xs,a)
                     //end of identifier
                     case ' '::xs if mode == 0 =>
                         ident = Identifier(seq)
@@ -469,7 +471,7 @@ case class Declaration(s: List[Char]) extends GeneratorToken(s){
  *  @param s the list of lexing states
  *  @param i indicates whether the states are inclusive (%s) or exclusive (%x)
 */
-case class LexingState(s: List[List[Char]],i: Boolean) extends GeneratorToken(s.flatMap(c => c :+ ',')){
+case class LexingState(s: List[String],i: Boolean) extends GeneratorToken(s.flatMap(c => c :+ ',')){
     override def toString():String = {
         val sb = StringBuilder.newBuilder
         i match {
