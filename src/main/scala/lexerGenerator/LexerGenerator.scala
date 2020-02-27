@@ -472,7 +472,7 @@ case class Declaration(s: List[Char]) extends GeneratorToken(s){
 case class LexingState(s: List[List[Char]],i: Boolean) extends GeneratorToken(s.flatMap(c => c :+ ',')){
     override def toString():String = {
         val sb = StringBuilder.newBuilder
-        val s = i match {
+        i match {
             case true => sb.append("%s ")
             case false => sb.append("%x ")
         }
