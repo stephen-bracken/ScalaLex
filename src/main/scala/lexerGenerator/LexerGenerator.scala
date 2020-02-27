@@ -88,33 +88,38 @@ object Generator extends LazyLogging{
         convert(s,"")
     }
 
-    /** converts the input file into a lexed stream of tokens */
+    /** converts the input file into a lexed list of tokens */
     def lex(s: List[Char]) = {
-        /** used with seq, code, states etc. to specify composite tokens */
+        /** used with findSections, lexDefs and lexRules to specify composite tokens */
         var mode = 1
-        //keeps track of modes during comments
+        /** keeps the previous mode during comments */
         var prevMode = 0
-        var section:List[Char] = Nil
+        /** contains the current set of characters to be consumed */
         var seq:List[Char] = Nil
+        /** stores the identifier for Definitions */
         var ident:Identifier = null
+        /** tracks when a block statement is being processed */
         var inBlock = false
-        /* start of option declaration */
+        /** start of option declaration */
         val option = "%option".toList
-        /* start of inclusive lexing state declaration */
+        /** start of inclusive lexing state declaration */
         val inclusive = "%s".toList
-        /* start of exclusive lexing state declaration */
+        /** start of exclusive lexing state declaration */
         val exclusive = "%x".toList
+        /** used to specify inclusive (true) or exclusive lexing states */
         var lexingstate = false
+        /** used to store current list of lexing states */
         var states:List[String] = Nil
-        /*
-        modes:
-            0 - no def
-            1 - definition
-            2 - option declaration
-            3 - state transform
-            4 - free code block
-            5 - comment
-        */
+        /**
+         * Lexes Definitions in the input file
+         * modes:
+         * 0 - no def
+         * 1 - definition
+         * 2 - option declaration
+         * 3 - state transform
+         * 4 - free code block
+         * 5 - comment
+         */
         def lexDefs(d: List[Char]):List[GeneratorToken] = {
             mode = 0
             seq = Nil
@@ -246,15 +251,15 @@ object Generator extends LazyLogging{
             }
             makeDef(d,Nil)
         }
-        //TODO: Fix lexing of rules/regexes
-        /*
-        modes:
-        0 - no mode
-        1 - start condition
-        2 - regex
-        3 - code block
-        4 - comment
-        */
+        /**
+         * Lexes rule expressions in the input file
+         * modes:
+         * 0 - no mode
+         * 1 - start condition
+         * 2 - regex
+         * 3 - code block
+         * 4 - comment
+         */
         def lexRules(r: List[Char]):List[GeneratorToken] ={ 
             mode = 0
             seq = Nil
@@ -345,12 +350,13 @@ object Generator extends LazyLogging{
             }
             makeRule(r,Nil)
         }
-        /*
-        modes:
-            0 - no section
-            1 - defs
-            2 - rules
-            3 - routines
+        /**
+         *   finds the ends of sections in the input file and calls appropriate lexers
+         *   modes:
+         *   0 - no section
+         *   1 - defs
+         *   2 - rules
+         *   3 - routines
         */
         def findSections(s: List[Char]):List[GeneratorToken] = {
             var defs:List[GeneratorToken] = Nil
