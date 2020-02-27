@@ -1,11 +1,17 @@
     println("Start of defs");
+%{
+    println("code block 1")
+}%
 /* I am a comment */
 number [0-9]+
 %option case-insensitive,
 %x INSTRING INCOMMENT
 %%
 /* I am in the rules section */
-hello   println("hello");
-world   println("world");
+hello    println("hello");
+world    println("world");
+c2    %{
+    println("code block 2")
+}%
 %%
 println("I am in the code section");
