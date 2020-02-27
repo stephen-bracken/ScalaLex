@@ -8,6 +8,7 @@ number [0-9]+
 %x INSTRING INCOMMENT
 %%
 /* I am in the rules section */
+<INSTRING> a*    println("AAAAAAAAAAAAAAAA");
 hello    println("hello");
 world    println("world");
 c2    %{
