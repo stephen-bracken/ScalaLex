@@ -41,16 +41,9 @@ object Generator extends LazyLogging{
             var lines:List[String] = List()
             for (line <- bufferedSource.getLines) {
                 lines = line + '\n' :: lines
-                //logger.trace(line)
             }
             bufferedSource.close
             lines = lines.reverse
-            /*val split = lines.span(x => !(x.startsWith("%%")))
-            val defs = split._1
-            val rest = split._2
-            val rest2 = rest.span(x => !(x.startsWith("%%")))
-            val rules = rest2._1
-            val routines = rest2._2*/
             val compiledRules =  lex(lines.flatten)
             logger.info("Processed input: " + compiledRules)
             //logger.debug("final tokens: " + lines)
@@ -82,7 +75,6 @@ object Generator extends LazyLogging{
         trim(s,Nil)
     }
 
-    //TODO: Debug why tokens do not appear in the output list
     /** converts the input file into a lexed stream of tokens */
     def lex(s: List[Char]) = {
         /** used with seq, code, states etc. to specify composite tokens */
@@ -94,13 +86,14 @@ object Generator extends LazyLogging{
         var ident:Identifier = null
         var inBlock = false
         /* start of option declaration */
-        val option = "%option ".toList
+        val option = "%option".toList
         /* start of inclusive lexing state declaration */
-        val inclusive = "%s ".toList
+        val inclusive = "%s".toList
         /* start of exclusive lexing state declaration */
-        val exclusive = "%x ".toList
+        val exclusive = "%x".toList
         var lexingstate = false
         var states:List[String] = Nil
+        //TODO: Fix Lexing of Declarations and Definitions
         /*
         modes:
             0 - no def
@@ -170,17 +163,8 @@ object Generator extends LazyLogging{
                         logger.trace("added code block: " + c)
                         seq = Nil
                         makeDef(xs,a:+c)
-                    //identifier
-                    case ' '::xs if mode == 0 =>
-                        ident = Identifier(seq)
-                        logger.trace("processed identifier: " + ident)
-                        val s = xs.span(c => c != '\n')
-                        var n = trimWhitespace(s._1).toString.stripLeading.toList ++ s._2
-                        seq = Nil
-                        mode = 1
-                        makeDef(n,a)
-                    //%option
-                    case ','::xs if mode == 3 =>
+                    //declaration end
+                    case ','::xs if mode == 2 =>
                         val o = Declaration(seq)
                         logger.trace("processed option declaration: " + o)
                         mode = 0
@@ -211,24 +195,33 @@ object Generator extends LazyLogging{
                         mode = 0
                         makeDef(xs,r)
                     //separator
-                    case ' '::xs if mode == 4 =>
+                    case ' '::xs if mode == 3 && !seq.filter(c => c != ' ').isEmpty =>
                         states = states :+ seq
                         logger.trace("adding state " + seq)
                         seq = Nil
                         makeDef(xs,a)
-                    //option declaration
+                    //%option - declaration start
                     case x if seq == option && mode == 0 =>
-                        mode = 3
+                        mode = 2
                         logger.trace("processsing option declaration")
                         seq = Nil
                         makeDef(x,a)
-                    //%s and %x
+                    //%s|%x - state definition
                     case x if (seq == inclusive || seq == exclusive) && mode == 0 =>
                         val n = trimWhitespace(x)
                         logger.trace("processing lexing states")
-                        mode = 4
+                        mode = 3
                         lexingstate = seq == inclusive
                         seq = Nil
+                        makeDef(n,a)
+                    //end of identifier
+                    case ' '::xs if mode == 0 =>
+                        ident = Identifier(seq)
+                        logger.trace("processed identifier: " + ident)
+                        val s = xs.span(c => c != '\n')
+                        var n = trimWhitespace(s._1).foldLeft("")((s,c) => s + c).stripLeading.toList ++ s._2
+                        seq = Nil
+                        mode = 1
                         makeDef(n,a)
                     //normal character
                     case x::xs =>
