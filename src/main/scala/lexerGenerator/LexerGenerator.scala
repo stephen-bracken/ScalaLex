@@ -162,7 +162,7 @@ object Generator extends LazyLogging{
                         mode = 4
                         seq = Nil
                         makeDef(xs,a)
-                    case '%'::'{'::xs if mode == 0 =>
+                    case '%'::'{'::xs if mode == 0 || mode == 4 =>
                         logger.trace("processing code block")
                         inBlock = true
                         mode = 4
@@ -246,6 +246,7 @@ object Generator extends LazyLogging{
             }
             makeDef(d,Nil)
         }
+        //TODO: Fix lexing of rules/regexes
         /*
         modes:
         0 - no mode
@@ -304,7 +305,7 @@ object Generator extends LazyLogging{
                     seq = Nil
                     mode = 3
                     makeRule(xs,a)
-                case '%'::'{'::xs if mode == 0 =>
+                case '%'::'{'::xs if mode == 0 || mode == 2 || mode == 3 =>
                     logger.trace("processing code section")
                     inBlock = true
                     mode = 3
@@ -319,7 +320,7 @@ object Generator extends LazyLogging{
                     logger.trace("compiled rule: " + r)
                     seq = Nil
                     makeRule(xs,a :+ r)
-                    case '\n'::xs =>
+                    case '\n'::xs if !inBlock =>
                         val r = mode match {
                             case 0 => a
                             case 1 => throw new GeneratorError("unclosed start condition: " + seq)
@@ -327,7 +328,10 @@ object Generator extends LazyLogging{
                             case 3 => 
                                 val c = CodeBlock(seq)
                                 logger.trace("processed code block: " + c)
-                                a :+ c
+                                val r = LexingRule(start,regex,c)
+                                logger.trace("compiled rule: " + r)
+                                seq = Nil
+                                a :+ r
                             case 4 => throw new GeneratorError("Invalid comment in rules section: " + seq)
                         }
                         if(mode != 0) {seq = Nil}
@@ -496,7 +500,7 @@ case class LexingState(s: List[String],i: Boolean) extends GeneratorToken(s.flat
 }
 
 /** represents a rule of the form <startcondition> regex    %{code}% */
-case class LexingRule(s: StartCondition = StartCondition(Nil), r: LexRegex, c: CodeBlock) extends GeneratorToken(s.s ++ r.r ++ c.c){
+case class LexingRule(s: StartCondition = StartCondition("INITIAL".toList), r: LexRegex, c: CodeBlock) extends GeneratorToken(s.s ++ r.r ++ c.c){
     override def toString():String = {
         s.toString() ++ r.toString() + '\t' + c.toString()
     }
