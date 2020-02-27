@@ -8,6 +8,7 @@ import scala.annotation.tailrec
 import java.io.File
 import java.io.BufferedWriter
 import java.io.FileWriter
+import scala.collection.immutable.Nil
 
 
 object Generator extends LazyLogging{
@@ -75,6 +76,18 @@ object Generator extends LazyLogging{
         trim(s,Nil)
     }
 
+    def convertToTabs(s : List[Char]) = { 
+        @tailrec
+        def convert(s: List[Char],a: String):String = s match {
+            case Nil => a
+            case ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: xs =>
+                convert(xs,a+'\t')
+            case x :: xs =>
+                convert(xs,a+x)
+        }
+        convert(s,"")
+    }
+
     /** converts the input file into a lexed stream of tokens */
     def lex(s: List[Char]) = {
         /** used with seq, code, states etc. to specify composite tokens */
@@ -93,7 +106,6 @@ object Generator extends LazyLogging{
         val exclusive = "%x".toList
         var lexingstate = false
         var states:List[String] = Nil
-        //TODO: Fix Lexing of Declarations and Definitions
         /*
         modes:
             0 - no def
@@ -145,7 +157,7 @@ object Generator extends LazyLogging{
                         seq = Nil
                         makeDef(xs,a:+c)
                     //code blocks
-                    case '\t'::xs if mode == 0 =>
+                    case ' '::' '::' '::' '::xs if mode == 0 =>
                         logger.trace("processing code block")
                         mode = 4
                         seq = Nil
@@ -286,7 +298,7 @@ object Generator extends LazyLogging{
                     seq = Nil
                     makeRule(xs,a)
                 //regex
-                case '\t'::xs if mode == 2 || mode == 0 =>
+                case ' '::' '::' '::' '::xs if mode == 2 || mode == 0 =>
                     regex = LexRegex(seq)
                     logger.trace("processed regex: " + regex)
                     seq = Nil

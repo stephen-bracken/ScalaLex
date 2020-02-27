@@ -1,3 +1,4 @@
+    println("Start of defs");
 /* I am a comment */
 number [0-9]+
 %option case-insensitive,
