@@ -22,6 +22,7 @@ object LexerFactory{
         private var rules:List[String] = Nil
         private var states:List[String] = Nil
         private var inclusive:Boolean = false
+        //begin class
         sb.append("class Lex {\n")
         if(withdefs){processDefs(in.head);in = in.tail}
         if(withrules){processRules(in.head); in = in.tail}
@@ -42,6 +43,7 @@ object LexerFactory{
                 case x::xs => throw new LexerOutputError("Unexpected expression in defs: " + x)
             }
             processDef(d)
+            //add state variables
             sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(\"INITIAL\",")
             sb.append(states.reduceLeft((a,b) => '"'+a+'"'+','+'"'+b+'"'))
             sb.append(")\n")

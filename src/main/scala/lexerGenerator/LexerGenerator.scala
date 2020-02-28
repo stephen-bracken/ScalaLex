@@ -10,12 +10,17 @@ import java.io.BufferedWriter
 import java.io.FileWriter
 import scala.collection.immutable.Nil
 
-
+/** Creates a lexer using the input spec */
 object Generator extends LazyLogging{
+    /** represents a lexed section. Contains a list of tokens and indicates whether it was included in the input file.*/
     type Section = (List[GeneratorToken],Boolean)
+    /** the tokenised defs section */
     private var defs:Section = (Nil,false)
+    /** the tokenised rules section */
     private var rules:Section = (Nil,false)
+    /** the tokenised user subroutines section*/
     private var routines:Section = (Nil,false)
+    /** lexes the input file and produces a lexer file accoding to the input spec */
     def main(args: Array[String]): Unit = {
         /** uses option flags to process command options */
         type OptionMap = Map[Symbol, Any]
@@ -49,10 +54,10 @@ object Generator extends LazyLogging{
             }
             bufferedSource.close
             lines = lines.reverse
+            //Lex read lines
             val compiledRules =  lex(lines.flatten)
             logger.info("Processed input: " + compiledRules)
-            //logger.debug("final tokens: " + lines)
-            //logger.info("writing output to " + outputFile)
+            //produce output file
             LexerFactory.withDefs(defs)
             LexerFactory.withRules(rules)
             LexerFactory.withRoutines(routines)
@@ -61,6 +66,7 @@ object Generator extends LazyLogging{
             val bw = new BufferedWriter(new FileWriter(file))
             bw.write(text)
             bw.close()
+            logger.info("Lexer successfully created")
         }
         catch {
             case e:ArrayIndexOutOfBoundsException => usage
