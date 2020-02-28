@@ -2,14 +2,6 @@ package lexerGenerator
 
 import org.scalatest.time._
 
-//import org.junit._
-//import org.junit.Assert.assertEquals
-//import org.junit.rules.Timeout
-
-/*abstract class RegexParserSuite {
-    @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
-}*/
-
 class DFASuite extends UnitSpec {
 
     //###### DFA Construction ######
@@ -384,7 +376,6 @@ class DFABracketSuite extends UnitSpec {
 }
 
 class DFARangeSuite extends UnitSpec {
-    override def timeLimit: Span = Span(6000000,Millis)
     //###### Char range tests ######
     "The Regex Parser" should "produce an equivalent DFA to [abc]" in {
         logger.info("#########DFACharSet#########")
@@ -493,8 +484,6 @@ class DFARangeSuite extends UnitSpec {
         assert(dfa(seq2),"Seq2")
         assert(dfa(seq3),"Seq3")
     }
-    
-    //override def individualTestTimeout: Timeout = new org.junit.rules.Timeout(600000)
 }
 
 class DFABackslashSuite extends UnitSpec {
