@@ -25,6 +25,11 @@ object LexerFactory{
         //begin class
         sb.append("class Lex {\n")
         if(withdefs){processDefs(in.head);in = in.tail}
+        //add state variables
+        sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(\"INITIAL\",")
+        sb.append(states.reduceLeft((a,b) => '"'+a+'"'+','+'"'+b+'"'))
+        sb.append(")\n")
+        sb.append("private val inclusive:Boolean = "+inclusive+'\n')
         if(withrules){processRules(in.head); in = in.tail}
         if(withroutines){processRoutines(in.head.head.asInstanceOf[CodeBlock]);in = in.tail}
         sb.append('}')
@@ -43,11 +48,6 @@ object LexerFactory{
                 case x::xs => throw new LexerOutputError("Unexpected expression in defs: " + x)
             }
             processDef(d)
-            //add state variables
-            sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(\"INITIAL\",")
-            sb.append(states.reduceLeft((a,b) => '"'+a+'"'+','+'"'+b+'"'))
-            sb.append(")\n")
-            sb.append("private val inclusive:Boolean = "+inclusive+'\n')
         }
         /** compiles the rules from the rules section into methods for yylex to call */
         private def processRules(r: List[GeneratorToken]) = {
