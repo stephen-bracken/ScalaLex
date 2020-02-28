@@ -60,7 +60,7 @@ object LexerFactory{
                     val reg = lookupDefs(r())
                     val rb = StringBuilder.newBuilder
                     val name = getId(s(),reg)
-                    rb.append("def " + name + "() = {")
+                    rb.append("private def " + name + "() = {")
                     rb.append(c())
                     rb.append("}\n")
                     rules = rules :+ rb.mkString
