@@ -4,7 +4,6 @@ import scala.annotation.tailrec
 
 object LexerFactory{
     type Section = (List[GeneratorToken],Boolean)
-    private var o:Output = null
     private var rawdefs:List[GeneratorToken] = Nil
     private var rawrules:List[GeneratorToken] = Nil
     private var rawroutines:List[GeneratorToken] = Nil
@@ -15,8 +14,6 @@ object LexerFactory{
         private var id = 0
         /** gets the function id for a regex */
         private var idMap:Map[(String,String),String] = Map()
-        /** (regex -> action name) */
-        private var regexes:List[(String,String)] = Nil
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
         /** (name -> regex) */
@@ -93,11 +90,7 @@ object LexerFactory{
             if(states.contains(s)) {throw new LexerOutputError("Duplicate state declaration: " + s)}
             states :+ s
         }
-        private def addRegex(s: String,r: String):List[(String,String)] = {
-            val rx = lookupDefs(r)
-            if(regexes.contains(rx)) {throw new LexerOutputError("Duplicate regex declaration: " + r)}
-            regexes :+ (s,rx)
-        }
+        /** creates a switch statement that calls methods when regexes are activated */
         private def linkRules():String = {
             val b = StringBuilder.newBuilder
             b.append("\nprivate def doRule(r: String) = {\n")
