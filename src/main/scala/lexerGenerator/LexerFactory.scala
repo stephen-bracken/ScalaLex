@@ -43,9 +43,9 @@ object LexerFactory{
             }
             processDef(d)
             sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(")
-            sb.append(states.reduceLeft((a,b) => a + ',' + b))
+            sb.append(states.reduceLeft((a,b) => '"'+a+'"'+','+'"'+b+'"'))
             sb.append(")\n")
-            sb.append("val inclusive:Boolean = "+inclusive+'\n')
+            sb.append("private val inclusive:Boolean = "+inclusive+'\n')
         }
         /** compiles the rules from the rules section into methods for yylex to call */
         private def processRules(r: List[GeneratorToken]) = {
