@@ -31,7 +31,7 @@ object LexerFactory{
             @tailrec
             def processDef(l: List[GeneratorToken]):Unit = l match {
                 case Nil => {}
-                case Definition(i,r)::xs => {defs = defs.updated(i(),r())}
+                case Definition(i,r)::xs => {defs = defs.updated(i(),r());processDef(xs)}
                 case Declaration(s)::xs => {setOption(Util.asString(s));processDef(xs)}
                 case CodeBlock(c)::xs => {sb.append(Util.asString(c));processDef(xs)}
                 case Comment(s)::xs => {processDef(xs)}
