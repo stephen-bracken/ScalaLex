@@ -20,9 +20,9 @@ object LexerFactory{
         private val sb: StringBuilder = StringBuilder.newBuilder
         private var defs:Map[String,String] = Map()
         private var rules:List[String] = Nil
-        sb.append(
-            "class OutLexer {\nprivate var state = \"INITIAL\""
-        )
+        private var states:List[String] = Nil
+        private var inclusive:Boolean = false
+        sb.append("class Lex {\n")
         if(withdefs){processDefs(in.head);in = in.tail}
         if(withrules){processRules(in.head); in = in.tail}
         if(withroutines){processRoutines(in.head.head.asInstanceOf[CodeBlock]);in = in.tail}
@@ -34,6 +34,7 @@ object LexerFactory{
                 case Nil => {}
                 case Definition(i,r)::xs => {defs = defs.updated(i(),r());processDef(xs)}
                 case Declaration(s)::xs => {setOption(Util.asString(s));processDef(xs)}
+                case LexingState(s,i)::xs => {states = s; inclusive = i; processDef(xs)}
                 case CodeBlock(c)::xs => {sb.append(Util.asString(c));processDef(xs)}
                 case Comment(s)::xs => {processDef(xs)}
                 case x@LexingRule(s,r,c)::xs => throw new LexerOutputError("Rule found in defs section: " + x.head)  
@@ -75,8 +76,12 @@ object LexerFactory{
             id += 1
             i
         }
+        private def addState(s: String):List[String] = {
+            if(states.contains(s)) {throw new LexerOutputError("Duplicate state declaration: " + s)}
+            states :+ s
+        }
         private def addRegex(s: String,r: String):List[(String,String)] = {
-            if(regexes.contains(r)) {throw new LexerOutputError("Duplicate regex: " + r)}
+            if(regexes.contains(r)) {throw new LexerOutputError("Duplicate regex declaration: " + r)}
             regexes :+ (s,r)
         }
         /** looks up and replaces the regex value of names from the defs*/
