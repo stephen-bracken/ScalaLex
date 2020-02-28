@@ -63,7 +63,7 @@ object LexerFactory{
         }
         /** adds the code from the routines section */
         private def processRoutines(c: CodeBlock) = {
-
+            sb.append(c())
         }
         //######Defs functions#######
         private def setOption(o: String) = {}
