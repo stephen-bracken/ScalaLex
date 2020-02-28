@@ -29,7 +29,7 @@ object LexerFactory{
                 case Nil => {}
                 case Definition(i,r)::xs => {defs = defs.updated(i(),r())}
                 case Declaration(s)::xs => {setOption(Util.asString(s));processDef(xs)}
-                case CodeBlock(c)::xs => {sb.append(c);processDef(xs)}
+                case CodeBlock(c)::xs => {sb.append(Util.asString(c));processDef(xs)}
                 case Comment(s)::xs => {processDef(xs)}
                 case x@LexingRule(s,r,c)::xs => throw new LexerOutputError("Rule found in defs section: " + x.head)  
                 case x => throw new LexerOutputError("Unexpected expression in defs: " + x)
