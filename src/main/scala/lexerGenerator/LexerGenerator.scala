@@ -287,8 +287,10 @@ object Generator extends LazyLogging{
                     mode = 2
                     start = StartCondition(seq)
                     logger.trace("processed start condition: " + start)
+                    val s = xs.span(c => c != '\n' && c != '\t')
+                    var n = Util.trimLeading(s._1) ++ s._2
                     seq = Nil
-                    makeRule(xs,a)
+                    makeRule(n,a)
                 //regex
                 case ' '::' '::' '::' '::xs if mode == 2 || mode == 0 =>
                     regex = LexRegex(seq)
