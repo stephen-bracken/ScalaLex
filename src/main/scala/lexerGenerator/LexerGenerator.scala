@@ -118,7 +118,7 @@ object Generator extends LazyLogging{
                         a :+ d
                     case Nil if mode == 2 => throw new GeneratorError("Unclosed option: " + a.last + seq)
                     case Nil if mode == 3 => 
-                        states = states :+ seq.foldLeft("")((s,c) => s + c)
+                        states = states :+ Util.asString(seq)
                         seq = Nil
                         val s = new LexingState(states,lexingstate)
                         mode = 0
@@ -162,7 +162,7 @@ object Generator extends LazyLogging{
                         makeDef(xs,a:+c)
                     //declaration end
                     case ','::xs if mode == 2 =>
-                        seq = seq.foldLeft("")((s,c) => s + c).stripLeading.toList
+                        seq =  Util.trimLeading(Util.asString(seq)).toList
                         val o = Declaration(seq)
                         logger.trace("processed option declaration: " + o)
                         mode = 0
@@ -343,7 +343,7 @@ object Generator extends LazyLogging{
             var lines:List[Char] = Nil
             def makeDefs:Unit = {
                 val d = lines
-                logger.trace("reading defs from \n\"" + d.foldLeft("")((s,c) => s+c) + '"')
+                logger.trace("reading defs from \n\"" + Util.asString(d) + '"')
                 lines = Nil
                 mode = 0
                 defs = (lexDefs(d),true)
@@ -354,7 +354,7 @@ object Generator extends LazyLogging{
             def makeRules:Unit = {
                 val r = lines
                 lines = Nil
-                logger.trace("reading rules from \n\"" + r.foldLeft("")((s,c) => s+c) + '"')
+                logger.trace("reading rules from \n\"" + Util.asString(r) + '"')
                 mode = 0
                 rules = (lexRules(r),true)
                 logger.debug("lexed rules: " + rules._1)
@@ -426,7 +426,7 @@ object Generator extends LazyLogging{
     */
 
     private def makeFile(l: List[GeneratorToken]) = {
-        l.flatMap(t => t.toString()).foldLeft("")((s,c) => s + c)
+        Util.asString(l.flatMap(t => t.toString()))
     }
     def usage = {
         logger.error("Usage: LexerGenerator -i [Definitions file] -o [Output filename]")
