@@ -66,9 +66,12 @@ object LexerFactory{
                 case x::xs => throw new LexerOutputError("Unexpected token in rules section: " + x)
             }
             processRule(r)
+            sb.append("//### RULES ###")
+            rules.map(s => sb.append("\n"+s))
         }
         /** adds the code from the routines section */
         private def processRoutines(c: CodeBlock) = {
+            sb.append("//### USER SUBROUTINES ###")
             sb.append(c())
         }
         //######Defs functions#######
