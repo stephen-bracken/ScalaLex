@@ -167,7 +167,7 @@ object Generator extends LazyLogging{
                         makeDef(xs,a:+c)
                     //declaration end
                     case ','::xs if mode == 2 =>
-                        seq =  Util.trimLeading(Util.asString(seq)).toList
+                        seq =  Util.trimLeading(seq)
                         val o = Declaration(seq)
                         logger.trace("processed option declaration: " + o)
                         mode = 0
@@ -206,7 +206,7 @@ object Generator extends LazyLogging{
                     //%s|%x - state definition
                     case x if (seq == inclusive || seq == exclusive) && mode == 0 =>
                         val s = x.span(c => c != '\n')
-                        var n = Util.trimLeading(Util.asString(Util.trimWhitespace(s._1))).toList ++ s._2
+                        var n = Util.trimLeading(Util.trimWhitespace(s._1)) ++ s._2
                         logger.trace("processing lexing states")
                         mode = 3
                         lexingstate = seq == inclusive
@@ -223,7 +223,7 @@ object Generator extends LazyLogging{
                         ident = Identifier(seq)
                         logger.trace("processed identifier: " + ident)
                         val s = xs.span(c => c != '\n')
-                        var n = Util.trimLeading(Util.asString(Util.trimWhitespace(s._1))).toList ++ s._2
+                        var n = Util.trimLeading(Util.trimWhitespace(s._1)) ++ s._2
                         seq = Nil
                         mode = 1
                         makeDef(n,a)
