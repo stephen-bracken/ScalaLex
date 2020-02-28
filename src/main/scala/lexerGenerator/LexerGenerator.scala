@@ -264,7 +264,7 @@ object Generator extends LazyLogging{
             mode = 0
             seq = Nil
             inBlock = false
-            var start:StartCondition = StartCondition("INITIAL".toList)
+            var start:StartCondition = StartCondition()
             var regex:LexRegex = null
             @tailrec
             def makeRule(r: List[Char],a: List[GeneratorToken]):List[GeneratorToken] = 
@@ -276,6 +276,7 @@ object Generator extends LazyLogging{
                     seq = Nil
                     val r = LexingRule(start,regex,c)
                     mode = 0
+                    start = StartCondition()
                     logger.trace("processed rule: " + r)
                     a :+ r
                 //comment
@@ -324,7 +325,7 @@ object Generator extends LazyLogging{
                     val r = LexingRule(start,regex,c)
                     logger.trace("compiled rule: " + r)
                     seq = Nil
-                    start = null
+                    start = StartCondition()
                     makeRule(xs,a :+ r)
                     case '\n'::xs if !inBlock =>
                         val r = mode match {
@@ -337,7 +338,7 @@ object Generator extends LazyLogging{
                                 val r = LexingRule(start,regex,c)
                                 logger.trace("compiled rule: " + r)
                                 seq = Nil
-                                start = null
+                                start = StartCondition()
                                 a :+ r
                             case 4 => throw new GeneratorError("Invalid comment in rules section: " + seq)
                         }
@@ -508,7 +509,7 @@ case class LexingState(s: List[String],i: Boolean) extends GeneratorToken(s.flat
 }
 
 /** represents a rule of the form <startcondition> regex    %{code}% */
-case class LexingRule(s: StartCondition = StartCondition("INITIAL".toList), r: LexRegex, c: CodeBlock) extends GeneratorToken(s.s ++ r.r ++ c.c){
+case class LexingRule(s: StartCondition, r: LexRegex, c: CodeBlock) extends GeneratorToken(s.s ++ r.r ++ c.c){
     override def toString():String = {
         s.toString() ++ r.toString() + '\t' + c.toString()
     }
@@ -530,7 +531,7 @@ case class LexRegex(r: List[Char]) extends GeneratorToken(r){
 }
 
 /** contains a start condition as declared in a LexingState */
-case class StartCondition(s: List[Char]) extends GeneratorToken(s) {
+case class StartCondition(s: List[Char] = "INITIAL".toList) extends GeneratorToken(s) {
     def apply():List[Char] = s
     override def toString():String = makeString("<",">")
 }
