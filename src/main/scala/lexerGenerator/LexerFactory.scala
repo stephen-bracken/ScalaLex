@@ -36,11 +36,16 @@ object LexerFactory{
                 case Declaration(s)::xs => {setOption(Util.asString(s));processDef(xs)}
                 case LexingState(s,i)::xs => {states = s; inclusive = i; processDef(xs)}
                 case CodeBlock(c)::xs => {sb.append(Util.asString(c));processDef(xs)}
-                case Comment(s)::xs => {processDef(xs)}
-                case x@LexingRule(s,r,c)::xs => throw new LexerOutputError("Rule found in defs section: " + x.head)  
+                case Comment(s)::xs => processDef(xs)
+                case Identifier(s)::xs => throw new LexerOutputError("Unclosed identifier found: " + Util.asString(s))
+                case LexingRule(s,r,c)::xs => throw new LexerOutputError("Rule found in defs section: " + s + r)  
                 case x::xs => throw new LexerOutputError("Unexpected expression in defs: " + x)
             }
             processDef(d)
+            sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(")
+            sb.append(states.reduceLeft((a,b) => a + ',' + b))
+            sb.append(")\n")
+            sb.append("val inclusive:Boolean = "+inclusive+'\n')
         }
         /** compiles the rules from the rules section into methods for yylex to call */
         private def processRules(r: List[GeneratorToken]) = {
@@ -57,7 +62,7 @@ object LexerFactory{
                     rules = rules :+ rb.mkString
                     processRule(xs)
                 }
-                case Comment(c)::xs => {processRule(xs)}
+                case Comment(c)::xs => processRule(xs)
                 case x::xs => throw new LexerOutputError("Unexpected token in rules section: " + x)
             }
             processRule(r)
