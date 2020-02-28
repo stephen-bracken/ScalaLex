@@ -8,7 +8,16 @@ ScalaLex uses a Regex Compiler that produces DFA equivalents of each of the rege
 rules are split into a regular expression, with an optional start condition, followed by a code action, written in scala, to execute. Code is indicated using indentation.
 
 e.g.
-    ```<start> regex    %{ code }%``` 
+```
+<start> regex    code
+``` 
+or, alternatively, you can use code blocks:
+```
+<start> regex %{ code }%
+<start> regex %{
+code
+}%
+```
 
 # Input Language
 **operators**
