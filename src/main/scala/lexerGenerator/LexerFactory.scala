@@ -13,9 +13,13 @@ object LexerFactory{
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
         private var defs:Map[String,String] = Map()
+        sb.append(
+            "class OutLexer {"
+        )
         if(withdefs){processDefs(in.head);in = in.tail}
         if(withrules){processRules(in.head); in = in.tail}
         if(withroutines){processRoutines(in.head.head.asInstanceOf[CodeBlock]);in = in.tail}
+        sb.append('}')
         /** gets the definitions, options, code and states from the defs section */
         private def processDefs(d: List[GeneratorToken]) = {
 
