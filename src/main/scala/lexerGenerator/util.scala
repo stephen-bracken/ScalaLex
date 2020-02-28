@@ -33,4 +33,7 @@ object Util extends LazyLogging{
         }
         convert(s,"")
     }
+
+    /** removes leading whitespace from a string */
+    def trimLeading(s: String) = s.dropWhile(c => c == ' ' || c == '\t')
 }
