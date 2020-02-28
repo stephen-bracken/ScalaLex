@@ -16,15 +16,19 @@ object LexerFactory{
         if(withdefs){processDefs(in.head);in = in.tail}
         if(withrules){processRules(in.head); in = in.tail}
         if(withroutines){processRoutines(in.head.head.asInstanceOf[CodeBlock]);in = in.tail}
+        /** gets the definitions, options, code and states from the defs section */
         private def processDefs(d: List[GeneratorToken]) = {
 
         }
+        /** compiles the rules from the rules section into methods for yylex to call */
         private def processRules(r: List[GeneratorToken]) = {
 
         }
+        /** adds the code from the routines section */
         private def processRoutines(c: CodeBlock) = {
 
         }
+        /** looks up the regex value of a name from the defined names*/
         private def lookupDefs(s: String):String = {
             var n = s
             val r = (for{
@@ -35,6 +39,7 @@ object LexerFactory{
                 if(!r.isEmpty){for (i <- r) yield{n = n.replace(i,defs(i))}}
                 n
             }
+        /** returns the output string */
         def apply() = {
             sb.mkString
         }
@@ -44,14 +49,17 @@ object LexerFactory{
         rawdefs = l._1
         withdefs = l._2
     }
+    /** adds the tokens from the rules section to the output file */
     def withRules(l: Section):Unit = {
         rawrules = l._1
         withrules = l._2
     }
+    /** adds the tokens from the routines section to the output file */
     def withRoutines(l: Section):Unit = {
         rawroutines = l._1
         withroutines = l._2
     }
+    /** produces the output file text */
     def makeLexer = {
         var l:List[List[GeneratorToken]] = Nil
         if(withdefs){l = l :+ rawdefs}
