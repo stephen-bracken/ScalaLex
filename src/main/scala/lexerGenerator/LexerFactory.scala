@@ -39,14 +39,7 @@ object LexerFactory{
             sb.mkString
         }
     }
-    private def reset = {
-        withdefs = false
-        withrules = false
-        withroutines = false
-        rawdefs = Nil
-        rawrules = Nil
-        rawroutines = null
-    }
+    /** adds the tokens from the defs section to the output file */
     def withDefs(l: Section):Unit = {
         rawdefs = l._1
         withdefs = l._2
@@ -65,8 +58,6 @@ object LexerFactory{
         if(withrules){l = l :+ rawrules}
         if(withroutines){l = l :+ rawroutines}
         val o = new Output(l:_*)
-        val s = o()
-        reset
-        s
+        o()
     }
 }
