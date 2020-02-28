@@ -12,6 +12,10 @@ object LexerFactory{
     private var withrules = false
     private var withroutines = false
     class Output(l: List[GeneratorToken]*){
+        private var id = 0
+        /** gets the function id for a regex */
+        private var idMap:Map[String,String] = Map()
+        private var regexes:List[String] = Nil
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
         private var defs:Map[String,String] = Map()
@@ -32,13 +36,29 @@ object LexerFactory{
                 case CodeBlock(c)::xs => {sb.append(Util.asString(c));processDef(xs)}
                 case Comment(s)::xs => {processDef(xs)}
                 case x@LexingRule(s,r,c)::xs => throw new LexerOutputError("Rule found in defs section: " + x.head)  
-                case x => throw new LexerOutputError("Unexpected expression in defs: " + x)
+                case x::xs => throw new LexerOutputError("Unexpected expression in defs: " + x)
             }
             processDef(d)
         }
         /** compiles the rules from the rules section into methods for yylex to call */
         private def processRules(r: List[GeneratorToken]) = {
-
+            @tailrec
+            def processRule(l: List[GeneratorToken]):Unit = l match {
+                case Nil => {}
+                case LexingRule(s,r,c)::xs => {
+                    val reg = lookupDefs(r())
+                    regexes = addRegex(reg)
+                    val rb = StringBuilder.newBuilder
+                    rb.append("def " + getId(reg) + "() = {")
+                    rb.append(c())
+                    rb.append("}\n")
+                    sb.append(rb.mkString)
+                    processRule(xs)
+                }
+                case Comment(c)::xs => {processRule(xs)}
+                case x::xs => throw new LexerOutputError("Unexpected token in rules section: " + x)
+            }
+            processRule(r)
         }
         /** adds the code from the routines section */
         private def processRoutines(c: CodeBlock) = {
@@ -47,7 +67,18 @@ object LexerFactory{
         //######Defs functions#######
         private def setOption(o: String) = {}
         //######Rules functions######
-        /** looks up the regex value of a name from the defined names*/
+        /** assigns a regex function to a given id */
+        private def getId(r: String):String = {
+            val i = "rule" + id
+            idMap = idMap.updated(r,i)
+            id += 1
+            i
+        }
+        private def addRegex(r: String):List[String] = {
+            if(regexes.contains(r)) {throw new LexerOutputError("Duplicate regex: " + r)}
+            regexes :+ r
+        }
+        /** looks up and replaces the regex value of names from the defs*/
         private def lookupDefs(s: String):String = {
             var n = s
             val r = (for{
