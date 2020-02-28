@@ -12,6 +12,10 @@ import scala.collection.immutable.Nil
 
 
 object Generator extends LazyLogging{
+    type Section = (List[GeneratorToken],Boolean)
+    private var defs:Section = (Nil,false)
+    private var rules:Section = (Nil,false)
+    private var routines:Section = (Nil,false)
     def main(args: Array[String]): Unit = {
         /** uses option flags to process command options */
         type OptionMap = Map[Symbol, Any]
@@ -49,7 +53,10 @@ object Generator extends LazyLogging{
             logger.info("Processed input: " + compiledRules)
             //logger.debug("final tokens: " + lines)
             //logger.info("writing output to " + outputFile)
-            val text = makeFile(compiledRules)
+            LexerFactory.withDefs(defs)
+            LexerFactory.withRules(rules)
+            LexerFactory.withRoutines(routines)
+            val text = LexerFactory.makeLexer
             val file = new File(outputFile)
             val bw = new BufferedWriter(new FileWriter(file))
             bw.write(text)
@@ -360,16 +367,14 @@ object Generator extends LazyLogging{
          *   3 - routines
         */
         def findSections(s: List[Char]):List[GeneratorToken] = {
-            var defs:List[GeneratorToken] = Nil
-            var rules:List[GeneratorToken] = Nil
             var lines:List[Char] = Nil
             def makeDefs:Unit = {
                 val d = lines
                 logger.trace("reading defs from \n\"" + d.foldLeft("")((s,c) => s+c) + '"')
                 lines = Nil
                 mode = 0
-                defs = lexDefs(d)
-                logger.debug("lexed definitions: " + defs)
+                defs = (lexDefs(d),true)
+                logger.debug("lexed definitions: " + defs._1)
                 mode = 2
                 seq = Nil
             }
@@ -378,8 +383,8 @@ object Generator extends LazyLogging{
                 lines = Nil
                 logger.trace("reading rules from \n\"" + r.foldLeft("")((s,c) => s+c) + '"')
                 mode = 0
-                rules = lexRules(r)
-                logger.debug("lexed rules: " + rules)
+                rules = (lexRules(r),true)
+                logger.debug("lexed rules: " + rules._1)
                 mode = 3
                 seq = Nil
             }
@@ -390,16 +395,16 @@ object Generator extends LazyLogging{
                     case Nil => 
                         mode match{
                             case 1 => throw new GeneratorError("No delimiter found. the minimum input for an input file is:\n%%\n")
-                            case 2 => makeRules; a ++ rules
+                            case 2 => makeRules; a ++ rules._1
                             case 3 => 
                                 //gather code from final section
                                 val r = lines
                                 lines = Nil
                                 mode = 0
-                                if(!r.isEmpty){val routines = CodeBlock(r)
-                                logger.debug("lexed routines: " + routines)
+                                if(!r.isEmpty){routines = (List(CodeBlock(r)),true)
+                                logger.debug("lexed routines: " + routines._1)
                                 //combine sections into result
-                                a :+ routines}
+                                a ++ routines._1}
                                 else a
                             case x => throw new GeneratorError("Generator ended in unhandled mode: " + x)
                         }
@@ -407,10 +412,10 @@ object Generator extends LazyLogging{
                         val n:List[GeneratorToken] = mode match {
                             case 1 =>
                                 makeDefs
-                                defs :+ Delimiter()
+                                defs._1 :+ Delimiter()
                             case 2 =>
                                 makeRules
-                                rules :+ Delimiter()
+                                rules._1 :+ Delimiter()
                             case 0 =>
                                 throw new GeneratorError("unexpected %% section")
                         }
