@@ -16,7 +16,7 @@ class LexRule(val startCondition: String = "", val regex: String = "",val action
         this(s(),r(),c())
     }
     def this(l: LexingRule){
-        this(l.s,l.r,l.c)
+        this(l.s(),l.r(),l.c())
     }
     private val dfa:DFA = regexParser.translateRegex(regex)
     def parse(s: String) = dfa.longestPrefixMatch(s)

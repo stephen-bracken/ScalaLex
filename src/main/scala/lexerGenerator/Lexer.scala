@@ -24,7 +24,7 @@ class Lexer(input: List[GeneratorToken],private var _in:String) extends LazyLogg
     }
     private def makeRules(l: List[LexingRule]) = {
         def makeRule(lx: LexingRule):LexRule = {
-            new LexRule(lx.getStart,lookupDefs(lx.getRegex),lx.getCode)
+            new LexRule(lx)
         }
         for(lx <- l) yield (makeRule(lx))
     }

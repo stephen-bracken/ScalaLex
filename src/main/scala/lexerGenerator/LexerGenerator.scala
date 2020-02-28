@@ -68,33 +68,6 @@ object Generator extends LazyLogging{
         }
     }
 
-    def trimWhitespace(s: List[Char]):List[Char] = {
-        logger.trace("formatting whitespace: " + s)
-        def trim(s: List[Char],a: List[Char]):List[Char] = {
-            s match {
-                case Nil => a
-                //case ' '::Nil => a
-                case ' '::' '::xs =>
-                    trim(xs,a :+ ' ')
-                case x::xs =>
-                    trim(xs,a :+ x)
-            }
-        }
-        trim(s,Nil)
-    }
-
-    def convertToTabs(s : List[Char]) = { 
-        @tailrec
-        def convert(s: List[Char],a: String):String = s match {
-            case Nil => a
-            case ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: xs =>
-                convert(xs,a+'\t')
-            case x :: xs =>
-                convert(xs,a+x)
-        }
-        convert(s,"")
-    }
-
     /** converts the input file into a lexed list of tokens */
     def lex(s: List[Char]) = {
         /** used with findSections, lexDefs and lexRules to specify composite tokens */
@@ -228,7 +201,7 @@ object Generator extends LazyLogging{
                     //%s|%x - state definition
                     case x if (seq == inclusive || seq == exclusive) && mode == 0 =>
                         val s = x.span(c => c != '\n')
-                        var n = trimWhitespace(s._1).foldLeft("")((s,c) => s + c).stripLeading.toList ++ s._2
+                        var n = Util.asString(Util.trimWhitespace(s._1)).stripLeading.toList ++ s._2
                         logger.trace("processing lexing states")
                         mode = 3
                         lexingstate = seq == inclusive
@@ -236,7 +209,7 @@ object Generator extends LazyLogging{
                         makeDef(n,a)
                     //separator
                     case ' '::xs if mode == 3 && !seq.filter(c => c != ' ').isEmpty =>
-                        states = states :+ seq.foldLeft("")((s,c) => s + c)
+                        states = states :+ Util.asString(seq)
                         logger.trace("adding state " + seq)
                         seq = Nil
                         makeDef(xs,a)
@@ -245,7 +218,7 @@ object Generator extends LazyLogging{
                         ident = Identifier(seq)
                         logger.trace("processed identifier: " + ident)
                         val s = xs.span(c => c != '\n')
-                        var n = trimWhitespace(s._1).foldLeft("")((s,c) => s + c).stripLeading.toList ++ s._2
+                        var n = Util.trimWhitespace(s._1).foldLeft("")((s,c) => s + c).stripLeading.toList ++ s._2
                         seq = Nil
                         mode = 1
                         makeDef(n,a)
@@ -518,9 +491,9 @@ case class LexingRule(s: StartCondition, r: LexRegex, c: CodeBlock) extends Gene
     override def toString():String = {
         s.toString() ++ r.toString() + '\t' + c.toString()
     }
-    def getStart = s.toString
-    def getRegex = r.toString
-    def getCode = c.toString
+    def getStart = s()
+    def getRegex = r()
+    def getCode = c()
 }
 
 /** the identifier component of a Definition */
@@ -528,22 +501,23 @@ case class Identifier(s: List[Char]) extends GeneratorToken(s){
     override def toString():String = {
         makeString("{","}")
     }
+    def apply():String = Util.asString(s)
 }
 
 /** contains a regular expression. may also contain identifier names that need to be compiled */
 case class LexRegex(r: List[Char]) extends GeneratorToken(r){
-    def apply():List[Char] = r
+    def apply():String = Util.asString(r)
 }
 
 /** contains a start condition as declared in a LexingState */
 case class StartCondition(s: List[Char] = "INITIAL".toList) extends GeneratorToken(s) {
-    def apply():List[Char] = s
+    def apply():String = Util.asString(s)
     override def toString():String = makeString("<",">")
 }
 
 /** contains a scala expression */
 case class CodeBlock(c: List[Char]) extends GeneratorToken(c) {
-    def apply():List[Char] = c
+    def apply():String = Util.asString(c)
     override def toString():String = makeString("{","}")
 }
 
