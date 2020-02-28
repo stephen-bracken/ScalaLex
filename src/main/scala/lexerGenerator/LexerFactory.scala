@@ -94,10 +94,9 @@ object LexerFactory{
         private def linkRules():String = {
             val b = StringBuilder.newBuilder
             b.append("\nprivate def doRule(r: String) = {\n")
-            b.append("val x = (state,r)\n")
-            b.append("x match {\n")
-            for (((s,r),n)<- idMap) yield(b.append("\tcase " + "(\""+s+"\",\""+r+"\")" + "=> " + n + "()\n"))
-            b.append("\tcase y => {}\n}\n}")
+            b.append("r match {\n")
+            for (((s,r),n)<- idMap) yield(b.append("\tcase \""+r+"\" if state == \""+s+"\" => " + n + "()\n"))
+            b.append("\tcase y => {}\n}\n}\n")
             b.mkString
         }
         /** looks up and replaces the regex value of names from the defs*/
