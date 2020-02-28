@@ -15,9 +15,11 @@ object LexerFactory{
         private var id = 0
         /** gets the function id for a regex */
         private var idMap:Map[(String,String),String] = Map()
+        /** (regex -> action name) */
         private var regexes:List[(String,String)] = Nil
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
+        /** (name -> regex) */
         private var defs:Map[String,String] = Map()
         private var rules:List[String] = Nil
         private var states:List[String] = Nil
@@ -56,9 +58,9 @@ object LexerFactory{
                 case Nil => {}
                 case LexingRule(s,r,c)::xs => {
                     val reg = lookupDefs(r())
-                    regexes = addRegex(s(),reg)
                     val rb = StringBuilder.newBuilder
-                    rb.append("def " + getId(s(),reg) + "() = {")
+                    val name = getId(s(),reg)
+                    rb.append("def " + name + "() = {")
                     rb.append(c())
                     rb.append("}\n")
                     rules = rules :+ rb.mkString
@@ -68,12 +70,13 @@ object LexerFactory{
                 case x::xs => throw new LexerOutputError("Unexpected token in rules section: " + x)
             }
             processRule(r)
-            sb.append("//### RULES ###")
+            sb.append("//### RULES ###\n")
+            sb.append(linkRules)
             rules.map(s => sb.append("\n"+s))
         }
         /** adds the code from the routines section */
         private def processRoutines(c: CodeBlock) = {
-            sb.append("//### USER SUBROUTINES ###")
+            sb.append("//### USER SUBROUTINES ###\n")
             sb.append(c())
         }
         //######Defs functions#######
@@ -94,6 +97,15 @@ object LexerFactory{
             val rx = lookupDefs(r)
             if(regexes.contains(rx)) {throw new LexerOutputError("Duplicate regex declaration: " + r)}
             regexes :+ (s,rx)
+        }
+        private def linkRules():String = {
+            val b = StringBuilder.newBuilder
+            b.append("\nprivate def doRule(r: String) = {\n")
+            b.append("val x = (state,r)\n")
+            b.append("x match {\n")
+            for (((s,r),n)<- idMap) yield(b.append("\tcase " + "(\""+s+"\",\""+r+"\")" + "=> " + n + "()\n"))
+            b.append("\tcase y => {}\n}\n}")
+            b.mkString
         }
         /** looks up and replaces the regex value of names from the defs*/
         private def lookupDefs(s: String):String = {
