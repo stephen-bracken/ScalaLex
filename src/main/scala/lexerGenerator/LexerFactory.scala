@@ -42,7 +42,7 @@ object LexerFactory{
                 case x::xs => throw new LexerOutputError("Unexpected expression in defs: " + x)
             }
             processDef(d)
-            sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(")
+            sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(\"INITIAL\",")
             sb.append(states.reduceLeft((a,b) => '"'+a+'"'+','+'"'+b+'"'))
             sb.append(")\n")
             sb.append("private val inclusive:Boolean = "+inclusive+'\n')
