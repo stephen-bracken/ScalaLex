@@ -1,5 +1,7 @@
 package lexerGenerator
 
+import scala.annotation.tailrec
+
 object LexerFactory{
     type Section = (List[GeneratorToken],Boolean)
     private var o:Output = null
@@ -22,7 +24,17 @@ object LexerFactory{
         sb.append('}')
         /** gets the definitions, options, code and states from the defs section */
         private def processDefs(d: List[GeneratorToken]) = {
-
+            @tailrec
+            def processDef(l: List[GeneratorToken]):Unit = l match {
+                case Nil => {}
+                case Definition(i,r)::xs => {defs = defs.updated(i(),r())}
+                case Declaration(s)::xs => {setOption(Util.asString(s));processDef(xs)}
+                case CodeBlock(c)::xs => {sb.append(c);processDef(xs)}
+                case Comment(s)::xs => {processDef(xs)}
+                case x@LexingRule(s,r,c)::xs => throw new LexerOutputError("Rule found in defs section: " + x.head)  
+                case x => throw new LexerOutputError("Unexpected expression in defs: " + x)
+            }
+            processDef(d)
         }
         /** compiles the rules from the rules section into methods for yylex to call */
         private def processRules(r: List[GeneratorToken]) = {
@@ -32,6 +44,9 @@ object LexerFactory{
         private def processRoutines(c: CodeBlock) = {
 
         }
+        //######Defs functions#######
+        private def setOption(o: String) = {}
+        //######Rules functions######
         /** looks up the regex value of a name from the defined names*/
         private def lookupDefs(s: String):String = {
             var n = s
@@ -73,3 +88,5 @@ object LexerFactory{
         o()
     }
 }
+
+class LexerOutputError(msg: String) extends Error(msg)
