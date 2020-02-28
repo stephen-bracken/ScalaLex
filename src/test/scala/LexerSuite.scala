@@ -32,6 +32,13 @@ class LexerSuite extends UnitSpec {
         assert(Generator.lex(in.toList) == List(Delimiter()))
     }
 
+    it should "Be able to process comments" in {
+        logger.info("#########LexTokens#########")
+        val in = "/* I am a comment */\n%%/* I am a comment */"
+        val r = Generator.lex(in.toList)
+        assert(r.filter(p => p.isInstanceOf[Comment]).length == 2)
+    }
+
     it should "Be able to process each Lexical token" in {
         logger.info("#########LexTokens#########")
         val in = "/* I am a comment */\nnumber [0-9]+\n%option case-insensitive,\n%x INSTRING INCOMMENT\n%%\n/* I am in the rules section */\nhello\tprintln(\"hello\");\nworld\tprintln(\"world\");\n%%\nprintln(\"I am in the code section\");\n"
