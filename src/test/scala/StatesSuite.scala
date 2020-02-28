@@ -1,8 +1,5 @@
 package lexerGenerator
 
-//import org.junit._
-//import org.junit.Assert.assertEquals
-
 class StatesSuite extends UnitSpec {
     //###### State tests ######
 

@@ -3,7 +3,6 @@ package lexerGenerator
 import com.typesafe.scalalogging.LazyLogging
 import java.io.FileNotFoundException
 import scala.io.Source
-//import fastparse._,NoWhitespace._
 import scala.annotation.tailrec
 import java.io.File
 import java.io.BufferedWriter
@@ -416,27 +415,6 @@ object Generator extends LazyLogging{
         findSections(s)
     }
 
-    //def parser[_: P] = P( "hello" )
-    /*def parseRules[_:P] = P(parseRule ~ parseNextRule)
-    def parseNextRule[_:P]:P[Unit] = P(parseRule ~ parseNextRule | End)
-    def parseRule[_:P] = P(parseRegex.! ~ parseBlock.!)
-    def parseRegex[_:P] = P((anyButChar('\t').rep.! ~ "\t"))
-    def startBlock[_: P] = P( "%{" ~ anyButChar('{').rep.! )
-    def endBlock[_: P] = P( anyButSeq("}%").! ~ "}%" )
-    def parseBlock[_: P] = P(codeBlock | (anyButChar(';').rep.! ~ ";"))
-    def codeBlock[_:P] = P((startBlock ~ endBlock).!)
-    /** matches any character except c */
-    def anyButChar[_:P](c: Char) = P(CharPred(i => i != c))
-    def anyButSeq[_:P](s: String):P[String] = s.toList match {
-        case Nil => 
-            throw new GeneratorError("anyButSeq with empty sequence")
-        case x::Nil => 
-            anyButChar(x).!
-        case x::xs =>
-            P(CharPred(c => c != x) ~ anyButSeq(xs.toString)).!
-    }
-    //def ws[_:P]:P[Unit] = P((" " | "\n").rep)
-    */
 
     private def makeFile(l: List[GeneratorToken]) = {
         Util.asString(l.flatMap(t => t.toString()))

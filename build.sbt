@@ -6,9 +6,9 @@ scalaVersion := "2.12.10"
 
 unmanagedSources / excludeFilter := HiddenFileFilter || "*output*"
 
-resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases"
+resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases"//used for supersafe compiler plugin
 
-addSbtPlugin("com.artima.supersafe" % "sbtplugin" % "1.1.3")
+addSbtPlugin("com.artima.supersafe" % "sbtplugin" % "1.1.3")//used with scalatest
 
 libraryDependencies ++= Seq(
     "org.slf4j"%"slf4j-api"%"1.7.25",
@@ -17,10 +17,7 @@ libraryDependencies ++= Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "org.scalactic" %% "scalactic" % "3.1.0",
     "org.scalatest" %% "scalatest" % "3.1.0" % "test",
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
-    //"com.lihaoyi" %% "fastparse" % "2.2.2",
     "org.scala-lang" % "scala-compiler" % "2.12.10",
-    //"com.novocode" % "junit-interface" % "0.11" % Test
 )
 
 testOptions in Test += Tests.Argument(TestFrameworks.JUnit, "-a", "-v", "-s")
@@ -32,9 +29,9 @@ scalacOptions ++= Seq(
     "-Ywarn-dead-code", //warn when dead code is identified
     "-Xfatal-warnings",  //fail the compilation if there are any warnings
     "-language:implicitConversions",
-    "-language:postfixOps",
-    "-feature"
-    //"-Ypatmat-exhaust-depth 40"
+    "-language:postfixOps", //enables postfix notation in project
+    "-feature"  //feature warnings (e.g. postfixOps)
+    //"-Ypatmat-exhaust-depth 40" //pattern matching depth
 )
 
 

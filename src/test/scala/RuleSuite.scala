@@ -1,8 +1,5 @@
 package lexerGenerator
 
-//import org.junit._
-//import org.junit.Assert.assertEquals
-
 class RuleSuite extends UnitSpec {
     "an empty code block" should "execute with no actions" in {
         val a = new LexRule
@@ -23,6 +20,4 @@ class RuleSuite extends UnitSpec {
         val a = new LexRule(action = "{3+4}")
         assert(a.result == 7)
     }
-
-    //@Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
 }
