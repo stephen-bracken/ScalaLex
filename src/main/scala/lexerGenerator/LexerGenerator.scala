@@ -311,7 +311,14 @@ object Generator extends LazyLogging{
                         val r = mode match {
                             case 0 => a
                             case 1 => throw new GeneratorError("unclosed start condition: " + seq)
-                            case 2 => throw new GeneratorError("unclosed/unpaired regex expression: "+ seq)
+                            case 2 => 
+                                val r = LexRegex(seq)
+                                seq = Nil
+                                logger.trace("processed regex: " + r)
+                                val rl = LexingRule(start,r,CodeBlock())
+                                logger.trace("processed empty action: " + rl)
+                                start = StartCondition()
+                                a :+ rl
                             case 3 => 
                                 val c = CodeBlock(seq)
                                 logger.trace("processed code block: " + c)
@@ -516,7 +523,7 @@ case class StartCondition(s: List[Char] = "INITIAL".toList) extends GeneratorTok
 }
 
 /** contains a scala expression */
-case class CodeBlock(c: List[Char]) extends GeneratorToken(c) {
+case class CodeBlock(c: List[Char] = Nil) extends GeneratorToken(c) {
     def apply():String = Util.asString(c)
     override def toString():String = makeString("{","}")
 }
