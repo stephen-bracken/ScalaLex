@@ -91,8 +91,9 @@ object LexerFactory{
             states :+ s
         }
         private def addRegex(s: String,r: String):List[(String,String)] = {
-            if(regexes.contains(r)) {throw new LexerOutputError("Duplicate regex declaration: " + r)}
-            regexes :+ (s,r)
+            val rx = lookupDefs(r)
+            if(regexes.contains(rx)) {throw new LexerOutputError("Duplicate regex declaration: " + r)}
+            regexes :+ (s,rx)
         }
         /** looks up and replaces the regex value of names from the defs*/
         private def lookupDefs(s: String):String = {
