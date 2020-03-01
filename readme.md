@@ -1,5 +1,5 @@
 # ScalaLex
-This tool is designed to implement a modified version of the [LEX](http://dinosaur.compilertools.net/lex/) specification. This program implements all of the standard functions of lex or flex, but the output program is written in scala.
+This tool is designed to implement a modified version of the [LEX](http://dinosaur.compilertools.net/lex/)/[FLEX](http://dinosaur.compilertools.net/flex/manpage.html) specification. This program implements all of the standard functions of lex or flex, but the output program is written in scala.
 
 ScalaLex uses a Regex Compiler that produces DFA equivalents of each of the regex rules in the output program. Each Regex is matched using longest prefix match, and in the case of two or more matches of the same length, the first matched rule is used.
 
