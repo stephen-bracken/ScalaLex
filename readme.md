@@ -98,3 +98,5 @@ the following operators are used during the processing of an input string, and w
 - ``$`` special case lookahead - checks that the entire input has been consumed
 
 - ``^`` lookbehind - checks that the beginning of the string was matched
+
+- ``.`` matches any character
