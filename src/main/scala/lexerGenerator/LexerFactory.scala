@@ -21,10 +21,10 @@ object LexerFactory{
         private var rules:List[String] = Nil
         private var states:List[String] = Nil
         private var inclusive:Boolean = false
+        sb.append("//######DEFINITIONS/OUTER EXPRESSIONS/IMPORTS######\n")
+        if(withdefs){processDefs(in.head);in = in.tail}
         //begin class
         sb.append("class Lex {\n")
-        if(withdefs){processDefs(in.head);in = in.tail}
-        //add state variables
         sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(\"INITIAL\",")
         sb.append(states.reduceLeft((a,b) => '"'+a+'"'+','+'"'+b+'"'))
         sb.append(")\n")
@@ -40,7 +40,7 @@ object LexerFactory{
                 case Definition(i,r)::xs => {defs = defs.updated(i(),r());processDef(xs)}
                 case Declaration(s)::xs => {setOption(Util.asString(s));processDef(xs)}
                 case LexingState(s,i)::xs => {states = s; inclusive = i; processDef(xs)}
-                case CodeBlock(c)::xs => {sb.append(Util.asString(c));processDef(xs)}
+                case CodeBlock(c)::xs => {sb.append(Util.asString(c)+'\n');processDef(xs)}
                 case Comment(s)::xs => processDef(xs)
                 case Identifier(s)::xs => throw new LexerOutputError("Unclosed identifier found: " + Util.asString(s))
                 case LexingRule(s,r,c)::xs => throw new LexerOutputError("Rule found in defs section: " + s + r)  

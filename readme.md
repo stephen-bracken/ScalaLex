@@ -32,7 +32,7 @@ the first section {defs} may contain any of the following expression types:
 
 - ``{name} regex`` associates a name with a regex. The name can be called in the rules section e.g. ``{number} [0-9]+`` can be called using ``{number}`` and the call will be replaced with ``[0-9]+`` in the output regex
 
-- ``    println("example code");`` indented lines will automatically be treated as code that will be executed when the lexer is initialised.
+- ``    println("example code");`` indented lines will automatically be treated as code that will be executed when the lexer is initialised. Code in this section is placed before definition of the lexer class so any code here aside from imports should be wrapped in a class or object to prevent compiler errors.
 
 - ``/* comment */`` /* and */ can be used to declare a comment.
 
@@ -52,7 +52,7 @@ hello    println("hello")
 this rule uses the regex ``hello`` which matches the word "hello", and as it's action, it prints "hello" to the console.
 
 ### Subroutines
-the user subroutines section consists of a continuous code block that can be filled with any additional functions that you want to reference using either rules or the initial code.
+the user subroutines section consists of a continuous code block that can be filled with any additional functions that you want to reference using either rules or the initial code. These will be included in the lexer class at the bottom.
 
 # Regular expression support
 
