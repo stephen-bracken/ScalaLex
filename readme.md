@@ -86,14 +86,14 @@ the user subroutines section consists of a continuous code block that can be fil
 
 *note that it is possible to get partial matches from the getMatches and longestPrefixMatch functions, but the lookahead functionality remains the same.*
 
-## Special operators
+### Special operators
 the following operators are used during the processing of an input string, and will be escaped.
 
 - "\u0008" is a backspace character that is used to represent concatenations
 
 - whitespace is used for parsing rules and definitions, so to use whitespace in your regex, it is highly reccomended to parenthesise it using ``[ ]``
 
-## Planned operators
+### Planned operators
 
 - ``$`` special case lookahead - checks that the entire input has been consumed
 
