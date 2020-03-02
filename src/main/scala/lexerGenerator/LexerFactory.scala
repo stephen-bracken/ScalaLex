@@ -104,10 +104,10 @@ object LexerFactory{
                     val reg = lookupDefs(r())
                     val rb = StringBuilder.newBuilder
                     val name = getId(s(),reg)
-                    rb.append("\t//"+s()+", "+reg+'\n')
-                    rb.append("\tprivate def " + name + "() = {\n"+Util.indentString(2))
+                    rb.append(Util.indentString(2)+"//"+s()+", "+reg+'\n')
+                    rb.append(Util.indentString(2)+"def " + name + "() = {\n"+Util.indentString(3))
                     rb.append(c())
-                    rb.append("\n\t}\n")
+                    rb.append("\n"+Util.indentString(2)+"}\n")
                     rules = rules :+ rb.mkString
                     processRule(xs)
                 }
@@ -116,8 +116,11 @@ object LexerFactory{
             }
             processRule(r)
             sb.append("\n\t//### RULES ###\n")
-            sb.append(linkRules)
+            sb.append("\n\t/**selects the rule that matches a regex from yylex*/")
+            sb.append("\n\tprivate def doRule(r: String) = {\n")
             rules.map(s => sb.append("\n"+s))
+            sb.append(linkRules)
+            sb.append("\t}\n")
         }
         /** adds the code from the routines section */
         private def processRoutines(c: CodeBlock) = {
@@ -142,11 +145,10 @@ object LexerFactory{
         /** creates a switch statement that calls methods when regexes are activated */
         private def linkRules():String = {
             val b = StringBuilder.newBuilder
-            b.append("\n\t/**selects the rule that matches a regex from yylex*/")
-            b.append("\n\tprivate def doRule(r: String) = {\n")
+            b.append('\n'+Util.indentString(2)+"//Selector\n")
             b.append(Util.indentString(2)+"r match {\n")
             for (((s,r),n)<- idMap) yield(b.append(Util.indentString(3)+"case \""+r+"\" if state == \""+s+"\" => " + n + "()\n"))
-            b.append(Util.indentString(3)+"case y => {}\n"+Util.indentString(2)+"}\n\t}\n")
+            b.append(Util.indentString(3)+"case y => {}\n"+Util.indentString(2)+"}\n")
             b.mkString
         }
         /** looks up and replaces the regex value of names from the defs*/
