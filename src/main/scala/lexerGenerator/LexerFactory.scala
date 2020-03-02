@@ -22,6 +22,7 @@ object LexerFactory{
         private var states:List[String] = Nil
         private var inclusive:Boolean = false
         sb.append("//######DEFINITIONS/OUTER EXPRESSIONS/IMPORTS######\n")
+        sb.append("import scala.io.Source\nimport java.io.File\nimport java.io.BufferedWriter\nimport java.io.FileWriter\n")
         if(withdefs){processDefs(in.head);in = in.tail}
         //begin class
         sb.append("class Lex {\n")
@@ -92,7 +93,7 @@ object LexerFactory{
                     val rb = StringBuilder.newBuilder
                     val name = getId(s(),reg)
                     rb.append("\t//"+s()+", "+reg+'\n')
-                    rb.append("\tprivate def " + name + "() = {\n\t")
+                    rb.append("\tprivate def " + name + "() = {\n"+Util.indentString(2))
                     rb.append(c())
                     rb.append("\n\t}\n")
                     rules = rules :+ rb.mkString
@@ -108,8 +109,9 @@ object LexerFactory{
         }
         /** adds the code from the routines section */
         private def processRoutines(c: CodeBlock) = {
-            sb.append("\t//### USER SUBROUTINES ###\n\t")
+            sb.append("\n\t//### USER SUBROUTINES ###\n\t")
             sb.append(c())
+            sb.append("\n\t//### END ###\n")
         }
         //######Defs functions#######
         private def setOption(o: String) = {}
