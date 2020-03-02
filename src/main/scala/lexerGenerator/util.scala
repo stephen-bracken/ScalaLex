@@ -34,6 +34,10 @@ object Util extends LazyLogging{
         convert(s,"")
     }
 
+    def indentString(n:Int):String = {
+        (for(i <- 0 until n) yield ('\t')).foldLeft("")((s,c) => s + c)
+    }
+
     /** removes leading whitespace from a character sequence */
     def trimLeading(l: List[Char]):List[Char] = l.dropWhile(c => c == ' ' || c == '\t')
 
