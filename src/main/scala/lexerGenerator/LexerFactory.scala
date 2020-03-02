@@ -25,12 +25,46 @@ object LexerFactory{
         if(withdefs){processDefs(in.head);in = in.tail}
         //begin class
         sb.append("class Lex {\n")
-        sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(\"INITIAL\",")
+        //states
+        sb.append("\tprivate var state = \"INITIAL\"\n\tprivate val states:List[String] = List(\"INITIAL\",")
         sb.append(states.reduceLeft((a,b) => '"'+a+'"'+','+'"'+b+'"'))
         sb.append(")\n")
-        sb.append("private val inclusive:Boolean = "+inclusive+'\n')
+        sb.append("\tprivate val inclusive:Boolean = "+inclusive+'\n')
+        //processing of input
+        sb.append("\t/**file path of input to analyse*/\n")
+        sb.append("\tprivate var _in:String = \"\"\n")
+        sb.append("\t/**output stream from lexed input*/\n")
+        sb.append("\tprivate var _out:List[Char] = Nil\n")
+        sb.append("\t/**unprocessed input*/\n")
+        sb.append("\tprivate var inputseq:List[Char] = Nil\n")
+        sb.append("\tprivate var _c:Char = null\n")
+        sb.append("\tprivate def readFile() = {\n")
+        sb.append(Util.indentString(2)+"val bufferedSource = Source.fromFile(_in)\n")
+        sb.append(Util.indentString(2)+"var lines:List[String] = List()\n")
+        sb.append(Util.indentString(2)+"for (line <- bufferedSource.getLines) {\n")
+        sb.append(Util.indentString(3)+"lines = lines:+line\n")
+        sb.append(Util.indentString(3)+"logger.trace(line)\n")
+        sb.append(Util.indentString(2)+"}\n")
+        sb.append(Util.indentString(2)+"bufferedSource.close\n")
+        //sb.append(Util.indentString(2)+"lines = lines.reverse\n")
+        sb.append(Util.indentString(2)+"inputSeq = lines.flatten\n")
+        sb.append(Util.indentString(2)+"_c = inputSeq.head\n")
+        sb.append("\t}\n")
+        //input(),output() and unput()
+        sb.append("\t//IO methods\n")
+        sb.append("\t/** gets the next character fron the input stream */\n")
+        sb.append("\tprivate def input = _c\n")
+        sb.append("\t/** writes a character to the output stream */\n")
+        sb.append("\tprivate def output(c: Char) = {_out = _out:+c}\n")
+        sb.append("\t/** writes a character to the input stream */\n")
+        sb.append("\tprivate def unput(c: Char) = {inputSeq = inputSeq:+c}\n")
+        //yylex
+        sb.append("\tdef yylex() = {\n")
+        //end yylex
+        sb.append("\t}\n")
         if(withrules){processRules(in.head); in = in.tail}
         if(withroutines){processRoutines(in.head.head.asInstanceOf[CodeBlock]);in = in.tail}
+        //end class
         sb.append('}')
         /** gets the definitions, options, code and states from the defs section */
         private def processDefs(d: List[GeneratorToken]) = {
@@ -57,9 +91,10 @@ object LexerFactory{
                     val reg = lookupDefs(r())
                     val rb = StringBuilder.newBuilder
                     val name = getId(s(),reg)
-                    rb.append("private def " + name + "() = {")
+                    rb.append("\t//"+s()+", "+reg+'\n')
+                    rb.append("\tprivate def " + name + "() = {\n\t")
                     rb.append(c())
-                    rb.append("}\n")
+                    rb.append("\n\t}\n")
                     rules = rules :+ rb.mkString
                     processRule(xs)
                 }
@@ -67,13 +102,13 @@ object LexerFactory{
                 case x::xs => throw new LexerOutputError("Unexpected token in rules section: " + x)
             }
             processRule(r)
-            sb.append("//### RULES ###\n")
+            sb.append("\n\t//### RULES ###\n")
             sb.append(linkRules)
             rules.map(s => sb.append("\n"+s))
         }
         /** adds the code from the routines section */
         private def processRoutines(c: CodeBlock) = {
-            sb.append("//### USER SUBROUTINES ###\n")
+            sb.append("\t//### USER SUBROUTINES ###\n\t")
             sb.append(c())
         }
         //######Defs functions#######
@@ -93,10 +128,11 @@ object LexerFactory{
         /** creates a switch statement that calls methods when regexes are activated */
         private def linkRules():String = {
             val b = StringBuilder.newBuilder
-            b.append("\nprivate def doRule(r: String) = {\n")
-            b.append("r match {\n")
-            for (((s,r),n)<- idMap) yield(b.append("\tcase \""+r+"\" if state == \""+s+"\" => " + n + "()\n"))
-            b.append("\tcase y => {}\n}\n}\n")
+            b.append("\n\t/**selects the rule that matches a regex from yylex*/")
+            b.append("\n\tprivate def doRule(r: String) = {\n")
+            b.append(Util.indentString(2)+"r match {\n")
+            for (((s,r),n)<- idMap) yield(b.append(Util.indentString(3)+"case \""+r+"\" if state == \""+s+"\" => " + n + "()\n"))
+            b.append(Util.indentString(3)+"case y => {}\n"+Util.indentString(2)+"}\n\t}\n")
             b.mkString
         }
         /** looks up and replaces the regex value of names from the defs*/
