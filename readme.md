@@ -104,7 +104,7 @@ the following methods are built into the output file to allow for utility functi
 ### Special operators
 the following operators are used during the processing of an input string, and will be escaped.
 
-- "\u0008" is a backspace character that is used to represent concatenations
+- ``\u0008`` is a backspace character that is used to represent concatenations
 
 - whitespace is used for parsing rules and definitions, so to use whitespace in your regex, it is highly reccomended to parenthesise it using ``[ ]``
 
