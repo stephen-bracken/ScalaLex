@@ -70,7 +70,7 @@ object LexerFactory{
         sb.append("\t/** writes a character to the output stream */\n")
         sb.append("\tprivate def output(c: Char) = {_out = _out:+c}\n")
         sb.append("\t/** writes a character to the input stream */\n")
-        sb.append("\tprivate def unput(c: Char) = {inputSeq = inputSeq:+c}\n")
+        sb.append("\tprivate def unput(c: Char) = {inputSeq = c::inputSeq}\n")
         //yylex()
         sb.append("\tdef yylex() = {\n")
         //end yylex()
