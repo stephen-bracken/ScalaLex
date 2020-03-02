@@ -26,7 +26,7 @@ object Util extends LazyLogging{
         @tailrec
         def convert(s: List[Char],a: String):String = s match {
             case Nil => a
-            case ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: ' ' :: xs =>
+            case ' ' :: ' ' :: ' ' :: ' ' :: xs =>
                 convert(xs,a+'\t')
             case x :: xs =>
                 convert(xs,a+x)
