@@ -54,6 +54,21 @@ this rule uses the regex ``hello`` which matches the word "hello", and as it's a
 ### Subroutines
 the user subroutines section consists of a continuous code block that can be filled with any additional functions that you want to reference using either rules or the initial code. These will be included in the lexer class at the bottom.
 
+## Built-in methods
+the following methods are built into the output file to allow for utility functions and define a standard pipeline for lexing:
+
+- readFile() reads the file from the supplied location and writes it into the input string.
+
+- input() gets the next character in the input stream
+
+- output() writes a character to the output stream
+
+- unput() writes a character back onto the front of the input stream
+
+- yylex() runs each regex on the input string and consumes the longest matched string. If an action is associated with the regex, then the action method is called.
+
+- doRule(r) is used by yylex to call code actions.
+
 # Regular expression support
 
 ## Regex Operators
