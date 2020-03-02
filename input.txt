@@ -17,5 +17,6 @@ rule{number}    pritnln("hi");
 c2    %{
     println("code block 2")
 }%
+add    2 + 4
 %%
 println("I am in the code section");
