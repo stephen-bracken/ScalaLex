@@ -15,9 +15,11 @@ The top level syntax for an input file is:
     {user subroutines}
 
 
-subroutines can be ommitted, therefore the minimum input specification is
+each section can be ommitted, therefore the minimum input specification is
 
-    %%
+```
+    
+```
 
 which will produce a program that will simply output any input given.
 
