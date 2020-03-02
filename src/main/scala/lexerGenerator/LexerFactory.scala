@@ -22,12 +22,19 @@ object LexerFactory{
         private var states:List[String] = Nil
         private var inclusive:Boolean = false
         sb.append("//######DEFINITIONS/OUTER EXPRESSIONS/IMPORTS######\n")
-        sb.append("import scala.io.Source\nimport java.io.File\nimport java.io.BufferedWriter\nimport java.io.FileWriter\n")
+        //required imports
+        sb.append("import scala.io.Source\n")
+        sb.append("import java.io.File\n")
+        sb.append("import java.io.BufferedWriter\n")
+        sb.append("import java.io.FileWriter\n")
         if(withdefs){processDefs(in.head);in = in.tail}
         //begin class
         sb.append("class Lex {\n")
         //states
-        sb.append("\tprivate var state = \"INITIAL\"\n\tprivate val states:List[String] = List(\"INITIAL\",")
+        sb.append("\t/**tracks the state of the lexer*/\n")
+        sb.append("\tprivate var state = \"INITIAL\"\n")
+        sb.append("\t/** list of valid lexing states */\n")
+        sb.append("\tprivate val states:List[String] = List(\"INITIAL\",")
         sb.append(states.reduceLeft((a,b) => '"'+a+'"'+','+'"'+b+'"'))
         sb.append(")\n")
         sb.append("\tprivate val inclusive:Boolean = "+inclusive+'\n')
@@ -38,7 +45,10 @@ object LexerFactory{
         sb.append("\tprivate var _out:List[Char] = Nil\n")
         sb.append("\t/**unprocessed input*/\n")
         sb.append("\tprivate var inputseq:List[Char] = Nil\n")
+        sb.append("\t/**stores the next character to be processed*/\n")
         sb.append("\tprivate var _c:Char = null\n")
+        //readFile()
+        sb.append("\t/**reads an input file into inputseq*/\n")
         sb.append("\tprivate def readFile() = {\n")
         sb.append(Util.indentString(2)+"val bufferedSource = Source.fromFile(_in)\n")
         sb.append(Util.indentString(2)+"var lines:List[String] = List()\n")
@@ -50,6 +60,7 @@ object LexerFactory{
         //sb.append(Util.indentString(2)+"lines = lines.reverse\n")
         sb.append(Util.indentString(2)+"inputSeq = lines.flatten\n")
         sb.append(Util.indentString(2)+"_c = inputSeq.head\n")
+        //end readFile()
         sb.append("\t}\n")
         //input(),output() and unput()
         sb.append("\t//IO methods\n")
@@ -59,9 +70,9 @@ object LexerFactory{
         sb.append("\tprivate def output(c: Char) = {_out = _out:+c}\n")
         sb.append("\t/** writes a character to the input stream */\n")
         sb.append("\tprivate def unput(c: Char) = {inputSeq = inputSeq:+c}\n")
-        //yylex
+        //yylex()
         sb.append("\tdef yylex() = {\n")
-        //end yylex
+        //end yylex()
         sb.append("\t}\n")
         if(withrules){processRules(in.head); in = in.tail}
         if(withroutines){processRoutines(in.head.head.asInstanceOf[CodeBlock]);in = in.tail}
