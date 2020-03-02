@@ -7,7 +7,11 @@
         %%
         routines
 
-    each section is optional, so the minimum input is an empty file.
+    the routines section is optional, so the minimum input is
+
+    %%
+
+    i.e. a new line followed by a delimiter
 */
     import com.typesafe.scalalogging.LazyLogging
 %{
