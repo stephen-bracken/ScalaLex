@@ -1,3 +1,14 @@
+/*
+    This is an input file containing examples of each type of declaration in each section.
+    The format for input files is
+        definitions
+        %%
+        rules
+        %%
+        routines
+
+    each section is optional, so the minimum input is an empty file.
+*/
     import com.typesafe.scalalogging.LazyLogging
 %{
     object Tester{
