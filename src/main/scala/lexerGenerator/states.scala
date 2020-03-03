@@ -4,13 +4,6 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.annotation.tailrec
 import scala.collection.immutable.Nil
 
-/** Represents a Non-deterministic Finite State Automata */
-class NFA(s: List[NFAState]) extends FSA[NFAState](s) {
-  //NFA Evaluation is not implemented but NFA and NFAStates are used in construction of DFAs
-  @deprecated("evaluation of NFAs is not implemented","")
-  override def eval(s: String): Boolean =  {logger.error("attempted evaluation on NFA");false}
-}
-
 /** Represents a Deterministic Finite State Automata */
 class DFA(s: List[DFAState],val regex:String)
     extends FSA[DFAState](s) {
@@ -128,16 +121,6 @@ abstract class FSA[A<:State](private var _s:List[A]) extends LazyLogging {
   }
 }
 
-class NFAState(id: Int, a: Boolean = false) extends State (id){
-  override var accepting: Boolean = a
-  override type S = NFAState
-  private var _epsilons = Set(this)
-  /** a list of epsilon transitions from this state */
-  def epsilons = _epsilons
-  /** adds an epsilon transition from this state to s */
-  def epsilons_(s: NFAState) = _epsilons = _epsilons.union(Set(s))
-}
-
 class DFAState(private val _n: Set[NFAState] = Set(), id: Int) extends State(id){
   /** gets the set of NFAStates that this DFAState was constructed from */
   def nfaStates = _n
@@ -181,6 +164,16 @@ class DFAState(private val _n: Set[NFAState] = Set(), id: Int) extends State(id)
        if(transitions.isEmpty) true
        else !(transitions.exists(p => !(p.result.diff(Set(this)).isEmpty)))
   }
+}
+
+class NFAState(id: Int, a: Boolean = false) extends State (id){
+  override var accepting: Boolean = a
+  override type S = NFAState
+  private var _epsilons = Set(this)
+  /** a list of epsilon transitions from this state */
+  def epsilons = _epsilons
+  /** adds an epsilon transition from this state to s */
+  def epsilons_(s: NFAState) = _epsilons = _epsilons.union(Set(s))
 }
 
 abstract class State(private val _id:Int) extends LazyLogging{
