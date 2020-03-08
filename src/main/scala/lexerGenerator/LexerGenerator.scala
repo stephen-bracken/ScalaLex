@@ -355,6 +355,7 @@ object Generator extends LazyLogging{
         */
         def findSections(s: List[Char]):List[GeneratorToken] = {
             var lines:List[Char] = Nil
+            var inExp = false
             def makeDefs:Unit = {
                 val d = lines
                 logger.trace("reading defs from \n\"" + Util.asString(d) + '"')
@@ -395,7 +396,23 @@ object Generator extends LazyLogging{
                                 else a
                             case x => throw new GeneratorError("Generator ended in unhandled mode: " + x)
                         }
-                    case '%'::'%'::xs =>
+                    case '/'::'*'::xs =>
+                        inExp = true
+                        lines = lines :+ '/' :+ '*'
+                        find(xs,a)
+                    case '*'::'/'::xs =>
+                        inExp = false
+                        lines = lines :+ '*' :+ '/'
+                        find(xs,a)
+                    case '%'::'{'::xs =>
+                        inExp = true
+                        lines = lines :+ '%' :+ '{'
+                        find(xs,a)
+                    case '}'::'%'::xs =>
+                        inExp = false
+                        lines = lines :+ '}' :+ '%'
+                        find(xs,a)
+                    case '\n'::'%'::'%'::xs if !inExp =>
                         val n:List[GeneratorToken] = mode match {
                             case 1 =>
                                 makeDefs

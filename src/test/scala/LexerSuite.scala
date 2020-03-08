@@ -28,7 +28,7 @@ class LexerSuite extends UnitSpec {
 
     it should "Be able to process an empty program" in {
         logger.info("#########LexEmptyDefs#########")
-        val in = "%%"
+        val in = "\n%%"
         assert(Generator.lex(in.toList) == List(Delimiter()))
     }
 

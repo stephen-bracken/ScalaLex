@@ -21,16 +21,63 @@ object LexerFactory{
         private var rules:List[String] = Nil
         private var states:List[String] = Nil
         private var inclusive:Boolean = false
+        sb.append("//######DEFINITIONS/OUTER EXPRESSIONS/IMPORTS######\n")
+        //required imports
+        sb.append("import scala.io.Source\n")
+        sb.append("import java.io.File\n")
+        sb.append("import java.io.BufferedWriter\n")
+        sb.append("import java.io.FileWriter\n")
+        if(withdefs){processDefs(in.head);in = in.tail}
         //begin class
         sb.append("class Lex {\n")
-        if(withdefs){processDefs(in.head);in = in.tail}
-        //add state variables
-        sb.append("private var state = \"INITIAL\"\nprivate val states:List[String] = List(\"INITIAL\",")
+        //states
+        sb.append("\t/**tracks the state of the lexer*/\n")
+        sb.append("\tprivate var state = \"INITIAL\"\n")
+        sb.append("\t/** list of valid lexing states */\n")
+        sb.append("\tprivate val states:List[String] = List(\"INITIAL\",")
         sb.append(states.reduceLeft((a,b) => '"'+a+'"'+','+'"'+b+'"'))
         sb.append(")\n")
-        sb.append("private val inclusive:Boolean = "+inclusive+'\n')
+        sb.append("\tprivate val inclusive:Boolean = "+inclusive+'\n')
+        //processing of input
+        sb.append("\t/**file path of input to analyse*/\n")
+        sb.append("\tprivate var _in:String = \"\"\n")
+        sb.append("\t/**output stream from lexed input*/\n")
+        sb.append("\tprivate var _out:List[Char] = Nil\n")
+        sb.append("\t/**unprocessed input*/\n")
+        sb.append("\tprivate var inputseq:List[Char] = Nil\n")
+        sb.append("\t/**stores the next character to be processed*/\n")
+        sb.append("\tprivate var _c:Char = null\n")
+        //readFile()
+        sb.append("\t/**reads an input file into inputseq*/\n")
+        sb.append("\tprivate def readFile() = {\n")
+        sb.append(Util.indentString(2)+"val bufferedSource = Source.fromFile(_in)\n")
+        sb.append(Util.indentString(2)+"var lines:List[String] = List()\n")
+        sb.append(Util.indentString(2)+"println(\"reading lines from file:\")\n")
+        sb.append(Util.indentString(2)+"for (line <- bufferedSource.getLines) {\n")
+        sb.append(Util.indentString(3)+"lines = lines:+line\n")
+        sb.append(Util.indentString(3)+"println(line)\n")
+        sb.append(Util.indentString(2)+"}\n")
+        sb.append(Util.indentString(2)+"bufferedSource.close\n")
+        //sb.append(Util.indentString(2)+"lines = lines.reverse\n")
+        sb.append(Util.indentString(2)+"inputSeq = lines.flatten\n")
+        sb.append(Util.indentString(2)+"_c = inputSeq.head\n")
+        //end readFile()
+        sb.append("\t}\n")
+        //input(),output() and unput()
+        sb.append("\t//IO methods\n")
+        sb.append("\t/** gets the next character fron the input stream */\n")
+        sb.append("\tprivate def input = _c\n")
+        sb.append("\t/** writes a character to the output stream */\n")
+        sb.append("\tprivate def output(c: Char) = {_out = _out:+c}\n")
+        sb.append("\t/** writes a character to the input stream */\n")
+        sb.append("\tprivate def unput(c: Char) = {inputSeq = c::inputSeq}\n")
+        //yylex()
+        sb.append("\tdef yylex() = {\n")
+        //end yylex()
+        sb.append("\t}\n")
         if(withrules){processRules(in.head); in = in.tail}
         if(withroutines){processRoutines(in.head.head.asInstanceOf[CodeBlock]);in = in.tail}
+        //end class
         sb.append('}')
         /** gets the definitions, options, code and states from the defs section */
         private def processDefs(d: List[GeneratorToken]) = {
@@ -40,7 +87,7 @@ object LexerFactory{
                 case Definition(i,r)::xs => {defs = defs.updated(i(),r());processDef(xs)}
                 case Declaration(s)::xs => {setOption(Util.asString(s));processDef(xs)}
                 case LexingState(s,i)::xs => {states = s; inclusive = i; processDef(xs)}
-                case CodeBlock(c)::xs => {sb.append(Util.asString(c));processDef(xs)}
+                case CodeBlock(c)::xs => {sb.append(Util.asString(c)+'\n');processDef(xs)}
                 case Comment(s)::xs => processDef(xs)
                 case Identifier(s)::xs => throw new LexerOutputError("Unclosed identifier found: " + Util.asString(s))
                 case LexingRule(s,r,c)::xs => throw new LexerOutputError("Rule found in defs section: " + s + r)  
@@ -57,9 +104,10 @@ object LexerFactory{
                     val reg = lookupDefs(r())
                     val rb = StringBuilder.newBuilder
                     val name = getId(s(),reg)
-                    rb.append("private def " + name + "() = {")
+                    rb.append(Util.indentString(2)+"//"+s()+", "+reg+'\n')
+                    rb.append(Util.indentString(2)+"def " + name + "() = {\n"+Util.indentString(3))
                     rb.append(c())
-                    rb.append("}\n")
+                    rb.append("\n"+Util.indentString(2)+"}\n")
                     rules = rules :+ rb.mkString
                     processRule(xs)
                 }
@@ -67,14 +115,18 @@ object LexerFactory{
                 case x::xs => throw new LexerOutputError("Unexpected token in rules section: " + x)
             }
             processRule(r)
-            sb.append("\n//### RULES ###")
-            sb.append(linkRules)
+            sb.append("\n\t//### RULES ###\n")
+            sb.append("\n\t/**selects the rule that matches a regex from yylex*/")
+            sb.append("\n\tprivate def doRule(r: String) = {\n")
             rules.map(s => sb.append("\n"+s))
+            sb.append(linkRules)
+            sb.append("\t}\n")
         }
         /** adds the code from the routines section */
         private def processRoutines(c: CodeBlock) = {
-            sb.append("\n//### USER SUBROUTINES ###")
+            sb.append("\n\t//### USER SUBROUTINES ###\n\t")
             sb.append(c())
+            sb.append("\n\t//### END ###\n")
         }
         //######Defs functions#######
         private def setOption(o: String) = {}
@@ -93,10 +145,10 @@ object LexerFactory{
         /** creates a switch statement that calls methods when regexes are activated */
         private def linkRules():String = {
             val b = StringBuilder.newBuilder
-            b.append("\nprivate def doRule(r: String) = {\n")
-            b.append("r match {\n")
-            for (((s,r),n)<- idMap) yield(b.append("\tcase \""+r+"\" if state == \""+s+"\" => " + n + "()\n"))
-            b.append("\tcase y => {}\n}\n}\n")
+            b.append('\n'+Util.indentString(2)+"//Selector\n")
+            b.append(Util.indentString(2)+"r match {\n")
+            for (((s,r),n)<- idMap) yield(b.append(Util.indentString(3)+"case \""+r+"\" if state == \""+s+"\" => " + n + "()\n"))
+            b.append(Util.indentString(3)+"case y => {}\n"+Util.indentString(2)+"}\n")
             b.mkString
         }
         /** looks up and replaces the regex value of names from the defs*/

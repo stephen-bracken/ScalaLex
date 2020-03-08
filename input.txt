@@ -1,9 +1,26 @@
-    println("Start of defs");
+/*
+    This is an input file containing examples of each type of declaration in each section.
+    The format for input files is
+        definitions
+        %%
+        rules
+        %%
+        routines
+
+    the routines section is optional, so the minimum input is
+
+    %%
+
+    i.e. a new line followed by a delimiter
+*/
+    import com.typesafe.scalalogging.LazyLogging
 %{
-    println("code block 1")
+    object Tester{
+        println("hello")
+    }
 }%
 /* I am a comment */
-number [0-9]+
+{number} [0-9]+
 %option case-insensitive,
 %x INSTRING INCOMMENT
 %%
@@ -11,8 +28,10 @@ number [0-9]+
 <INSTRING> a*    println("AAAAAAAAAAAAAAAA");
 hello    println("hello");
 world    println("world");
+rule{number}    pritnln("hi");
 c2    %{
     println("code block 2")
 }%
+add    2 + 4
 %%
 println("I am in the code section");
