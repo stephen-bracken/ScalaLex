@@ -609,7 +609,7 @@ object regexParser extends LazyLogging {
         //add transitions s0 -> initial, final -> s1, s1 -> s0
         s0.epsilons_(a.initialState)
         a.finalState.epsilons_(s1)
-        s1.epsilons_(s0)
+        a.finalState.epsilons_(a.initialState)
         //populate NFA
         n.addStates(a.states)
         n.addState(s1)
