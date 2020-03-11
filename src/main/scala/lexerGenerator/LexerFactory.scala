@@ -21,6 +21,7 @@ object LexerFactory{
         private var rules:List[String] = Nil
         private var states:List[String] = Nil
         private var inclusive:Boolean = false
+        private var options:Map[String,Boolean] = Map()
         sb.append("//######DEFINITIONS/OUTER EXPRESSIONS/IMPORTS######\n")
         //required imports
         sb.append("import scala.io.Source\n")
