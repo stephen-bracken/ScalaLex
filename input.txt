@@ -1,7 +1,7 @@
 /*
     This is an input file containing examples of each type of declaration in each section.
     The format for input files is
-        definitions
+        defs
         %%
         rules
         %%
