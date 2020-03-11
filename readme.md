@@ -111,10 +111,22 @@ the following operators are used during the processing of an input string, and w
 
 - whitespace is used for parsing rules and definitions, so to use whitespace in your regex, it is highly reccomended to parenthesise it using ``[ ]``
 
-### Planned operators
+### Planned features
 
-- ``$`` special case lookahead - checks that the entire input has been consumed
+- ``/`` trailing context - ``a/b`` matches ab but returns b to the input
+
+- ``$`` special case lookahead - checks that the entire input has been consumed. Equivalent to ``x/\n``
 
 - ``^`` lookbehind - checks that the beginning of the string was matched
 
 - ``.`` matches any character
+
+- ``{x,}`` matching x or more characters
+
+- multiple start state matching, e.g. ``<INSTRING,INCOMMENT>x``
+
+- ``<<EOF>>`` end of file
+
+- character classes, e.g. ``[:alnum:]`` = ``[]``
+
+- ``REJECT;`` rejects this regex and moves onto the next best match.
