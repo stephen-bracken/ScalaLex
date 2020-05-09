@@ -4,7 +4,7 @@ version := "0.5"
 
 scalaVersion := "2.12.10"
 
-unmanagedSources / excludeFilter := HiddenFileFilter || "*output*"
+unmanagedSources / excludeFilter := HiddenFileFilter || "*output*" || "Lexer.scala"
 
 resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases"//used for supersafe compiler plugin
 
