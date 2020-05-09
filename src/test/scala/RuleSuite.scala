@@ -1,4 +1,4 @@
-package lexerGenerator
+package scalaLex
 
 class RuleSuite extends UnitSpec {
     "an empty code block" should "execute with no actions" in {

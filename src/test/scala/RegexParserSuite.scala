@@ -1,4 +1,4 @@
-package lexerGenerator
+package scalaLex
 
 import org.scalatest.time._
 

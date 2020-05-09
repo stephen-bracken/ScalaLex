@@ -1,4 +1,4 @@
-package lexerGenerator
+package scalaLex
 import scala.util.Try
 import scala.collection.immutable.Nil
 import scala.language.postfixOps

@@ -1,4 +1,4 @@
-package lexerGenerator
+package scalaLex
 import com.typesafe.scalalogging.LazyLogging
 
 /** Represents a Non-deterministic Finite State Automata */

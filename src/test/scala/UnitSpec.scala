@@ -1,4 +1,4 @@
-package lexerGenerator
+package scalaLex
 import org.scalatest._
 import org.scalatest.flatspec._
 import org.scalatest.matchers.should.Matchers

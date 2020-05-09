@@ -1,4 +1,4 @@
-package lexerGenerator
+package scalaLex
 import scala.language.postfixOps
 import com.typesafe.scalalogging.LazyLogging
 import scala.annotation.tailrec

@@ -1,4 +1,4 @@
-package lexerGenerator
+package scalaLex
 
 class StatesSuite extends UnitSpec {
     //###### State tests ######

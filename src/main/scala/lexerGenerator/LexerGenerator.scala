@@ -1,4 +1,4 @@
-package lexerGenerator
+package scalaLex
 
 import com.typesafe.scalalogging.LazyLogging
 import java.io.FileNotFoundException
@@ -439,7 +439,7 @@ object Generator extends LazyLogging{
         Util.asString(l.flatMap(t => t.toString()))
     }
     def usage = {
-        logger.error("Usage: LexerGenerator -i [Definitions file] -o [Output filename]")
+        logger.error("Usage: scalaLex -i [Definitions file] -o [Output filename]")
     }
 }
 

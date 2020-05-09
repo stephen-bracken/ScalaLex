@@ -1,4 +1,4 @@
-package lexerGenerator
+package scalaLex
 
 //import org.junit._
 //import org.junit.Assert.assertEquals
@@ -23,7 +23,7 @@ class LexerSuite extends UnitSpec {
     it should "Be able to process the input rules" in {
         println("#########LexSimpleInt#########")
         val rules:String = "%%      \n      int k;\n[0-9]+   {\n        k = atoi(yytext);\n     if (k%7 == 0)\n             printf(\"%d\", k+3);\n      else\n          printf(\"%d\",k);\n         }"
-        //val lexer = lexerGenerator.Generator.ReadRules(List(rules))
+        //val lexer = scalaLex.Generator.ReadRules(List(rules))
     }
 
     it should "Be able to process an empty program" in {
