@@ -1,0 +1,1 @@
+addSbtPlugin("com.github.xuwei-k" % "sbt-class-diagram" % "0.2.1")//class diagram
