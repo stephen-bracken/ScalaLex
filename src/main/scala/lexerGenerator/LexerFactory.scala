@@ -1,6 +1,10 @@
 package scalaLex
 
 import scala.annotation.tailrec
+import scala.reflect.runtime._
+import scala.reflect.runtime
+import scala.tools.reflect.ToolBox
+import java.io._
 
 object LexerFactory{
     type Section = (List[GeneratorToken],Boolean)
@@ -10,6 +14,10 @@ object LexerFactory{
     private var withdefs = false
     private var withrules = false
     private var withroutines = false
+    private val file = new File("tmp/dfa")
+    private val cm = universe.runtimeMirror(getClass().getClassLoader)
+    private val tb = cm.mkToolBox()
+    private val oos = new ObjectOutputStream(new FileOutputStream(file))
     class Output(l: List[GeneratorToken]*){
         private var id = 0
         /** provides the function id for a regex */
