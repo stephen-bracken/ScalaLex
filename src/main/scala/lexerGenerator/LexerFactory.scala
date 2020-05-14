@@ -12,7 +12,7 @@ object LexerFactory{
     private var withroutines = false
     class Output(l: List[GeneratorToken]*){
         private var id = 0
-        /** gets the function id for a regex */
+        /** provides the function id for a regex */
         private var idMap:Map[(String,String),String] = Map()
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
