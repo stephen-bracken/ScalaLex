@@ -14,14 +14,15 @@ object LexerFactory{
     private var withdefs = false
     private var withrules = false
     private var withroutines = false
-    private val file = new File("tmp/dfa")
+    private val file = new File("output/dfa")
     private val cm = universe.runtimeMirror(getClass().getClassLoader)
     private val tb = cm.mkToolBox()
+    private val build = scala.reflect.runtime.universe.internal.reificationSupport
     private val oos = new ObjectOutputStream(new FileOutputStream(file))
     class Output(l: List[GeneratorToken]*){
         private var id = 0
         /** provides the function id for a regex */
-        private var idMap:Map[(String,String),String] = Map()
+        private var idMap:Map[(String,String),(String,DFA)] = Map()
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
         /** (name -> regex) */
@@ -33,12 +34,12 @@ object LexerFactory{
         sb.append("//######DEFINITIONS/OUTER EXPRESSIONS/IMPORTS######\n")
         //required imports
         sb.append("import scala.io.Source\n")
-        sb.append("import java.io.File\n")
-        sb.append("import java.io.BufferedWriter\n")
-        sb.append("import java.io.FileWriter\n")
+        sb.append("import java.io._\n")
         if(withdefs){processDefs(in.head);in = in.tail}
         //begin class
         sb.append("class Lex {\n")
+        sb.append("private val ois = new ObjectInputStream(new FileInputStream(\"output/dfa\"))\n")
+        sb.append("private val idMap = ois.readObject() \nois.close()\n")
         //states
         sb.append("\t/**tracks the state of the lexer*/\n")
         sb.append("\tprivate var state = \"INITIAL\"\n")
@@ -110,13 +111,15 @@ object LexerFactory{
         }
         /** compiles the rules from the rules section into methods for yylex to call */
         private def processRules(r: List[GeneratorToken]) = {
+            
             @tailrec
             def processRule(l: List[GeneratorToken]):Unit = l match {
                 case Nil => {}
                 case LexingRule(s,r,c)::xs => {
                     val reg = lookupDefs(r())
                     val rb = StringBuilder.newBuilder
-                    val name = getId(s(),reg)
+                    val dfa = regexParser.translateRegex(reg)
+                    val name = getId(s(),reg)(dfa)
                     rb.append(Util.indentString(2)+"//"+s()+", "+reg+'\n')
                     rb.append(Util.indentString(2)+"def " + name + "() = {\n"+Util.indentString(3))
                     rb.append(c())
@@ -147,9 +150,9 @@ object LexerFactory{
         private def setOption(o: String) = {}
         //######Rules functions######
         /** assigns a regex function to a given id */
-        private def getId(s: String,r: String):String = {
+        private def getId(s: String,r: String)(d: DFA):String = {
             val i = "rule" + id
-            idMap = idMap.updated((s,r),i)
+            idMap = idMap.updated((s,r),(i,d))
             id += 1
             i
         }
@@ -162,7 +165,7 @@ object LexerFactory{
             val b = StringBuilder.newBuilder
             b.append('\n'+Util.indentString(2)+"//Selector\n")
             b.append(Util.indentString(2)+"r match {\n")
-            for (((s,r),n)<- idMap) yield(b.append(Util.indentString(3)+"case \""+r+"\" if state == \""+s+"\" => " + n + "()\n"))
+            for (((s,r),(n,d))<- idMap) yield(b.append(Util.indentString(3)+"case \""+r+"\" if state == \""+s+"\" => " + n + "()\n"))
             b.append(Util.indentString(3)+"case y => {}\n"+Util.indentString(2)+"}\n")
             b.mkString
         }
@@ -177,8 +180,17 @@ object LexerFactory{
                 if(!r.isEmpty){for (i <- r) yield{n = n.replace(i,defs(i))}}
                 n
             }
+        
+        def writeMappings:Unit = {
+            oos.writeObject(idMap)
+        }
+        
         /** returns the output string */
         def apply() = {
+            oos.close()
+            val ois = new ObjectInputStream(new FileInputStream("output/dfa"))
+            ois.readObject().asInstanceOf[DFA]
+            ois.close()
             sb.mkString
         }
     }
@@ -204,6 +216,7 @@ object LexerFactory{
         if(withrules){l = l :+ rawrules}
         if(withroutines){l = l :+ rawroutines}
         val o = new Output(l:_*)
+        o.writeMappings
         o()
     }
 }

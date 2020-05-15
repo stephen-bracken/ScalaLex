@@ -5,8 +5,9 @@ import scala.annotation.tailrec
 import scala.collection.immutable.Nil
 
 /** Represents a Deterministic Finite State Automata */
+@SerialVersionUID(100L)
 class DFA(s: List[DFAState],val regex:String)
-    extends FSA[DFAState](s) {
+    extends FSA[DFAState](s) with Serializable {
     
     def apply(s: String):Boolean = eval(s)
     /** evaluates an input string against this DFA. Returns true if input string results in an accepting state */
@@ -74,8 +75,7 @@ class DFA(s: List[DFAState],val regex:String)
   *
   * @param s List of states in order
   */
-@SerialVersionUID(200L)
-abstract class FSA[A<:State](private var _s:List[A]) extends LazyLogging with Serializable {
+abstract class FSA[A<:State](private var _s:List[A]) extends LazyLogging  {
   /** gets the set of states in this FSA */
   def states = _s
   /** the starting state for this FSA */
@@ -177,8 +177,7 @@ class NFAState(id: Int, a: Boolean = false) extends State (id){
   def epsilons_(s: NFAState) = _epsilons = _epsilons.union(Set(s))
 }
 
-@SerialVersionUID(100L)
-abstract class State(private val _id:Int) extends LazyLogging with Serializable {
+abstract class State(private val _id:Int) extends LazyLogging  {
   type S <: State
   /** gets the id of this state */
   def id = _id
@@ -232,8 +231,7 @@ abstract class State(private val _id:Int) extends LazyLogging with Serializable 
 }
 
 /** represents a transition from this state. Contains associated characters, whether the transition is inverted (^), and the set of possible destinations */
-@SerialVersionUID(300L)
-case class Transition[S<:State](var chars: Set[Char],val inverted: Boolean = false,var result: Set[S]) extends LazyLogging with Serializable {
+case class Transition[S<:State](var chars: Set[Char],val inverted: Boolean = false,var result: Set[S]) extends LazyLogging  {
   /** indicates whether an input character represents an acceptible transition symbol */
   def makeTransition(c: Char):Boolean = chars.contains(c) ^ inverted
   /** adds a state to the result set */
