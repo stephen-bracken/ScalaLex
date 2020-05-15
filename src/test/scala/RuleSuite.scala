@@ -20,4 +20,9 @@ class RuleSuite extends UnitSpec {
         val a = new LexRule(action = "{3+4}")
         assert(a.result == 7)
     }
+
+    it should "be able to assign variables at runtime" in {
+        val a = new LexRule(action = "{val x = 10;x}")
+        assert(a.result == 10)
+    }
 }
