@@ -6,6 +6,7 @@ import scala.reflect.runtime
 import scala.tools.reflect.ToolBox
 import java.io._
 
+//TODO: Fix class path for DFA
 object LexerFactory{
     type Section = (List[GeneratorToken],Boolean)
     private var rawdefs:List[GeneratorToken] = Nil
@@ -21,7 +22,7 @@ object LexerFactory{
     private val oos = new ObjectOutputStream(new FileOutputStream(file))
     class Output(l: List[GeneratorToken]*){
         private var id = 0
-        /** provides the function id for a regex */
+        /** provides the function id for a regex to be exported to the final program */
         private var idMap:Map[(String,String),(String,DFA)] = Map()
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
@@ -188,9 +189,6 @@ object LexerFactory{
         /** returns the output string */
         def apply() = {
             oos.close()
-            val ois = new ObjectInputStream(new FileInputStream("output/dfa"))
-            ois.readObject().asInstanceOf[DFA]
-            ois.close()
             sb.mkString
         }
     }

@@ -52,6 +52,6 @@ class LexerSuite extends UnitSpec {
         val ois = new ObjectInputStream(new FileInputStream("output/dfa"))
         val d = ois.readObject().asInstanceOf[DFA]
         ois.close()
-        assert(d.getClass() == classOf[DFA])
+        assert(d.getClass() == classOf[Map[(String,String),(String,DFA)]])
     }
 }
