@@ -1,8 +1,10 @@
-name := "Year3Project"
+name := "ScalaLex"
 
 version := "0.5"
 
 scalaVersion := "2.12.10"
+
+mainClass := Some("scalaLex.Generator")
 
 unmanagedSources / excludeFilter := HiddenFileFilter || "*output*" || "Lexer.scala"
 
