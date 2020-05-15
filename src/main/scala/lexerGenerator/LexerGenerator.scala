@@ -61,7 +61,7 @@ object Generator extends LazyLogging{
             LexerFactory.withRules(rules)
             LexerFactory.withRoutines(routines)
             val text = LexerFactory.makeLexer
-            val file = new File(outputFile)
+            val file = new File("output/"+outputFile)
             val bw = new BufferedWriter(new FileWriter(file))
             bw.write(text)
             bw.close()

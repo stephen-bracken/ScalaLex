@@ -39,8 +39,9 @@ object LexerFactory{
         if(withdefs){processDefs(in.head);in = in.tail}
         //begin class
         sb.append("class Lex {\n")
-        sb.append("private val ois = new ObjectInputStream(new FileInputStream(\"output/dfa\"))\n")
-        sb.append("private val idMap = ois.readObject() \nois.close()\n")
+        sb.append("\t//imports the state machines from the dfa file")
+        sb.append("\tprivate val ois = new ObjectInputStream(new FileInputStream(\"dfa\"))\n")
+        sb.append("\tprivate val idMap = ois.readObject() \nois.close()\n")
         //states
         sb.append("\t/**tracks the state of the lexer*/\n")
         sb.append("\tprivate var state = \"INITIAL\"\n")
