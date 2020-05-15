@@ -2,6 +2,7 @@
 *.log
 
 tmp/*
+output/*
 
 # sbt specific
 .cache/
