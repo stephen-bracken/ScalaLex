@@ -2,7 +2,7 @@ package scalaLex
 
 //import org.junit._
 //import org.junit.Assert.assertEquals
-
+import java.io._
 //import fastparse._
 
 class LexerSuite extends UnitSpec {
@@ -45,5 +45,13 @@ class LexerSuite extends UnitSpec {
         logger.info(in)
         val r = Generator.lex(in.toList)
         logger.info(r.toString)
+    }
+
+    ignore should "Be able to serialize a DFA" in {
+        logger.info("#########LexTokens#########")
+        val ois = new ObjectInputStream(new FileInputStream("output/dfa"))
+        val d = ois.readObject().asInstanceOf[DFA]
+        ois.close()
+        assert(d.getClass() == classOf[DFA])
     }
 }
