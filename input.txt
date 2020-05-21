@@ -28,7 +28,7 @@
 <INSTRING> a*    println("AAAAAAAAAAAAAAAA");
 hello    println("hello");
 world    println("world");
-rule{number}    pritnln("hi");
+rule{number}    println("hi");
 c2    %{
     println("code block 2")
 }%
