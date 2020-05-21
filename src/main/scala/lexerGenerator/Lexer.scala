@@ -16,7 +16,8 @@ class Lex {
 	//imports the state machines from the dfa file
 	private val ois = new ObjectInputStream(new FileInputStream("dfa"))
 	private val regpair:List[(DFA,String)] = ois.readObject().asInstanceOf[List[(DFA,String)]] 
-ois.close()
+	ois.close()
+	readFile()
 	/**tracks the state of the lexer*/
 	private var state = "INITIAL"
 	/** list of valid lexing states */
