@@ -20,7 +20,7 @@ class LexerSuite extends UnitSpec {
         succeed
     }
 
-    it should "Be able to process the input rules" in {
+    ignore should "Be able to process the input rules" in {
         println("#########LexSimpleInt#########")
         val rules:String = "%%      \n      int k;\n[0-9]+   {\n        k = atoi(yytext);\n     if (k%7 == 0)\n             printf(\"%d\", k+3);\n      else\n          printf(\"%d\",k);\n         }"
         //val lexer = scalaLex.Generator.ReadRules(List(rules))
