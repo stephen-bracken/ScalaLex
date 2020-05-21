@@ -40,7 +40,7 @@ object LexerFactory{
         if(withdefs){processDefs(in.head);in = in.tail}
         //begin class
         sb.append("class Lex {\n")
-        sb.append("\t//imports the state machines from the dfa file")
+        sb.append("\t//imports the state machines from the dfa file\n")
         sb.append("\tprivate val ois = new ObjectInputStream(new FileInputStream(\"dfa\"))\n")
         sb.append("\tprivate val idMap:Map[(String,String),(String,DFA)] = ois.readObject() \nois.close()\n")
         //states
