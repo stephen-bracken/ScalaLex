@@ -43,7 +43,7 @@ object LexerFactory{
         sb.append("class Lex {\n")
         sb.append("\t//imports the state machines from the dfa file\n")
         sb.append("\tprivate val ois = new ObjectInputStream(new FileInputStream(\"dfa\"))\n")
-        sb.append("\tprivate val regMap:Map[DFA,String] = ois.readObject() \nois.close()\n")
+        sb.append("\tprivate val regMap:Map[DFA,String] = ois.readObject().asInstanceOf[Map[DFA,String]] \nois.close()\n")
         //states
         sb.append("\t/**tracks the state of the lexer*/\n")
         sb.append("\tprivate var state = \"INITIAL\"\n")
