@@ -36,6 +36,7 @@ object LexerFactory{
         sb.append("//######DEFINITIONS/OUTER EXPRESSIONS/IMPORTS######\n")
         //required imports
         sb.append("import scala.io.Source\n")
+        sb.append("import scala.annotation.tailrec\n")
         sb.append("import java.io._\n")
         sb.append("import scalaLex.DFA\n")
         if(withdefs){processDefs(in.head);in = in.tail}
@@ -91,6 +92,7 @@ object LexerFactory{
         sb.append("\tprivate def yymore() = {yytext += currMatch}\n")
         //yylex()
         sb.append("\tdef yylex() = {\n")
+        sb.append(Util.indentString(2)+"@tailrec\n")
         sb.append(Util.indentString(2)+"def f(p:List[(DFA,String)],i:Int,a:String):Unit = {\n")
 		sb.append(Util.indentString(3)+"p match {\n")
 		sb.append(Util.indentString(4)+"case Nil => inputseq.drop(i); doRule(a)\n")

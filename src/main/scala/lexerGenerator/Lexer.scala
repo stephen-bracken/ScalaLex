@@ -6,6 +6,7 @@ import scala.io.Source
 import java.io._
 import scalaLex.DFA
 import com.typesafe.scalalogging.LazyLogging
+import scala.annotation.tailrec
 
     object Tester{
         println("hello")
@@ -54,6 +55,7 @@ ois.close()
 	/** appends the current match to the matched text*/
 	private def yymore() = {yytext += currMatch}
 	def yylex() = {
+		@tailrec
 		def f(p:List[(DFA,String)],i:Int,a:String):Unit = {
 			p match {
 				case Nil => inputseq.drop(i); doRule(a)
