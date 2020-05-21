@@ -24,6 +24,7 @@ object LexerFactory{
         private var id = 0
         /** provides the function id for a regex to be exported to the final program */
         private var idMap:Map[(String,String),(String,DFA)] = Map()
+        private var regMap:Map[DFA,String] = Map()
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
         /** (name -> regex) */
@@ -42,7 +43,7 @@ object LexerFactory{
         sb.append("class Lex {\n")
         sb.append("\t//imports the state machines from the dfa file\n")
         sb.append("\tprivate val ois = new ObjectInputStream(new FileInputStream(\"dfa\"))\n")
-        sb.append("\tprivate val idMap:Map[(String,String),(String,DFA)] = ois.readObject() \nois.close()\n")
+        sb.append("\tprivate val regMap:Map[DFA,String] = ois.readObject() \nois.close()\n")
         //states
         sb.append("\t/**tracks the state of the lexer*/\n")
         sb.append("\tprivate var state = \"INITIAL\"\n")
@@ -156,6 +157,7 @@ object LexerFactory{
         private def getId(s: String,r: String)(d: DFA):String = {
             val i = "rule" + id
             idMap = idMap.updated((s,r),(i,d))
+            regMap = regMap.updated(d,r)
             id += 1
             i
         }
@@ -185,7 +187,7 @@ object LexerFactory{
             }
         
         def writeMappings:Unit = {
-            oos.writeObject(idMap)
+            oos.writeObject(regMap)
         }
         
         /** returns the output string */
