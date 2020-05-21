@@ -36,3 +36,8 @@ add    2 + 4
 %%
 \\test commit
 println("I am in the code section");
+def main(args: Array[String]): Unit = {
+    while(inputseq.nonEmpty){
+		yylex()
+	}
+}

@@ -123,6 +123,10 @@ class Lex {
 	//### USER SUBROUTINES ###
 	
 println("I am in the code section");
-
+def main(args: Array[String]): Unit = {
+    while(inputseq.nonEmpty){
+		yylex()
+	}
+}
 	//### END ###
 }
