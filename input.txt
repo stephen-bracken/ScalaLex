@@ -34,4 +34,5 @@ c2    %{
 }%
 add    2 + 4
 %%
+\\test commit
 println("I am in the code section");
