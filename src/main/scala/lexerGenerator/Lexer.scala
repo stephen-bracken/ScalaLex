@@ -59,7 +59,11 @@ class Lex {
 		@tailrec
 		def f(p:List[(DFA,String,String)],i:Int,a:String):Unit = {
 			p match {
-				case Nil => inputseq.drop(i); doRule(a)
+				case Nil => 
+					val m = inputseq.splitAt(i)
+					currMatch = m._1.asInstanceOf[String]
+					inputseq = m._2
+					doRule(a)
 				case (d,r,s) :: tl if s == state =>
 					val l = d.longestPrefixMatch(inputseq.asInstanceOf[String])
 					if(l._1 > i) f(tl,l._1,a)
