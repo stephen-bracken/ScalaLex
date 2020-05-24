@@ -23,7 +23,7 @@ object LexerFactory{
     class Output(l: List[GeneratorToken]*){
         private var id = 0
         /** provides the function id for a regex to be exported to the final program */
-        private var idMap:Map[(String,String),(String,DFA)] = Map()
+        private var idMap:Map[String,String] = Map()
         private var regpair:List[(DFA,String,String)] = Nil
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
@@ -169,7 +169,7 @@ object LexerFactory{
         /** assigns a regex function to a given id */
         private def getId(s: String,r: String)(d: DFA):String = {
             val i = "rule" + id
-            idMap = idMap.updated((s,r),(i,d))
+            idMap = idMap.updated(r,i)
             regpair = (d,r,s) :: regpair
             id += 1
             i
@@ -183,7 +183,7 @@ object LexerFactory{
             val b = StringBuilder.newBuilder
             b.append('\n'+Util.indentString(2)+"//Selector\n")
             b.append(Util.indentString(2)+"r match {\n")
-            for (((s,r),(n,d))<- idMap) yield(b.append(Util.indentString(3)+"case \""+r+"\" if state == \""+s+"\" => " + n + "()\n"))
+            for ((r,n) <- idMap) yield(b.append(Util.indentString(3)+"case \""+r+"\" => " + n + "()\n"))
             b.append(Util.indentString(3)+"case y => {}\n"+Util.indentString(2)+"}\n")
             b.mkString
         }

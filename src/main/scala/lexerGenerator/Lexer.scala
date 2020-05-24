@@ -110,12 +110,12 @@ class Lex {
 
 		//Selector
 		r match {
-			case "rule[0-9]+" if state == "INITIAL" => rule3()
-			case "c2" if state == "INITIAL" => rule4()
-			case "a*" if state == "INSTRING" => rule0()
-			case "add" if state == "INITIAL" => rule5()
-			case "hello" if state == "INITIAL" => rule1()
-			case "world" if state == "INITIAL" => rule2()
+			case "rule[0-9]+" => rule3()
+			case "c2" => rule4()
+			case "a*" => rule0()
+			case "add" => rule5()
+			case "hello" => rule1()
+			case "world" => rule2()
 			case y => {}
 		}
 	}
