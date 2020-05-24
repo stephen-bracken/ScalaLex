@@ -15,7 +15,7 @@ import scala.annotation.tailrec
 class Lex {
 	//imports the state machines from the dfa file
 	private val ois = new ObjectInputStream(new FileInputStream("dfa"))
-	private val regpair:List[(DFA,String)] = ois.readObject().asInstanceOf[List[(DFA,String)]] 
+	private val regpair:List[(DFA,String,String)] = ois.readObject().asInstanceOf[List[(DFA,String,String)]] 
 	ois.close()
 	readFile()
 	/**tracks the state of the lexer*/
@@ -57,10 +57,10 @@ class Lex {
 	private def yymore() = {yytext += currMatch}
 	def yylex() = {
 		@tailrec
-		def f(p:List[(DFA,String)],i:Int,a:String):Unit = {
+		def f(p:List[(DFA,String,String)],i:Int,a:String):Unit = {
 			p match {
 				case Nil => inputseq.drop(i); doRule(a)
-				case (d,r) :: tl =>
+				case (d,r,s) :: tl if s == state =>
 					val l = d.longestPrefixMatch(inputseq.asInstanceOf[String])
 					if(l._1 > i) f(tl,l._1,a)
 					else f(tl,i,a)

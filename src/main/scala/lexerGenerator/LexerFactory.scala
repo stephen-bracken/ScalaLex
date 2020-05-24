@@ -24,7 +24,7 @@ object LexerFactory{
         private var id = 0
         /** provides the function id for a regex to be exported to the final program */
         private var idMap:Map[(String,String),(String,DFA)] = Map()
-        private var regpair:List[(DFA,String)] = Nil
+        private var regpair:List[(DFA,String,String)] = Nil
         private var in = l.toList
         private val sb: StringBuilder = StringBuilder.newBuilder
         /** (name -> regex) */
@@ -44,7 +44,7 @@ object LexerFactory{
         sb.append("class Lex {\n")
         sb.append("\t//imports the state machines from the dfa file\n")
         sb.append("\tprivate val ois = new ObjectInputStream(new FileInputStream(\"dfa\"))\n")
-        sb.append("\tprivate val regpair:List[(DFA,String)] = ois.readObject().asInstanceOf[List[(DFA,String)]] \n\tois.close()\n")
+        sb.append("\tprivate val regpair:List[(DFA,String,String)] = ois.readObject().asInstanceOf[List[(DFA,String,String)]] \n\tois.close()\n")
         sb.append("\treadFile()\n")
         //states
         sb.append("\t/**tracks the state of the lexer*/\n")
@@ -94,10 +94,10 @@ object LexerFactory{
         //yylex()
         sb.append("\tdef yylex() = {\n")
         sb.append(Util.indentString(2)+"@tailrec\n")
-        sb.append(Util.indentString(2)+"def f(p:List[(DFA,String)],i:Int,a:String):Unit = {\n")
+        sb.append(Util.indentString(2)+"def f(p:List[(DFA,String,String)],i:Int,a:String):Unit = {\n")
 		sb.append(Util.indentString(3)+"p match {\n")
 		sb.append(Util.indentString(4)+"case Nil => inputseq.drop(i); doRule(a)\n")
-	    sb.append(Util.indentString(4)+"case (d,r) :: tl =>\n")
+	    sb.append(Util.indentString(4)+"case (d,r,s) :: tl if s == state =>\n")
 		sb.append(Util.indentString(5)+"val l = d.longestPrefixMatch(inputseq.asInstanceOf[String])\n")
 	    sb.append(Util.indentString(5)+"if(l._1 > i) f(tl,l._1,a)\n")
 	    sb.append(Util.indentString(5)+"else f(tl,i,a)\n")
@@ -170,7 +170,7 @@ object LexerFactory{
         private def getId(s: String,r: String)(d: DFA):String = {
             val i = "rule" + id
             idMap = idMap.updated((s,r),(i,d))
-            regpair = (d,r) :: regpair
+            regpair = (d,r,s) :: regpair
             id += 1
             i
         }
