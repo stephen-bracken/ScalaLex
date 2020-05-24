@@ -4,6 +4,8 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.annotation.tailrec
 import scala.collection.immutable.Nil
 
+///TODO: Implement trailing context (/), Start match (^) and end match ($)
+
 /** Represents a Deterministic Finite State Automata */
 @SerialVersionUID(100L)
 class DFA(s: List[DFAState],val regex:String)

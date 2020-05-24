@@ -513,7 +513,7 @@ object regexParser extends LazyLogging {
             case '+'      => plus
             case '?'      => lazyOp
             case '\u0008' => concat
-            case '/'      => concat
+            case '/'      => throw new NotImplementedError("Trailing context (/) is not supported by ScalaLex")
             case '^'      => startMatch
             case '$'      => endMatch
             case _        => false
@@ -662,12 +662,12 @@ object regexParser extends LazyLogging {
       def startMatch:Boolean = {
         logger.debug("Start matching")
         startMatching = true
-        true
+        throw new NotImplementedError("Start matching (^) is not supported by ScalaLex")
       }
       def endMatch:Boolean = {
         logger.debug("End matching")
         endMatching = true
-        true
+        throw new NotImplementedError("End matching ($) is not supported by ScalaLex")
       }
     //add the final state as an accepting state
     val nfa = translateSymbols(sym)
