@@ -68,6 +68,7 @@ class Lex {
 					val l = d.longestPrefixMatch(inputseq.asInstanceOf[String])
 					if(l._1 > i) f(tl,l._1,a)
 					else f(tl,i,a)
+				case x::xs => f(xs,i,a)
 			}
 		}
 		f(regpair,0,"")
