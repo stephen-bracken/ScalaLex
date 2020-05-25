@@ -22,6 +22,18 @@ e.g.
 running ``java -jar scalaLex -i input.txt -o output`` will read definitions from the source file input.txt (an example has been provided for you) 
 and output to the file /output/output.scala. Note that ScalaLex will always produce a file named dfa which is **always necessary** for running the output program.
 
+### sbt build file
+To resolve dependencies in the output program, you will need to use a build tool such as sbt or IntelliJ, and add the following dependences to the output program in a build file (build.sbt for sbt):
+
+```
+libraryDependencies ++= Seq(
+    "org.slf4j"%"slf4j-api"%"1.7.25", //simple logging facade for Java
+    "ch.qos.logback"%"logback-classic"%"1.2.3", //logback
+    "ch.qos.logback"%"logback-core"%"1.2.3",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2", //scala-logging
+)
+```
+
 ## Input Language
 
 The top level syntax for an input file is:
