@@ -9,6 +9,7 @@ import java.io._
 //TODO: Fix class path for DFA
 object LexerFactory{
     type Section = (List[GeneratorToken],Boolean)
+    private var fileName:String = ""
     private var rawdefs:List[GeneratorToken] = Nil
     private var rawrules:List[GeneratorToken] = Nil
     private var rawroutines:List[GeneratorToken] = Nil
@@ -214,6 +215,13 @@ object LexerFactory{
             sb.mkString
         }
     }
+
+    class SBTBuilder(l: List[(String,String)]){
+        
+    }
+
+    def setFileName(s: String):Unit = {fileName = s}
+
     /** adds the tokens from the defs section to the output file */
     def withDefs(l: Section):Unit = {
         rawdefs = l._1
@@ -237,7 +245,11 @@ object LexerFactory{
         if(withroutines){l = l :+ rawroutines}
         val o = new Output(l:_*)
         o.writeMappings
-        o()
+        val src = o()
+        val file = new File("output/"+fileName)
+        val bw = new BufferedWriter(new FileWriter(file))
+        bw.write(src)
+        bw.close()
     }
 }
 

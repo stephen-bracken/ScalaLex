@@ -57,14 +57,11 @@ object Generator extends LazyLogging{
             val compiledRules =  lex(lines.flatten)
             logger.info("Processed input: " + compiledRules)
             //produce output file
+            LexerFactory.setFileName(outputFile)
             LexerFactory.withDefs(defs)
             LexerFactory.withRules(rules)
             LexerFactory.withRoutines(routines)
-            val text = LexerFactory.makeLexer
-            val file = new File("output/"+outputFile)
-            val bw = new BufferedWriter(new FileWriter(file))
-            bw.write(text)
-            bw.close()
+            LexerFactory.makeLexer
             logger.info("Lexer successfully created")
         }
         catch {
