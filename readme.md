@@ -11,8 +11,7 @@ This tool was built using sbt and requires Java 8 to run.
 ## Instructions for use
 To use this program, you need to first package it into a jar file by running the command ``sbt package`` (or just ``package`` if inside sbt), which should create a jar file in the /scalaLex/target/scala-2.12 directory. 
 
-This file needs to be added to your system classpath to allow the output program to run. To do this you need to add the jar file to your build file using IntelliJ or sbt (for sbt see https://www.scala-sbt.org/1.x/docs/Classpaths.html), run the command:
-``set fullClasspath in Compile += Attributed.blank(file(".../ScalaLex/target/scala-2.12/ScalaLex.jar"))``
+This file needs to be added to your system classpath to allow the output program to run. To do this you need to add the jar file to your build file using IntelliJ or sbt (for sbt see https://www.scala-sbt.org/1.x/docs/Classpaths.html), to run the tool using the sbt scala interpreter run the command: ``set fullClasspath in Compile += Attributed.blank(file(".../ScalaLex/target/scala-2.12/ScalaLex.jar"))`` **note that this alone will not enable the output file to run as you must do the same thing in a separate sbt build file**
 
 You can check your classpath by using the command ``show compile:fullClasspath``
 
@@ -24,6 +23,8 @@ The arguments for ScalaLex are as follows:
 e.g.
 running ``java -jar scalaLex -i input.txt -o output`` will read definitions from the source file input.txt (an example has been provided for you) 
 and output to the file /output/output.scala. Note that ScalaLex will always produce a file named dfa which is **always necessary** for running the output program.
+
+You can extract the contents of the output folder anywhere you want and create a new sbt build there.
 
 ### sbt build file
 To resolve dependencies in the output program, you will need to use a build tool such as sbt or IntelliJ, and add the following dependences to the output program in a build file (build.sbt for sbt):
