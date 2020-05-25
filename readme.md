@@ -5,6 +5,9 @@ This tool is designed to implement a modified version of the [LEX](http://dinosa
 
 ScalaLex uses a Regex Compiler that produces DFA equivalents of each of the regex rules in the output program. Each Regex is matched using longest prefix match, and in the case of two or more matches of the same length, the first matched rule is used.
 
+## Requirements
+This tool was built using sbt and requires Java 8 to run.
+
 ## Instructions for use
 To use this program, you need to first package it into a jar file by running the command ``sbt package`` (or just ``package`` if inside sbt), which should create a jar file in the /scalaLex/target/scala-2.12 directory. 
 
