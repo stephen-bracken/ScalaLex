@@ -11,6 +11,8 @@ To use this program, you need to first package it into a jar file by running the
 This file needs to be added to your system classpath to allow the output program to run. To do this, run the command:
 ``set fullClasspath in Compile += Attributed.blank(file(".../ScalaLex/target/scala-2.12/ScalaLex.jar"))``
 
+You can check your classpath by using the command ``show compile:fullClasspath``
+
 The arguments for ScalaLex are as follows:
 
     - -i : the input file to read defninitions from
