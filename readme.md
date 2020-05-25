@@ -1,7 +1,21 @@
 # ScalaLex
+*The following readme file is supplied with ScalaLex and is available on [Github](https://github.com/stephen-bracken/ScalaLex)*
 This tool is designed to implement a modified version of the [LEX](http://dinosaur.compilertools.net/lex/)/[FLEX](http://dinosaur.compilertools.net/flex/manpage.html) specification. This program implements all of the standard functions of lex or flex, but the output program is written in scala.
 
 ScalaLex uses a Regex Compiler that produces DFA equivalents of each of the regex rules in the output program. Each Regex is matched using longest prefix match, and in the case of two or more matches of the same length, the first matched rule is used.
+
+## Instructions for use
+To use this program, you need to first package it into a jar file by running the command ``sbt package`` (or just ``package`` if inside sbt), which should create a jar file in the /scalaLex/target/scala-2.12 directory. 
+This file needs to be added to your system classpath to allow the output program to run.
+
+The arguments for ScalaLex are as follows:
+
+    - -i : the input file to read defninitions from
+    - -o : the name of the output source file to be created
+
+e.g.
+running ``java -jar scalaLex -i input.txt -o output`` will read definitions from the source file input.txt (an example has been provided for you) 
+and output to the file /output/output.scala. Note that ScalaLex will always produce a file named dfa which is **always necessary** for running the output program.
 
 ## Input Language
 
