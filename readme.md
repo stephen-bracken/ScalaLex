@@ -8,7 +8,7 @@ ScalaLex uses a Regex Compiler that produces DFA equivalents of each of the rege
 ## Instructions for use
 To use this program, you need to first package it into a jar file by running the command ``sbt package`` (or just ``package`` if inside sbt), which should create a jar file in the /scalaLex/target/scala-2.12 directory. 
 
-This file needs to be added to your system classpath to allow the output program to run. To do this you need to add the jar file to your build file using IntelliJ or sbt (for sbt see [](https://www.scala-sbt.org/1.x/docs/Classpaths.html)), run the command:
+This file needs to be added to your system classpath to allow the output program to run. To do this you need to add the jar file to your build file using IntelliJ or sbt (for sbt see https://www.scala-sbt.org/1.x/docs/Classpaths.html), run the command:
 ``set fullClasspath in Compile += Attributed.blank(file(".../ScalaLex/target/scala-2.12/ScalaLex.jar"))``
 
 You can check your classpath by using the command ``show compile:fullClasspath``
